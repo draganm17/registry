@@ -336,7 +336,16 @@ key& key::assign(key_id root, registry::view view)
 
 key& key::assign(string_view_type name, registry::view view)
 {
-    // TODO: ...
+    if (empty()) {
+        return swap(key(name, view)), *this;
+    }
+
+    const auto new_root_id = key_id_from_string(name.substr(0, name.find(TEXT('\\'))));
+    if (static_cast<std::underlying_type_t<key_id>>(new_root_id) == -1) throw bad_key_name();
+
+    m_name.assign(name.data(), name.size());
+    m_root = new_root_id;
+    m_view = view;
     return *this;
 }
 
