@@ -389,6 +389,8 @@ namespace registry
         //! Replaces the contents of the key.
         /*!
         @post `*this == key(root, view)`.
+        @param[in] root - a predefined key identifier.
+        @param[in] view - a registry view.
         @return `*this`.
         */
         key& assign(key_id root, registry::view view = default_view);
@@ -396,13 +398,19 @@ namespace registry
         //! Replaces the contents of the key.
         /*!
         @post `*this == key(name, view)`.
+        @param[in] name - a key name string begining with a valid predefined key identifier.
+        @param[in] view - a registry view.
         @return `*this`.
+        @throw registry::bad_key_name if `name` is not a valid key name.
         */
         key& assign(string_view_type name, registry::view view = default_view);
 
         //! Replaces the contents of the key.
         /*!
         @post `*this == key(root, subkey, view)`.
+        @param[in] root - a predefined key identifier.
+        @param[in] subkey - a subkey string.
+        @param[in] view - a registry view.
         @return `*this`.
         */
         key& assign(key_id root, string_view_type subkey, registry::view view = default_view);
@@ -467,7 +475,7 @@ namespace registry
     {
         friend key;
 
-        string_view_type  m_entry_view;
+        string_view_type  m_value;
         string_view_type  m_key_string_view;
 
     public:

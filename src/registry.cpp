@@ -52,11 +52,13 @@ class smart_hkey_base
 
 public:
     constexpr smart_hkey_base() noexcept 
-    : m_hkey(nullptr) { }
+    : m_hkey(nullptr)
+    { }
 
     constexpr smart_hkey_base(HKEY hkey) 
         noexcept(std::is_nothrow_constructible<SmartPtr, void*, smart_hkey_deleter>::value)
-    : m_hkey((void*)hkey, smart_hkey_deleter{}) { }
+    : m_hkey((void*)hkey, smart_hkey_deleter{})
+    { }
 
 public:
     operator HKEY() const noexcept { return (HKEY)m_hkey.get(); }
@@ -154,7 +156,8 @@ namespace registry {
 //                             class registry_error                                   //
 //------------------------------------------------------------------------------------//
 
-struct registry_error::storage {
+struct registry_error::storage
+{
     key          key1;
     key          key2;
     string_type  value_name;
@@ -211,8 +214,6 @@ const view key::default_view =
 #elif defined(_WIN32)
     view::view_32bit;
 #endif
-
-key::iterator key::iterator::operator--(int) { auto tmp = *this; --*this; return tmp; }
 
 key::key() noexcept
     : details::key_state{ default_view, static_cast<key_id>(-1) }
@@ -315,7 +316,7 @@ key::iterator key::begin() const noexcept
 
     iterator it;
     it.m_key_string_view = m_name;
-    it.m_entry_view = string_view_type(m_name.data(), std::min(m_name.find(TEXT("\\")), m_name.size()));
+    it.m_value = string_view_type(m_name.data(), std::min(m_name.find(TEXT("\\")), m_name.size()));
     return it;
 }
 
@@ -323,16 +324,14 @@ key::iterator key::end() const noexcept
 {
     iterator it;
     it.m_key_string_view = m_name;
-    it.m_entry_view = string_view_type(m_name.data() + m_name.size(), 0);
+    it.m_value = string_view_type(m_name.data() + m_name.size(), 0);
     return it;
 }
 
 key& key::assign(key_id root, registry::view view)
 {
-    if (empty()) {
-        return swap(key(root, view)), *this;
-    }
-    return (has_subkey() ? remove_subkey() : *this).replace_root(root).replace_view(view);
+    return empty() ? (swap(key(root, view)), *this)
+                   : (has_subkey() ? remove_subkey() : *this).replace_root(root).replace_view(view);
 }
 
 key& key::assign(string_view_type name, registry::view view)
@@ -343,19 +342,15 @@ key& key::assign(string_view_type name, registry::view view)
 
 key& key::assign(key_id root, string_view_type subkey, registry::view view)
 {
-    if (empty()) {
-        return swap(key(root, subkey, view)), *this;
-    }
-    return replace_root(root).replace_subkey(subkey).replace_view(view);
+    return empty() ? (swap(key(root, subkey, view)), *this)
+                   : (has_subkey() ? replace_subkey(subkey) : *this).replace_root(root).replace_view(view);
 }
 
 key& key::append(string_view_type subkey)
 {
     assert(empty() == false);
-    if (!subkey.empty()) {
-        m_name.append(m_name.back() == TEXT('\\') ? TEXT("") : TEXT("\\"));
-        m_name.append(subkey.data(), subkey.size());
-    }
+    m_name.append(m_name.back() == TEXT('\\') ? TEXT("") : TEXT("\\"));
+    m_name.append(subkey.data(), subkey.size());
     return *this;
 }
 
@@ -363,8 +358,8 @@ key& key::replace_root(key_id id)
 {
     assert(empty() == false);
     if (id != m_root) {
-        auto new_root_str = key_id_to_string(id);
-        auto old_root_str = key_id_to_string(root());
+        const auto new_root_str = key_id_to_string(id);
+        const auto old_root_str = key_id_to_string(root());
         m_name.replace(0, old_root_str.size(), new_root_str.data(), new_root_str.size());
         m_root = id;
     }
@@ -375,8 +370,8 @@ key& key::replace_subkey(string_view_type subkey)
 {
     assert(empty() == false);
     assert(has_subkey() == true);
-    const auto sk = this->subkey();
-    m_name.replace(sk.data() - m_name.data(), sk.size(), subkey.data(), subkey.size());
+    const auto old_subkey = this->subkey();
+    m_name.replace(old_subkey.data() - m_name.data(), old_subkey.size(), subkey.data(), subkey.size());
     return *this;
 }
 
@@ -391,7 +386,7 @@ key& key::remove_subkey()
 {
     assert(empty() == false);
     assert(has_subkey() == true);
-    m_name.resize(m_name.size() - subkey().size());
+    m_name.resize(m_name.size() - subkey().size() - 1);
     return *this;
 }
 
@@ -406,7 +401,7 @@ void key::swap(key& other) noexcept
 
 bool key::iterator::operator==(const iterator& rhs) const noexcept
 {
-    return m_entry_view.data() == rhs.m_entry_view.data() && m_entry_view.size() == rhs.m_entry_view.size();
+    return m_value.data() == rhs.m_value.data() && m_value.size() == rhs.m_value.size();
 }
 
 bool key::iterator::operator!=(const iterator& rhs) const noexcept { return !(*this == rhs); }
@@ -418,28 +413,28 @@ bool key::iterator::operator!=(const iterator& rhs) const noexcept { return !(*t
 
 key::iterator::reference key::iterator::operator*() const
 {
-    assert(!m_entry_view.empty());
-    return m_entry_view;
+    assert(!m_value.empty());
+    return m_value;
 }
 
 key::iterator::pointer key::iterator::operator->() const
 {
-    assert(!m_entry_view.empty());
-    return &m_entry_view;
+    assert(!m_value.empty());
+    return &m_value;
 }
 
 key::iterator& key::iterator::operator++()
 {
-    assert(!m_entry_view.empty());
+    assert(!m_value.empty());
     const auto end = m_key_string_view.end();
 
-    auto first = m_entry_view.end();
+    auto first = m_value.end();
     for (; first != end && *first == TEXT('\\'); ++first);
 
     auto last = first;
     for (; last != end && *last != TEXT('\\'); ++last);
 
-    m_entry_view = string_view_type(first, last - first);
+    m_value = string_view_type(first, last - first);
     return *this;
 }
 
@@ -450,6 +445,8 @@ key::iterator& key::iterator::operator--()
     // TODO: ...
     return *this;
 }
+
+key::iterator key::iterator::operator--(int) { auto tmp = *this; --*this; return tmp; }
 
 
 //------------------------------------------------------------------------------------//
@@ -565,30 +562,30 @@ value& value::assign(none_value_tag) noexcept
 
 value& value::assign(sz_value_tag, string_view_type value)
 {
+    static constexpr auto null_teminator = TEXT('\0');
     const auto data_ptr = reinterpret_cast<const uint8_t*>(value.data());
     const auto data_size = value.size() * sizeof(string_view_type::value_type);
-    static constexpr uint8_t null_teminator[sizeof(string_view_type::value_type)] = {};
 
     m_data.resize(data_size + sizeof(null_teminator));
     m_type = value_type::sz;
 
     memcpy(m_data.data(), data_ptr, data_size);
-    memcpy(m_data.data() + data_size, null_teminator, sizeof(null_teminator));
+    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
 
     return *this;
 }
 
 value& value::assign(expand_sz_value_tag, string_view_type value)
 {
+    static constexpr auto null_teminator = TEXT('\0');
     const auto data_ptr = reinterpret_cast<const uint8_t*>(value.data());
     const auto data_size = value.size() * sizeof(string_view_type::value_type);
-    static constexpr uint8_t null_teminator[sizeof(string_view_type::value_type)] = {};
 
     m_data.resize(data_size + sizeof(null_teminator));
     m_type = value_type::expand_sz;
 
     memcpy(m_data.data(), data_ptr, data_size);
-    memcpy(m_data.data() + data_size, null_teminator, sizeof(null_teminator));
+    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
 
     return *this;
 }
@@ -606,9 +603,7 @@ value& value::assign(dword_value_tag, uint32_t value)
 {
     m_data.resize(sizeof(uint32_t));
     m_type = value_type::dword;
-
-    auto data_ptr = reinterpret_cast<const uint8_t*>(&value);
-    memcpy(m_data.data(), data_ptr, sizeof(uint32_t));
+    memcpy(m_data.data(), &value, sizeof(uint32_t));
 
     return *this;
 }
@@ -619,30 +614,29 @@ value& value::assign(dword_big_endian_value_tag, uint32_t value)
     m_type = value_type::dword_big_endian;
 
     boost::endian::big_uint32_t value_copy = value;
-    const auto data_ptr = reinterpret_cast<const uint8_t*>(value_copy.data());
-    memcpy(m_data.data(), data_ptr, sizeof(uint32_t));
+    memcpy(m_data.data(), value_copy.data(), sizeof(uint32_t));
 
     return *this;
 }
 
 value& value::assign(link_value_tag, string_view_type value)
 {
+    static constexpr auto null_teminator = TEXT('\0');
     const auto data_ptr = reinterpret_cast<const uint8_t*>(value.data());
     const auto data_size = value.size() * sizeof(string_view_type::value_type);
-    static constexpr uint8_t null_teminator[sizeof(string_view_type::value_type)] = {};
 
     m_data.resize(data_size + sizeof(null_teminator));
     m_type = value_type::link;
 
     memcpy(m_data.data(), data_ptr, data_size);
-    memcpy(m_data.data() + data_size, null_teminator, sizeof(null_teminator));
+    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
 
     return *this;
 }
 
 value& value::assign(multi_sz_value_tag, const std::vector<string_view_type>& value)
 {
-    static constexpr uint8_t null_teminator[sizeof(string_type::value_type)] = {};
+    static constexpr auto null_teminator = TEXT('\0');
 
     const auto buffer_size = std::accumulate(value.begin(), value.end(), size_t(0), [](size_t sz, const auto& value) {
         return sz + value.size() * sizeof(string_type::value_type) + sizeof(null_teminator);
@@ -658,10 +652,10 @@ value& value::assign(multi_sz_value_tag, const std::vector<string_view_type>& va
         const auto data_size = value.size() * sizeof(string_view_type::value_type);
 
         memcpy(m_data.data() + offset, data_ptr, data_size);
-        memcpy(m_data.data() + data_size + offset, null_teminator, sizeof(null_teminator));
+        memcpy(m_data.data() + data_size + offset, &null_teminator, sizeof(null_teminator));
         offset += data_size + sizeof(null_teminator);
     });
-    memcpy(m_data.data() + offset, null_teminator, sizeof(null_teminator));
+    memcpy(m_data.data() + offset, &null_teminator, sizeof(null_teminator));
 
     return *this;
 }
@@ -671,7 +665,7 @@ value& value::assign_impl(multi_sz_value_tag, const std::function<bool(string_vi
     string_view_type value;
     auto enumerator_copy = enumerator;
     size_t offset = 0, buffer_size = 0;
-    static constexpr uint8_t null_teminator[sizeof(string_type::value_type)] = {};
+    static constexpr auto null_teminator = TEXT('\0');
 
     while (enumerator(value)) {
         buffer_size += value.size() * sizeof(string_type::value_type) + sizeof(null_teminator);
@@ -685,10 +679,10 @@ value& value::assign_impl(multi_sz_value_tag, const std::function<bool(string_vi
         const auto data_size = value.size() * sizeof(string_view_type::value_type);
 
         memcpy(m_data.data() + offset, data_ptr, data_size);
-        memcpy(m_data.data() + data_size + offset, null_teminator, sizeof(null_teminator));
+        memcpy(m_data.data() + data_size + offset, &null_teminator, sizeof(null_teminator));
         offset += data_size + sizeof(null_teminator);
     }
-    memcpy(m_data.data() + offset, null_teminator, sizeof(null_teminator));
+    memcpy(m_data.data() + offset, &null_teminator, sizeof(null_teminator));
 
     return *this;
 }*/
@@ -697,9 +691,7 @@ value& value::assign(qword_value_tag, uint64_t value)
 {
     m_data.resize(sizeof(uint64_t));
     m_type = value_type::qword;
-
-    const auto data_ptr = reinterpret_cast<const uint8_t*>(&value);
-    memcpy(m_data.data(), data_ptr, sizeof(uint64_t));
+    memcpy(m_data.data(), &value, sizeof(uint64_t));
 
     return *this;
 }
@@ -719,7 +711,7 @@ value_entry::value_entry(const registry::key& key, string_view_type value_name)
     : value_entry_state{ key, static_cast<string_type>(value_name) }
 { }
 
-const key& value_entry::key() const noexcept { return reinterpret_cast<const registry::key&>(m_key); }
+const key& value_entry::key() const noexcept { return m_key; }
 
 const string_type& value_entry::value_name() const noexcept { return m_value_name; }
 
@@ -731,10 +723,7 @@ value value_entry::value() const
     return res;
 }
 
-value value_entry::value(std::error_code& ec) const
-{
-    return read_value(reinterpret_cast<const registry::key&>(m_key), m_value_name, ec);
-}
+value value_entry::value(std::error_code& ec) const { return read_value(m_key, m_value_name, ec); }
 
 void value_entry::swap(value_entry& other) noexcept
 {
@@ -776,7 +765,7 @@ key_iterator::key_iterator(const key& key)
     std::error_code ec;
     auto tmp = key_iterator(key, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key);
-    this->swap(tmp);
+    swap(tmp);
 }
 
 key_iterator::key_iterator(const key& key, std::error_code& ec)
@@ -882,13 +871,13 @@ recursive_key_iterator::recursive_key_iterator(const key& key)
     std::error_code ec;
     auto tmp = recursive_key_iterator(key, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key);
-    this->swap(tmp);
+    swap(tmp);
 }
 
 recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& ec)
 {
     ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) { if (ec || m_stack.back() == key_iterator()) m_stack.clear(); };
+    BOOST_SCOPE_EXIT_ALL(&) { if (ec || (!m_stack.empty() && m_stack.back() == key_iterator())) m_stack.clear(); };
 
     m_stack.emplace_back(key, ec);
 }
@@ -989,7 +978,7 @@ value_iterator::value_iterator(const key& key)
     std::error_code ec;
     auto tmp = value_iterator(key, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key);
-    this->swap(tmp);
+    swap(tmp);
 }
 
 value_iterator::value_iterator(const key& key, std::error_code& ec)
@@ -1192,13 +1181,13 @@ value read_value(const key& key, string_view_type name, std::error_code& ec)
         return value{};
     }
     
-    DWORD type;
-    std::vector<uint8_t> data;
+    details::value_state state;
     do {
         BYTE dummy;
-        DWORD size = static_cast<DWORD>(data.size());
-        rc = RegQueryValueEx(hkey, name.data(), nullptr, &type, size ? data.data() : &dummy, &size);
-        data.resize(size);
+        DWORD size = static_cast<DWORD>(state.m_data.size());
+        rc = RegQueryValueEx(hkey, name.data(), nullptr, 
+                             reinterpret_cast<DWORD*>(&state.m_type), size ? state.m_data.data() : &dummy, &size);
+        state.m_data.resize(size);
     } while (rc == ERROR_MORE_DATA);
         
     if (rc != ERROR_SUCCESS) {
@@ -1206,7 +1195,7 @@ value read_value(const key& key, string_view_type name, std::error_code& ec)
         return value{};
     }
     
-    return reinterpret_cast<value&&>(details::value_state{ static_cast<value_type>(type), std::move(data) });
+    return reinterpret_cast<value&&>(state);
 }
 
 bool create_key(const key& key)
@@ -1221,7 +1210,7 @@ bool create_key(const key& key, std::error_code& ec)
 {
     ec.clear();
     if (key.empty()) {
-        ec = std::error_code(ERROR_PATH_NOT_FOUND, std::system_category());
+        ec = std::error_code(ERROR_FILE_NOT_FOUND, std::system_category());
         return false;
     }
 
@@ -1254,7 +1243,7 @@ bool create_keys(const key& key)
 bool create_keys(const key& key, std::error_code& ec)
 {
     ec.clear();
-    if (!key.empty() && key.has_subkey()) {
+    if (!key.empty() && key.has_parent_key()) {
         create_keys(key.parent_key(), ec);
     }
     return ec ? false : create_key(key, ec);
