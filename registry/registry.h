@@ -627,7 +627,7 @@ namespace registry
         @post TODO: ...
         @param[in] tag - value type tag.
         @param[in] value - a container, such as Sequence::value_type should be explicitly convertible to 
-                           string_view_type.
+                           registry::string_view_type.
         */
         template <typename Sequence,
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Sequence::value_type>::value>
@@ -640,7 +640,7 @@ namespace registry
         @post TODO: ...
         @param[in] tag - value type tag.
         @param[in] first, last - input iterators, such as std::iterator_traits<InputIt>::value_type should be 
-                                 explicitly convertible to string_view_type.
+                                 explicitly convertible to registry::string_view_type.
         */
         template <typename InputIt,
                   typename = std::enable_if_t<std::is_constructible<string_view_type, 
@@ -654,7 +654,7 @@ namespace registry
         @post TODO: ...
         @param[in] tag - value type tag.
         @param[in] init - an object of type std::initializer_list<T>, such as T should be explicitly convertible to 
-                          string_view_type.
+                          registry::string_view_type.
         */
         template <typename T,
                   typename = std::enable_if_t<std::is_constructible<string_view_type, T>::value>
@@ -808,7 +808,7 @@ namespace registry
         @post `*this == value(tag, value)`.
         @param[in] tag - value type tag.
         @param[in] value - a container, such as Sequence::value_type should be explicitly convertible to 
-                           string_view_type.
+                           registry::string_view_type.
         @return `*this`.
         */
         template <typename Sequence,
@@ -821,7 +821,7 @@ namespace registry
         @post `*this == value(tag, first, last)`.
         @param[in] tag - value type tag.
         @param[in] first, last - input iterators, such as std::iterator_traits<InputIt>::value_type should be 
-                                 explicitly convertible to string_view_type.
+                                 explicitly convertible to registry::string_view_type.
         @return `*this`.
         */
         template <typename InputIt,
@@ -835,7 +835,7 @@ namespace registry
         @post `*this == value(tag, init)`.
         @param[in] tag - value type tag.
         @param[in] init - an object of type std::initializer_list<T>, such as T should be explicitly convertible to 
-                          string_view_type.
+                          registry::string_view_type.
         @return `*this`.
         */
         template <typename T,
