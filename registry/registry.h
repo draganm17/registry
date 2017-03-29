@@ -219,6 +219,34 @@ namespace registry
         skip_permission_denied =  0x1
     };
 
+    // TODO: ...
+    enum class key_info_mask : uint16_t
+    {
+        /*! TODO: ... */
+        none =                 0x0000,
+
+        /*! TODO: ... */
+        subkeys =              0x0001,
+
+        /*! TODO: ... */
+        values =               0x0002,
+
+        /*! TODO: ... */
+        max_subkey_size =      0x0004,
+
+        /*! TODO: ... */
+        max_value_name_size =  0x0008,
+
+        /*! TODO: ... */
+        max_value_data_size =  0x0010,
+
+        /*! TODO: ... */
+        last_write_time =      0x0020,
+
+        /*! TODO: ... */
+        all =                  0x003F
+    };
+
     //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
     struct none_value_tag             { };
 
@@ -245,6 +273,22 @@ namespace registry
 
     //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
     struct qword_value_tag            { };
+
+    // TODO: ...
+    struct key_info
+    {
+        uint32_t       subkeys;
+
+        uint32_t       values;
+
+        uint32_t       max_subkey_size;
+
+        uint32_t       max_value_name_size;
+
+        uint32_t       max_value_data_size;
+
+        key_time_type  last_write_time;
+    };
 
     //------------------------------------------------------------------------------------//
     //                             class bad_value_cast                                   //
@@ -979,9 +1023,15 @@ namespace registry
         //! Returns the key that was stored in the value entry object.
         const key& key() const noexcept;
 
+        // TODO: ...
+        key_info info(key_info_mask mask) const;
+
+        // TODO: ...
+        key_info info(key_info_mask mask, std::error_code& ec) const;
+
     public:
         // TODO: ...
-        value_entry& assign(const registry::key& key);
+        key_entry& assign(const registry::key& key);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_entry& other) noexcept;
@@ -1165,42 +1215,10 @@ namespace registry
         bool exists(string_view_type value_name, std::error_code& ec);
 
         // TODO: ...
-        bool has_subkeys() const;
+        key_info info(key_info_mask mask) const;
 
         // TODO: ...
-        bool has_subkeys(std::error_code& ec) const;
-
-        // TODO: ...
-        bool has_values() const;
-
-        // TODO: ...
-        // TODO: what about the default value, does it counts ???
-        bool has_values(std::error_code& ec) const;
-
-        // TODO: ...
-        bool is_empty() const;
-
-        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        /*!
-        Returns `false` on error.
-        */
-        // TODO: what about the default value, does it counts ???
-        bool is_empty(std::error_code& ec) const;
-
-        //! Returns the time of the last modification of the registry key specified by this handle.
-        /*!
-        The key must have been opened with the access_rights::query_value access right.
-        @return The time of the last modification of the key.
-        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to 
-               `this->key()`. std::bad_alloc may be thrown if memory allocation fails.
-        */
-        key_time_type last_write_time() const;
-
-        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        /*!
-        Returns `key_time_type::min()` on error.
-        */
-        key_time_type last_write_time(std::error_code& ec) const;
+        key_info info(key_info_mask mask, std::error_code& ec) const;
 
         //! Reads the content of an registry value contained inside the registry key specified by this handle.
         /*!
@@ -1775,6 +1793,20 @@ namespace registry
 
     key_options& operator^=(key_options& lhs, key_options rhs) noexcept;
 
+    constexpr key_info_mask operator&(key_info_mask lhs, key_info_mask rhs) noexcept;
+
+    constexpr key_info_mask operator|(key_info_mask lhs, key_info_mask rhs) noexcept;
+
+    constexpr key_info_mask operator^(key_info_mask lhs, key_info_mask rhs) noexcept;
+
+    constexpr key_info_mask operator~(key_info_mask lhs) noexcept;
+
+    key_info_mask& operator&=(key_info_mask& lhs, key_info_mask rhs) noexcept;
+
+    key_info_mask& operator|=(key_info_mask& lhs, key_info_mask rhs) noexcept;
+
+    key_info_mask& operator^=(key_info_mask& lhs, key_info_mask rhs) noexcept;
+
     //! Checks whether `lhs` is equal to `rhs`. Equivalent to `lhs.compare(rhs) == 0`.
     bool operator==(const key& lhs, const key& rhs) noexcept;
 
@@ -1919,25 +1951,10 @@ namespace registry
     bool exists(const key& key, string_view_type value_name, std::error_code& ec);
 
     // TODO: ...
-    bool is_empty(const key& key);
+    key_info info(const key& key, key_info_mask mask);
 
     // TODO: ...
-    bool is_empty(const key& key, std::error_code& ec);
-
-    //! Returns the time of the last modification of `key`.
-    /*!
-    @param[in] key - the registry key.
-    @return The time of the last modification of `key`.
-    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`. 
-           std::bad_alloc may be thrown if memory allocation fails.
-    */
-    key_time_type last_write_time(const key& key);
-
-    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-    /*!
-    Returns `key_time_type::min()` on error.
-    */
-    key_time_type last_write_time(const key& key, std::error_code& ec);
+    key_info info(const key& key, key_info_mask mask, std::error_code& ec);
 
     //! Reads the content of an existing registry value.
     /*!
@@ -2091,6 +2108,24 @@ namespace registry
     inline key_options& operator|=(key_options& lhs, key_options rhs) noexcept { return lhs = lhs | rhs; }
 
     inline key_options& operator^=(key_options& lhs, key_options rhs) noexcept { return lhs = lhs ^ rhs; }
+
+    inline constexpr key_info_mask operator&(key_info_mask lhs, key_info_mask rhs) noexcept
+    { return static_cast<key_info_mask>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
+
+    inline constexpr key_info_mask operator|(key_info_mask lhs, key_info_mask rhs) noexcept
+    { return static_cast<key_info_mask>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
+
+    inline constexpr key_info_mask operator^(key_info_mask lhs, key_info_mask rhs) noexcept
+    { return static_cast<key_info_mask>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs)); }
+
+    inline constexpr key_info_mask operator~(key_info_mask lhs) noexcept
+    { return static_cast<key_info_mask>(~static_cast<uint32_t>(lhs)); }
+
+    inline key_info_mask& operator&=(key_info_mask& lhs, key_info_mask rhs) noexcept { return lhs = lhs & rhs; }
+
+    inline key_info_mask& operator|=(key_info_mask& lhs, key_info_mask rhs) noexcept { return lhs = lhs | rhs; }
+
+    inline key_info_mask& operator^=(key_info_mask& lhs, key_info_mask rhs) noexcept { return lhs = lhs ^ rhs; }
 
     template <typename Sequence,
               typename = std::enable_if_t<std::is_constructible<string_view_type, Sequence::value_type>::value>

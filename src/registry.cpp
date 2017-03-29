@@ -631,6 +631,32 @@ void value::swap(value& other) noexcept
 
 
 //------------------------------------------------------------------------------------//
+//                               class key_entry                                      //
+//------------------------------------------------------------------------------------//
+
+key_entry::key_entry(const registry::key& key)
+    : m_key(key)
+{ }
+
+const registry::key& key_entry::key() const noexcept { return m_key; }
+
+key_info key_entry::info(key_info_mask mask) const { return registry::info(m_key, key_info_mask::all); }
+
+key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
+{
+    return registry::info(m_key, key_info_mask::all, ec);
+}
+
+key_entry& key_entry::assign(const registry::key& key)
+{ 
+    m_key.assign(key.name(), key.view());
+    return *this;
+}
+
+void key_entry::swap(key_entry& other) noexcept { m_key.swap(other.m_key); }
+
+
+//------------------------------------------------------------------------------------//
 //                              class value_entry                                     //
 //------------------------------------------------------------------------------------//
 
@@ -773,69 +799,47 @@ bool key_handle::exists(string_view_type value_name, std::error_code& ec)
                                         : (ec = std::error_code(rc, std::system_category()), false);
 }
 
-bool key_handle::has_subkeys() const
+key_info key_handle::info(key_info_mask mask) const
 {
     std::error_code ec;
-    decltype(auto) res = has_subkeys(ec);
+    decltype(auto) res = info(mask, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key());
     return res;
 }
 
-bool key_handle::has_subkeys(std::error_code& ec) const
-{
-    // TODO: check handle ???
-
-    ec.clear();
-    DWORD subkeys;
-    LSTATUS rc = RegQueryInfoKey(reinterpret_cast<HKEY>(native_handle()), nullptr, nullptr, nullptr,
-                                 &subkeys, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-    
-    return (rc == ERROR_SUCCESS) ? subkeys == 0
-                                 : (ec = std::error_code(rc, std::system_category()), false);
-}
-
-bool key_handle::is_empty() const
-{
-    std::error_code ec;
-    decltype(auto) res = is_empty(ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key());
-    return res;
-}
-
-bool key_handle::is_empty(std::error_code& ec) const
-{
-    // TODO: check handle ???
-
-    ec.clear();
-    DWORD subkeys, values;
-    LSTATUS rc = RegQueryInfoKey(reinterpret_cast<HKEY>(native_handle()), nullptr, nullptr, nullptr,
-                                 &subkeys, nullptr, nullptr, &values, nullptr, nullptr, nullptr, nullptr);
-    
-    return (rc == ERROR_SUCCESS) ? (subkeys == 0 && values == 0)
-                                 : (ec = std::error_code(rc, std::system_category()), false);
-}
-
-key_time_type key_handle::last_write_time() const
-{
-    // TODO: check handle ???
-
-    std::error_code ec;
-    decltype(auto) res = last_write_time(ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key());
-    return res;
-}
-
-key_time_type key_handle::last_write_time(std::error_code& ec) const
+key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
 {
     // TODO: check handle ???
 
     ec.clear();
     FILETIME time;
-    LSTATUS rc = RegQueryInfoKey(reinterpret_cast<HKEY>(native_handle()), nullptr, nullptr, nullptr,
-                                 nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &time);
-    
-    return (rc == ERROR_SUCCESS) ? key_time_type::clock::from_time_t(file_time_to_time_t(time))
-                                 : (ec = std::error_code(rc, std::system_category()), key_time_type::min());
+    key_info info{};
+
+    const bool read_subkeys =             (mask & key_info_mask::subkeys)             != key_info_mask::none;
+    const bool read_values =              (mask & key_info_mask::values)              != key_info_mask::none;
+    const bool read_max_subkey_size =     (mask & key_info_mask::max_subkey_size)     != key_info_mask::none;
+    const bool read_max_value_name_size = (mask & key_info_mask::max_value_name_size) != key_info_mask::none;
+    const bool read_max_value_data_size = (mask & key_info_mask::max_value_data_size) != key_info_mask::none;
+    const bool read_last_write_time =     (mask & key_info_mask::last_write_time)     != key_info_mask::none;
+
+    LSTATUS rc = RegQueryInfoKey(
+        reinterpret_cast<HKEY>(native_handle()), nullptr, nullptr, nullptr,
+        read_subkeys             ? reinterpret_cast<DWORD*>(&info.subkeys)             : nullptr,
+        read_max_subkey_size     ? reinterpret_cast<DWORD*>(&info.max_subkey_size)     : nullptr,
+        nullptr,
+        read_values              ? reinterpret_cast<DWORD*>(&info.values)              : nullptr,
+        read_max_value_name_size ? reinterpret_cast<DWORD*>(&info.max_value_name_size) : nullptr,
+        read_max_value_data_size ? reinterpret_cast<DWORD*>(&info.max_value_data_size) : nullptr,
+        nullptr, 
+        read_last_write_time     ? &time                                               : nullptr
+    );
+    ec = std::error_code(rc, std::system_category());
+
+    if (!ec && read_last_write_time) {
+        info.last_write_time = key_time_type::clock::from_time_t(file_time_to_time_t(time));
+    }
+
+    return !ec ? info : key_info();
 }
 
 value key_handle::read_value(string_view_type value_name) const
@@ -1074,17 +1078,14 @@ key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
     ec.clear();
     BOOST_SCOPE_EXIT_ALL(&) { 
         if (ec) swap(key_iterator());
-        if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear();
+        if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear(); // TODO: handle ERROR_FILE_NOT_FOUND here ???
     };
 
-    DWORD buffer_size;
-    LSTATUS rc = RegQueryInfoKey(reinterpret_cast<HKEY>(m_hkey.native_handle()), nullptr, nullptr, nullptr,
-                                 nullptr, &buffer_size, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+    key_info info = handle.info(key_info_mask::max_subkey_size, ec);
 
-    if (!(ec = std::error_code(rc, std::system_category()))) 
-    {
-        m_buffer.resize(++buffer_size, TEXT('_'));
-        m_entry.m_key.append({ m_buffer.data(), buffer_size });
+    if (!ec) {
+        m_buffer.resize(++info.max_subkey_size, TEXT('_'));
+        m_entry.m_key.append({ m_buffer.data(), info.max_subkey_size });
         increment(ec);
     }
 }
@@ -1305,14 +1306,11 @@ value_iterator::value_iterator(const key_handle& handle, std::error_code& ec)
 
     ec.clear();
     BOOST_SCOPE_EXIT_ALL(&) { if (ec) swap(value_iterator()); };
+    key_info info = handle.info(key_info_mask::max_value_name_size, ec);
 
-    DWORD buffer_size;
-    LSTATUS rc = RegQueryInfoKey(reinterpret_cast<HKEY>(m_hkey.native_handle()), nullptr, nullptr, nullptr,
-                                 nullptr, nullptr, nullptr, nullptr, &buffer_size, nullptr, nullptr, nullptr);
-
-    if (!(ec = std::error_code(rc, std::system_category()))) {
-        m_buffer.resize(++buffer_size);
-        m_entry.m_value_name.reserve(buffer_size);
+    if (!ec) {
+        m_buffer.resize(++info.max_value_name_size);
+        m_entry.m_value_name.reserve(info.max_value_name_size);
         increment(ec);
     }
 }
@@ -1428,34 +1426,19 @@ bool exists(const key& key, string_view_type value_name, std::error_code& ec)
     // TODO: ckeck for key emptiness
 }
 
-bool is_empty(const key& key)
+key_info info(const key& key, key_info_mask mask)
 {
     std::error_code ec;
-    decltype(auto) res = is_empty(key, ec);
+    decltype(auto) res = info(key, mask, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key);
     return res;
 }
 
-bool is_empty(const key& key, std::error_code& ec)
+key_info info(const key& key, key_info_mask mask, std::error_code& ec)
 {
     ec.clear();
     auto handle = key_handle::open(key, access_rights::query_value, ec);
-    return !ec ? handle.is_empty(ec) : false;
-}
-
-key_time_type last_write_time(const key& key)
-{
-    std::error_code ec;
-    decltype(auto) res = last_write_time(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    return res;
-}
-
-key_time_type last_write_time(const key& key, std::error_code& ec)
-{
-    ec.clear();
-    auto handle = key_handle::open(key, access_rights::query_value, ec);
-    return !ec ? handle.last_write_time(ec) : key_time_type::min();
+    return !ec ? handle.info(mask, ec) : key_info();
 }
 
 value read_value(const key& key, string_view_type value_name)
