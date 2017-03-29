@@ -631,75 +631,6 @@ void value::swap(value& other) noexcept
 
 
 //------------------------------------------------------------------------------------//
-//                               class key_entry                                      //
-//------------------------------------------------------------------------------------//
-
-key_entry::key_entry(const registry::key& key)
-    : m_key(key)
-{ }
-
-const registry::key& key_entry::key() const noexcept { return m_key; }
-
-key_info key_entry::info(key_info_mask mask) const { return registry::info(m_key, key_info_mask::all); }
-
-key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
-{
-    return registry::info(m_key, key_info_mask::all, ec);
-}
-
-key_entry& key_entry::assign(const registry::key& key)
-{ 
-    m_key.assign(key.name(), key.view());
-    return *this;
-}
-
-void key_entry::swap(key_entry& other) noexcept { m_key.swap(other.m_key); }
-
-
-//------------------------------------------------------------------------------------//
-//                              class value_entry                                     //
-//------------------------------------------------------------------------------------//
-
-value_entry::value_entry(const registry::key& key, string_view_type value_name)
-    : m_key(key)
-    , m_value_name(value_name)
-    //: value_entry_state{ key, static_cast<string_type>(value_name) }
-{ }
-
-const key& value_entry::key() const noexcept { return m_key; }
-
-const string_type& value_entry::value_name() const noexcept { return m_value_name; }
-
-value value_entry::value() const
-{
-    std::error_code ec;
-    decltype(auto) res = value(ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, m_key, {}, m_value_name);
-    return res;
-}
-
-value value_entry::value(std::error_code& ec) const
-{
-    ec.clear();
-    return read_value(m_key, m_value_name, ec);
-}
-
-value_entry& value_entry::assign(const registry::key& key, string_view_type value_name)
-{
-    m_key.assign(key.name(), key.view());
-    m_value_name.assign(value_name.data(), value_name.size());
-    return *this;
-}
-
-void value_entry::swap(value_entry& other) noexcept
-{
-    using std::swap;
-    swap(m_key, other.m_key);
-    swap(m_value_name, other.m_value_name);
-}
-
-
-//------------------------------------------------------------------------------------//
 //                                class key_handle                                    //
 //------------------------------------------------------------------------------------//
 
@@ -752,28 +683,25 @@ key_handle::key_handle(native_handle_type handle, const registry::key& key, acce
 try : m_state(std::make_shared<state>(state{ key, rights, handle }))
 { } catch(...) { close(handle); throw; }
 
+key_handle::key_handle(const weak_key_handle& handle)
+    : m_state(handle.m_state.lock())
+{
+    if (handle.expired()) throw bad_weak_key_handle();
+}
+
 key_handle::~key_handle() { if (m_state) close(m_state->handle); }
 
 key_handle& key_handle::operator=(const key_handle&) noexcept = default;
 
 key_handle& key_handle::operator=(key_handle&&) noexcept = default;
 
-const key& key_handle::key() const noexcept
-{
-    assert(valid());
-    return m_state->key;
-}
+const key& key_handle::key() const { return m_state ? m_state->key : throw bad_key_handle(); }
 
-access_rights key_handle::rights() const noexcept
-{
-    assert(valid());
-    return m_state->rights;
-}
+access_rights key_handle::rights() const noexcept { return m_state ? m_state->rights : throw bad_key_handle(); }
 
-key_handle::native_handle_type key_handle::native_handle() const noexcept
+key_handle::native_handle_type key_handle::native_handle() const
 {
-    assert(valid());
-    return m_state->handle;
+    return m_state ? m_state->handle : throw bad_key_handle();
 }
 
 bool key_handle::valid() const noexcept { return static_cast<bool>(m_state); }
@@ -815,12 +743,12 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
     FILETIME time;
     key_info info{};
 
-    const bool read_subkeys =             (mask & key_info_mask::subkeys)             != key_info_mask::none;
-    const bool read_values =              (mask & key_info_mask::values)              != key_info_mask::none;
-    const bool read_max_subkey_size =     (mask & key_info_mask::max_subkey_size)     != key_info_mask::none;
-    const bool read_max_value_name_size = (mask & key_info_mask::max_value_name_size) != key_info_mask::none;
-    const bool read_max_value_data_size = (mask & key_info_mask::max_value_data_size) != key_info_mask::none;
-    const bool read_last_write_time =     (mask & key_info_mask::last_write_time)     != key_info_mask::none;
+    const bool read_subkeys =             (mask & key_info_mask::read_subkeys)             != key_info_mask::none;
+    const bool read_values =              (mask & key_info_mask::read_values)              != key_info_mask::none;
+    const bool read_max_subkey_size =     (mask & key_info_mask::read_max_subkey_size)     != key_info_mask::none;
+    const bool read_max_value_name_size = (mask & key_info_mask::read_max_value_name_size) != key_info_mask::none;
+    const bool read_max_value_data_size = (mask & key_info_mask::read_max_value_data_size) != key_info_mask::none;
+    const bool read_last_write_time =     (mask & key_info_mask::read_last_write_time)     != key_info_mask::none;
 
     LSTATUS rc = RegQueryInfoKey(
         reinterpret_cast<HKEY>(native_handle()), nullptr, nullptr, nullptr,
@@ -1035,6 +963,136 @@ void key_handle::swap(key_handle& other) noexcept
 
 
 //------------------------------------------------------------------------------------//
+//                            class weak_key_handle                                   //
+//------------------------------------------------------------------------------------//
+
+weak_key_handle::weak_key_handle() noexcept = default;
+
+weak_key_handle::weak_key_handle(const weak_key_handle&) noexcept = default;
+
+weak_key_handle::weak_key_handle(weak_key_handle&&) noexcept = default;
+
+weak_key_handle::weak_key_handle(const key_handle& handle) noexcept
+    : m_state(handle.m_state)
+{ }
+
+weak_key_handle& weak_key_handle::operator=(const weak_key_handle&) noexcept = default;
+
+weak_key_handle& weak_key_handle::operator=(weak_key_handle&&) noexcept = default;
+
+bool weak_key_handle::expired() const noexcept { return m_state.expired(); }
+
+key_handle weak_key_handle::lock() const noexcept
+{
+    key_handle handle;
+    handle.m_state = m_state.lock();
+    return handle;
+}
+
+void weak_key_handle::swap(weak_key_handle& other) noexcept { m_state.swap(other.m_state); }
+
+
+//------------------------------------------------------------------------------------//
+//                               class key_entry                                      //
+//------------------------------------------------------------------------------------//
+
+key_entry::key_entry(const registry::key& key)
+    : m_key(key)
+{ }
+
+key_entry::key_entry(const key_handle& handle)
+    : m_key(handle.key())
+    , m_key_handle(handle)
+{ }
+
+const registry::key& key_entry::key() const noexcept { return m_key; }
+
+key_info key_entry::info(key_info_mask mask) const
+{
+    std::error_code ec;
+    decltype(auto) res = info(mask, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, m_key);
+    return res;
+}
+
+key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
+{
+    ec.clear();
+    auto handle = m_key_handle.lock();
+    return handle.valid() ? handle.info(mask, ec) : registry::info(m_key, mask, ec);
+}
+
+key_entry& key_entry::assign(const registry::key& key)
+{ 
+    m_key.assign(key.name(), key.view());
+    return *this;
+}
+
+key_entry& key_entry::assign(const key_handle& handle)
+{
+    // TODO: ...
+    return *this;
+}
+
+void key_entry::swap(key_entry& other) noexcept { m_key.swap(other.m_key); }
+
+
+//------------------------------------------------------------------------------------//
+//                              class value_entry                                     //
+//------------------------------------------------------------------------------------//
+
+value_entry::value_entry(const registry::key& key, string_view_type value_name)
+    : m_key(key)
+    , m_value_name(value_name)
+{ }
+
+value_entry::value_entry(const registry::key_handle& handle, string_view_type value_name)
+    : m_key(handle.key())
+    , m_value_name(value_name)
+    , m_key_handle(handle)
+{ }
+
+const key& value_entry::key() const noexcept { return m_key; }
+
+const string_type& value_entry::value_name() const noexcept { return m_value_name; }
+
+value value_entry::value() const
+{
+    std::error_code ec;
+    decltype(auto) res = value(ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, m_key, {}, m_value_name);
+    return res;
+}
+
+value value_entry::value(std::error_code& ec) const
+{
+    ec.clear();
+    auto handle = m_key_handle.lock();
+    return handle.valid() ? handle.read_value(m_value_name, ec) : registry::read_value(m_key, m_value_name, ec);
+}
+
+value_entry& value_entry::assign(const registry::key& key, string_view_type value_name)
+{
+    m_key.assign(key.name(), key.view());
+    m_value_name.assign(value_name.data(), value_name.size());
+    return *this;
+}
+
+value_entry& value_entry::assign(const key_handle& handle, string_view_type value_name)
+{
+    // TODO: ...
+    return *this;
+}
+
+void value_entry::swap(value_entry& other) noexcept
+{
+    using std::swap;
+    swap(m_key, other.m_key);
+    swap(m_value_name, other.m_value_name);
+}
+
+
+//------------------------------------------------------------------------------------//
 //                              class key_iterator                                    //
 //------------------------------------------------------------------------------------//
 
@@ -1071,7 +1129,7 @@ key_iterator::key_iterator(const key_handle& handle)
 key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
     : m_idx(-1)
     , m_hkey(handle)
-    , m_entry(handle.key())
+    , m_entry(handle)
 {
     // TODO: check handle ???
 
@@ -1081,7 +1139,7 @@ key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
         if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear(); // TODO: handle ERROR_FILE_NOT_FOUND here ???
     };
 
-    key_info info = handle.info(key_info_mask::max_subkey_size, ec);
+    key_info info = handle.info(key_info_mask::read_max_subkey_size, ec);
 
     if (!ec) {
         m_buffer.resize(++info.max_subkey_size, TEXT('_'));
@@ -1300,13 +1358,13 @@ value_iterator::value_iterator(const key_handle& handle)
 value_iterator::value_iterator(const key_handle& handle, std::error_code& ec)
     : m_idx(-1)
     , m_hkey(handle)
-    , m_entry(handle.key(), string_type())
+    , m_entry(handle, string_type())
 {
     // TODO: check handle ???
 
     ec.clear();
     BOOST_SCOPE_EXIT_ALL(&) { if (ec) swap(value_iterator()); };
-    key_info info = handle.info(key_info_mask::max_value_name_size, ec);
+    key_info info = handle.info(key_info_mask::read_max_value_name_size, ec);
 
     if (!ec) {
         m_buffer.resize(++info.max_value_name_size);

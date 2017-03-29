@@ -39,12 +39,15 @@ namespace registry
     enum class access_rights : uint32_t;
 
     class bad_value_cast;
+    class bad_key_handle;
+    class bad_weak_key_handle;
     class registry_error;
     class key;
     class value;
+    class key_handle;
+    class weak_key_handle;
     class key_entry;
     class value_entry;
-    class key_handle;
     class key_iterator;
     class recursive_key_iterator;
     class value_iterator;
@@ -223,28 +226,28 @@ namespace registry
     enum class key_info_mask : uint16_t
     {
         /*! TODO: ... */
-        none =                 0x0000,
+        none =                      0x0000,
 
         /*! TODO: ... */
-        subkeys =              0x0001,
+        read_subkeys =              0x0001,
 
         /*! TODO: ... */
-        values =               0x0002,
+        read_values =               0x0002,
 
         /*! TODO: ... */
-        max_subkey_size =      0x0004,
+        read_max_subkey_size =      0x0004,
 
         /*! TODO: ... */
-        max_value_name_size =  0x0008,
+        read_max_value_name_size =  0x0008,
 
         /*! TODO: ... */
-        max_value_data_size =  0x0010,
+        read_max_value_data_size =  0x0010,
 
         /*! TODO: ... */
-        last_write_time =      0x0020,
+        read_last_write_time =      0x0020,
 
         /*! TODO: ... */
-        all =                  0x003F
+        all =                       0x003F
     };
 
     //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
@@ -300,6 +303,30 @@ namespace registry
     {
     public:
         const char* what() const noexcept override { return "registry::bad_value_cast"; }
+    };
+
+    //------------------------------------------------------------------------------------//
+    //                              class bad_key_handle                                  //
+    //------------------------------------------------------------------------------------//
+
+    // TODO: ...
+    class bad_key_handle
+        : public std::exception
+    {
+    public:
+        const char* what() const noexcept override { return "registry::bad_key_handle"; }
+    };
+
+    //------------------------------------------------------------------------------------//
+    //                           class bad_weak_key_handle                                //
+    //------------------------------------------------------------------------------------//
+
+    // TODO: ...
+    class bad_weak_key_handle
+        : public std::exception
+    {
+    public:
+        const char* what() const noexcept override { return "registry::bad_weak_key_handle"; }
     };
 
     //------------------------------------------------------------------------------------//
@@ -971,156 +998,6 @@ namespace registry
     };
 
     //------------------------------------------------------------------------------------//
-    //                               class key_entry                                      //
-    //------------------------------------------------------------------------------------//
-
-    class key_entry 
-        //: private details::key_entry_state
-    {
-        friend class key_iterator;
-        friend class recursive_key_iterator;
-
-        key          m_key;
-
-    public:
-        // TODO: ...
-        key_entry() noexcept = default;
-
-        //! Constructs the value with the copy of the contents of `other`.
-        /*!
-        @post `*this == other`.
-        */
-        key_entry(const key_entry& other) = default;
-
-        /*! \brief
-        Constructs the value with the contents of `other` using move semantics. `other` is left in a valid but 
-        unspecified state. */
-        /*!
-        @post `*this` has the original value of `other`.
-        */
-        key_entry(key_entry&& other) noexcept = default;
-
-        // TODO: ...
-        key_entry(const key& key);
-
-        //! Replaces the contents of `*this` with a copy of the contents of `other`.
-        /*!
-        @post `*this == other`.
-        @return `*this`.
-        */
-        key_entry& operator=(const key_entry& other) = default;
-
-        /*! \brief
-        Replaces the contents of `*this` with those of `other` using move semantics. `other` is left in a valid, 
-        but unspecified state. */
-        /*!
-        @post `*this` has the original value of `other`.
-        @return `*this`.
-        */
-        key_entry& operator=(key_entry&& other) noexcept = default;
-
-    public:
-        //! Returns the key that was stored in the value entry object.
-        const key& key() const noexcept;
-
-        // TODO: ...
-        key_info info(key_info_mask mask) const;
-
-        // TODO: ...
-        key_info info(key_info_mask mask, std::error_code& ec) const;
-
-    public:
-        // TODO: ...
-        key_entry& assign(const registry::key& key);
-
-        //! Swaps the contents of `*this` and `other`.
-        void swap(key_entry& other) noexcept;
-    };
-
-    //\cond HIDDEN_SYMBOLS
-    namespace details
-    {
-        //struct value_entry_state
-        //{
-        //    key          m_key;
-        //    string_type  m_value_name;
-        //};
-    } //\endcond
-
-    //------------------------------------------------------------------------------------//
-    //                              class value_entry                                     //
-    //------------------------------------------------------------------------------------//
-
-    class value_entry 
-        //: private details::value_entry_state
-    {
-        friend class value_iterator;
-
-        key          m_key;
-        string_type  m_value_name;
-
-    public:
-        // TODO: ...
-        value_entry() noexcept = default;
-
-        //! Constructs the value with the copy of the contents of `other`.
-        /*!
-        @post `*this == other`.
-        */
-        value_entry(const value_entry& other) = default;
-
-        /*! \brief
-        Constructs the value with the contents of `other` using move semantics. `other` is left in a valid but 
-        unspecified state. */
-        /*!
-        @post `*this` has the original value of `other`.
-        */
-        value_entry(value_entry&& other) noexcept = default;
-
-        // TODO: ...
-        value_entry(const key& key, string_view_type value_name);
-
-        //! Replaces the contents of `*this` with a copy of the contents of `other`.
-        /*!
-        @post `*this == other`.
-        @return `*this`.
-        */
-        value_entry& operator=(const value_entry& other) = default;
-
-        /*! \brief
-        Replaces the contents of `*this` with those of `other` using move semantics. `other` is left in a valid, 
-        but unspecified state. */
-        /*!
-        @post `*this` has the original value of `other`.
-        @return `*this`.
-        */
-        value_entry& operator=(value_entry&& other) noexcept = default;
-
-    public:
-        //! Returns the key that was stored in the value entry object.
-        const key& key() const noexcept;
-
-        //! Returns the value name that was stored in the value entry object.
-        const string_type& value_name() const noexcept;
-
-        // TODO: ...
-        registry::value value() const;
-
-        /*!
-        Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        Returns a default-constructed value on error.
-        */
-        registry::value value(std::error_code& ec) const;
-
-    public:
-        // TODO: ...
-        value_entry& assign(const registry::key& key, string_view_type value_name);
-
-        //! Swaps the contents of `*this` and `other`.
-        void swap(value_entry& other) noexcept;
-    };
-
-    //------------------------------------------------------------------------------------//
     //                                class key_handle                                    //
     //------------------------------------------------------------------------------------//
 
@@ -1128,6 +1005,8 @@ namespace registry
     // TODO : invalid_handle exception ???  Remove noexcept from getters ???
     class key_handle
     {
+        friend class weak_key_handle;
+
         struct state;
         std::shared_ptr<state> m_state;
 
@@ -1161,6 +1040,9 @@ namespace registry
         // TODO: ...
         key_handle(native_handle_type handle, const registry::key& key, access_rights rights = access_rights::unknown); // TODO: remove c-tor ???
 
+        // TODO: ...
+        key_handle(const weak_key_handle& handle);
+
         ~key_handle();
 
         key_handle& operator=(const key_handle&) noexcept;
@@ -1176,21 +1058,21 @@ namespace registry
     public:
         //! Returns the key this handle was constructed with.
         /*!
-        @pre `valid() == true`.
+        @throw TODO: ...
         */
-        const registry::key& key() const noexcept;
+        const registry::key& key() const;
 
         //! Returns the access rights this handle was constructed with.
         /*!
-        @pre `valid() == true`.
+        @throw TODO: ...
         */
         access_rights rights() const noexcept;
 
         //! Returns the underlying implementation-defined native handle object suitable for use with WinAPI.
         /*!
-        @pre `valid() == true`.
+        @throw TODO: ...
         */
-        native_handle_type native_handle() const noexcept;
+        native_handle_type native_handle() const;
 
         // TODO: ...
         bool valid() const noexcept;
@@ -1214,10 +1096,21 @@ namespace registry
         */
         bool exists(string_view_type value_name, std::error_code& ec);
 
-        // TODO: ...
+        //! Retrieves information about the registry key specified by this handle.
+        /*!
+        The key must have been opened with the access_rights::query_value access right.
+        @param[in] mask - a mask specifying which fields of key_id structure are filled out and which aren't.
+                          The fields of key_id whick aren't filled out will have default-constructed values.
+        @return an instance of key_info.
+        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
+               `this->key()`. std::bad_alloc may be thrown if memory allocation fails.
+        */
         key_info info(key_info_mask mask) const;
 
-        // TODO: ...
+        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+        /*!
+        Returns `key_info()` on error.
+        */
         key_info info(key_info_mask mask, std::error_code& ec) const;
 
         //! Reads the content of an registry value contained inside the registry key specified by this handle.
@@ -1360,6 +1253,203 @@ namespace registry
     public:
         //! Swaps the contents of `*this` and `other`.
         void swap(key_handle& other) noexcept;
+    };
+
+    //------------------------------------------------------------------------------------//
+    //                            class weak_key_handle                                   //
+    //------------------------------------------------------------------------------------//
+
+    // TODO: ...
+    class weak_key_handle
+    {
+        friend class key_handle;
+
+        std::weak_ptr<key_handle::state> m_state;
+
+    public:
+        weak_key_handle() noexcept;
+
+        weak_key_handle(const weak_key_handle&) noexcept;
+
+        weak_key_handle(weak_key_handle&&) noexcept;
+
+        weak_key_handle(const key_handle& handle) noexcept;
+
+        weak_key_handle& operator=(const weak_key_handle&) noexcept;
+
+        weak_key_handle& operator=(weak_key_handle&&) noexcept;
+
+    public:
+        bool expired() const noexcept;
+
+        key_handle lock() const noexcept;
+
+    public:
+        void swap(weak_key_handle& other) noexcept;
+    };
+
+    //------------------------------------------------------------------------------------//
+    //                               class key_entry                                      //
+    //------------------------------------------------------------------------------------//
+
+    class key_entry 
+        //: private details::key_entry_state
+    {
+        friend class key_iterator;
+        friend class recursive_key_iterator;
+
+        key              m_key;
+        weak_key_handle  m_key_handle;
+
+    public:
+        // TODO: ...
+        key_entry() noexcept = default;
+
+        //! Constructs the value with the copy of the contents of `other`.
+        /*!
+        @post `*this == other`.
+        */
+        key_entry(const key_entry& other) = default;
+
+        /*! \brief
+        Constructs the value with the contents of `other` using move semantics. `other` is left in a valid but 
+        unspecified state. */
+        /*!
+        @post `*this` has the original value of `other`.
+        */
+        key_entry(key_entry&& other) noexcept = default;
+
+        // TODO: ...
+        key_entry(const key& key);
+
+        // TODO: ...
+        key_entry(const key_handle& handle);
+
+        //! Replaces the contents of `*this` with a copy of the contents of `other`.
+        /*!
+        @post `*this == other`.
+        @return `*this`.
+        */
+        key_entry& operator=(const key_entry& other) = default;
+
+        /*! \brief
+        Replaces the contents of `*this` with those of `other` using move semantics. `other` is left in a valid, 
+        but unspecified state. */
+        /*!
+        @post `*this` has the original value of `other`.
+        @return `*this`.
+        */
+        key_entry& operator=(key_entry&& other) noexcept = default;
+
+    public:
+        //! Returns the key that was stored in the value entry object.
+        const key& key() const noexcept;
+
+        // TODO: ...
+        key_info info(key_info_mask mask) const;
+
+        // TODO: ...
+        key_info info(key_info_mask mask, std::error_code& ec) const;
+
+    public:
+        // TODO: ...
+        key_entry& assign(const registry::key& key);
+
+        // TODO: ...
+        key_entry& assign(const registry::key_handle& handle);
+
+        //! Swaps the contents of `*this` and `other`.
+        void swap(key_entry& other) noexcept;
+    };
+
+    //\cond HIDDEN_SYMBOLS
+    namespace details
+    {
+        //struct value_entry_state
+        //{
+        //    key          m_key;
+        //    string_type  m_value_name;
+        //};
+    } //\endcond
+
+    //------------------------------------------------------------------------------------//
+    //                              class value_entry                                     //
+    //------------------------------------------------------------------------------------//
+
+    class value_entry 
+        //: private details::value_entry_state
+    {
+        friend class value_iterator;
+
+        key              m_key;
+        string_type      m_value_name;
+        weak_key_handle  m_key_handle;
+
+    public:
+        // TODO: ...
+        value_entry() noexcept = default;
+
+        //! Constructs the value with the copy of the contents of `other`.
+        /*!
+        @post `*this == other`.
+        */
+        value_entry(const value_entry& other) = default;
+
+        /*! \brief
+        Constructs the value with the contents of `other` using move semantics. `other` is left in a valid but 
+        unspecified state. */
+        /*!
+        @post `*this` has the original value of `other`.
+        */
+        value_entry(value_entry&& other) noexcept = default;
+
+        // TODO: ...
+        value_entry(const key& key, string_view_type value_name);
+
+        // TODO: ...
+        value_entry(const key_handle& handle, string_view_type value_name);
+
+        //! Replaces the contents of `*this` with a copy of the contents of `other`.
+        /*!
+        @post `*this == other`.
+        @return `*this`.
+        */
+        value_entry& operator=(const value_entry& other) = default;
+
+        /*! \brief
+        Replaces the contents of `*this` with those of `other` using move semantics. `other` is left in a valid, 
+        but unspecified state. */
+        /*!
+        @post `*this` has the original value of `other`.
+        @return `*this`.
+        */
+        value_entry& operator=(value_entry&& other) noexcept = default;
+
+    public:
+        //! Returns the key that was stored in the value entry object.
+        const key& key() const noexcept;
+
+        //! Returns the value name that was stored in the value entry object.
+        const string_type& value_name() const noexcept;
+
+        // TODO: ...
+        registry::value value() const;
+
+        /*!
+        Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+        Returns a default-constructed value on error.
+        */
+        registry::value value(std::error_code& ec) const;
+
+    public:
+        // TODO: ...
+        value_entry& assign(const registry::key& key, string_view_type value_name);
+
+        // TODO: ...
+        value_entry& assign(const registry::key_handle& handle, string_view_type value_name);
+
+        //! Swaps the contents of `*this` and `other`.
+        void swap(value_entry& other) noexcept;
     };
     
     //------------------------------------------------------------------------------------//
@@ -1950,10 +2040,21 @@ namespace registry
     */
     bool exists(const key& key, string_view_type value_name, std::error_code& ec);
 
-    // TODO: ...
+    //! Retrieves information about a registry key.
+    /*!
+    @param[in] key - ....
+    @param[in] mask - a mask specifying which fields of key_id structure are filled out and which aren't.
+                        The fields of key_id whick aren't filled out will have default-constructed values.
+    @return an instance of key_info.
+    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
+            `this->key()`. std::bad_alloc may be thrown if memory allocation fails.
+    */
     key_info info(const key& key, key_info_mask mask);
 
-    // TODO: ...
+    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+    /*!
+    Returns `key_info()` on error.
+    */
     key_info info(const key& key, key_info_mask mask, std::error_code& ec);
 
     //! Reads the content of an existing registry value.
