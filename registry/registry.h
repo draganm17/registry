@@ -39,7 +39,6 @@ namespace registry
     enum class access_rights : uint32_t;
 
     class bad_value_cast;
-    class bad_key_handle;
     class bad_weak_key_handle;
     class registry_error;
     class key;
@@ -140,7 +139,7 @@ namespace registry
     enum class value_type : uint32_t
     {
         /*! No defined value type. */
-        none =                 0,  // TODO: none -> unknown   OR remove ????
+        none =                 0,
 
         /*! A null-terminated string. */
         sz =                   1,
@@ -222,7 +221,9 @@ namespace registry
         skip_permission_denied =  0x1
     };
 
-    // TODO: ...
+    /*! TODO: ... \n
+    key_info_mask satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
+    `operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
     enum class key_info_mask : uint16_t
     {
         /*! TODO: ... */
@@ -280,16 +281,22 @@ namespace registry
     // TODO: ...
     struct key_info
     {
+        // TODO: ...
         uint32_t       subkeys;
 
+        // TODO: ...
         uint32_t       values;
 
+        // TODO: ...
         uint32_t       max_subkey_size;
 
+        // TODO: ...
         uint32_t       max_value_name_size;
 
+        // TODO: ...
         uint32_t       max_value_data_size;
 
+        // TODO: ...
         key_time_type  last_write_time;
     };
 
@@ -306,22 +313,12 @@ namespace registry
     };
 
     //------------------------------------------------------------------------------------//
-    //                              class bad_key_handle                                  //
-    //------------------------------------------------------------------------------------//
-
-    // TODO: ...
-    class bad_key_handle
-        : public std::exception
-    {
-    public:
-        const char* what() const noexcept override { return "registry::bad_key_handle"; }
-    };
-
-    //------------------------------------------------------------------------------------//
     //                           class bad_weak_key_handle                                //
     //------------------------------------------------------------------------------------//
 
-    // TODO: ...
+    /*! \brief
+    Defines a type of the object thrown by the constructors of registry::key_handle that take
+    registry::weak_key_handle as the argument, when the registry::weak_key_handle is already expired. */
     class bad_weak_key_handle
         : public std::exception
     {
@@ -520,10 +517,20 @@ namespace registry
         */
         bool has_parent_key() const noexcept;
 
-        // TODO: ...
+        //! Checks whether the key is absolute.
+        /*!
+        An absolute key is a key that unambiguously identifies the location of a registry key. The name of such key
+        should begin with a predefined key identifier. \n
+        Examples:
+        - "HKEY_LOCAL_MACHINE\Software\Microsoft" is an absolute key because it begins with "HKEY_LOCAL_MACHINE";
+        - "Software\Microsoft" is an relative key, because it does not begin with a predefined key identifier.
+        */
         bool is_absolute() const noexcept;
 
-        // TODO: ...
+        //! Checks whether the key is relative.
+        /*!
+        Equivalent to `!is_absolute()`.
+        */
         bool is_relative() const noexcept;
 
         //! Compares key objects.
@@ -1001,8 +1008,16 @@ namespace registry
     //                                class key_handle                                    //
     //------------------------------------------------------------------------------------//
 
-    // TODO: ...
-    // TODO : invalid_handle exception ???  Remove noexcept from getters ???
+    //! Represents a handle to an registry key.
+    /*!
+    registry::key_handle is a wrapper around a native key handle that retains shared ownership of that handle. Several 
+    key_handle objects may own the same key handle. The object is destroyed and its handle is closed when either of the
+    following happens:
+    - the last remaining key_handle owning the key handle is destroyed;
+    - the last remaining key_handle owning the key handle is assigned another handle via operator=.
+
+    A key_handle may also own no handle, in which case it is called `invalid`.
+    */
     class key_handle
     {
         friend class weak_key_handle;
@@ -1014,38 +1029,45 @@ namespace registry
         using native_handle_type = uintptr_t;
 
     public:
-        // TODO: if key does not exist is it an error (for now it is) ???
+        // TODO: move 'open' functions to the registry namespace level ???
         static key_handle open(const registry::key& key, access_rights rights);
 
         static key_handle open(const registry::key& key, access_rights rights, std::error_code& ec);
 
     public:
+        //! Default constructor.
+        /*!
+        @post `valid() == false`.
+        */
         key_handle() noexcept;
 
-        key_handle(const key_handle&) noexcept;
+        /*! \brief
+        Constructs a key_handle which shares ownership of the handle managed by `other`. If `other` manages no handle,
+        `*this` manages no handle too. */
+        key_handle(const key_handle& other) noexcept;
 
         //! Constructs the handle with the contents of `other` using move semantics.
         /*!
         @post `other.valid() == false`.
         @post `*this` has the original value of `other`.
         */
-        key_handle(key_handle&&) noexcept;
+        key_handle(key_handle&& other) noexcept;
+
+        // TODO: ...
+        key_handle(const weak_key_handle& handle);
 
         // TODO: ...
         key_handle(key_id id, access_rights rights = access_rights::unknown);
 
         // TODO: ...
-        explicit key_handle(native_handle_type handle, access_rights rights = access_rights::unknown); // TODO: remove c-tor ???
-
-        // TODO: ...
-        key_handle(native_handle_type handle, const registry::key& key, access_rights rights = access_rights::unknown); // TODO: remove c-tor ???
-
-        // TODO: ...
-        key_handle(const weak_key_handle& handle);
+        key_handle(native_handle_type handle, const registry::key& key, access_rights rights);
 
         ~key_handle();
 
-        key_handle& operator=(const key_handle&) noexcept;
+        /*! \brief
+        Replaces the managed handle with the one managed by `other`. If `*this` already owns an handle and it 
+        is the last key_handle owning it, and `other` is not the same as `*this`, the owned handle is closed. */
+        key_handle& operator=(const key_handle& other) noexcept;
 
         //! Replaces the contents of `*this` with those of `other` using move semantics.
         /*!
@@ -1053,14 +1075,14 @@ namespace registry
         @post `*this` has the original value of `other`.
         @return `*this`.
         */
-        key_handle& operator=(key_handle&&) noexcept;
+        key_handle& operator=(key_handle&& other) noexcept;
 
     public:
         //! Returns the key this handle was constructed with.
         /*!
         @throw TODO: ...
         */
-        const registry::key& key() const;
+        registry::key key() const;
 
         //! Returns the access rights this handle was constructed with.
         /*!
@@ -1072,7 +1094,7 @@ namespace registry
         /*!
         @throw TODO: ...
         */
-        native_handle_type native_handle() const;
+        native_handle_type native_handle() const noexcept;
 
         // TODO: ...
         bool valid() const noexcept;

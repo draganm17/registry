@@ -20,6 +20,46 @@ using namespace registry;
 //static_assert(sizeof(value) == sizeof(details::value_state), "");
 //static_assert(sizeof(value_entry) == sizeof(details::value_entry_state), "");
 
+
+class unique_hkey
+{
+    key_handle::native_handle_type m_handle;
+
+public:
+    unique_hkey(const unique_hkey&) = delete;
+
+    unique_hkey(unique_hkey&) = delete;
+
+    constexpr unique_hkey(key_handle::native_handle_type handle) noexcept
+    : m_handle(handle)
+    { }
+
+    unique_hkey& operator=(const unique_hkey&) = delete;
+
+    unique_hkey& operator=(unique_hkey&) = delete;
+
+    ~unique_hkey()
+    {
+        switch ((ULONG_PTR)m_handle) {
+            case (ULONG_PTR)0x0                              :
+            case (ULONG_PTR)HKEY_CLASSES_ROOT                :
+            case (ULONG_PTR)HKEY_CURRENT_USER                :
+            case (ULONG_PTR)HKEY_LOCAL_MACHINE               :
+            case (ULONG_PTR)HKEY_USERS                       :
+            case (ULONG_PTR)HKEY_PERFORMANCE_DATA            :
+            case (ULONG_PTR)HKEY_PERFORMANCE_TEXT            :
+            case (ULONG_PTR)HKEY_PERFORMANCE_NLSTEXT         :
+            case (ULONG_PTR)HKEY_CURRENT_CONFIG              :
+            case (ULONG_PTR)HKEY_DYN_DATA                    :
+            case (ULONG_PTR)HKEY_CURRENT_USER_LOCAL_SETTINGS : return;
+        }
+        ::RegCloseKey((HKEY)m_handle);
+    }
+
+    operator key_handle::native_handle_type&() noexcept { return m_handle; }
+};
+
+
 const auto NtQueryKey_ = []() noexcept
 {
     using F = DWORD(WINAPI*)(HANDLE, int, PVOID, ULONG, PULONG);
@@ -667,21 +707,9 @@ key_handle key_handle::open(const registry::key& key, access_rights rights, std:
 
 key_handle::key_handle() noexcept = default;
 
-key_handle::key_handle(const key_handle&) noexcept = default;
+key_handle::key_handle(const key_handle& other) noexcept = default;
 
-key_handle::key_handle(key_handle&&) noexcept = default;
-
-key_handle::key_handle(key_id id, access_rights rights)
-    : key_handle(static_cast<native_handle_type>(id), registry::key::from_key_id(id), rights)
-{ }
-
-key_handle::key_handle(native_handle_type handle, access_rights rights)
-    : key_handle(handle, registry::key(), rights)
-{ }
-
-key_handle::key_handle(native_handle_type handle, const registry::key& key, access_rights rights)
-try : m_state(std::make_shared<state>(state{ key, rights, handle }))
-{ } catch(...) { close(handle); throw; }
+key_handle::key_handle(key_handle&& other) noexcept = default;
 
 key_handle::key_handle(const weak_key_handle& handle)
     : m_state(handle.m_state.lock())
@@ -689,20 +717,36 @@ key_handle::key_handle(const weak_key_handle& handle)
     if (handle.expired()) throw bad_weak_key_handle();
 }
 
-key_handle::~key_handle() { if (m_state) close(m_state->handle); }
+key_handle::key_handle(key_id id, access_rights rights)
+    : key_handle(static_cast<native_handle_type>(id), registry::key::from_key_id(id), rights)
+{ }
 
-key_handle& key_handle::operator=(const key_handle&) noexcept = default;
+key_handle::key_handle(native_handle_type handle, const registry::key& key, access_rights rights)
+try : m_state(handle ? std::make_shared<state>(state{ key, rights, handle }) : nullptr)
+{ } catch(...) { close(handle); throw; }
 
-key_handle& key_handle::operator=(key_handle&&) noexcept = default;
-
-const key& key_handle::key() const { return m_state ? m_state->key : throw bad_key_handle(); }
-
-access_rights key_handle::rights() const noexcept { return m_state ? m_state->rights : throw bad_key_handle(); }
-
-key_handle::native_handle_type key_handle::native_handle() const
+key_handle::~key_handle() 
 {
-    return m_state ? m_state->handle : throw bad_key_handle();
+    // TODO: close should be invoked from the deleter of the shared_ptr ???
+    if (m_state) close(m_state->handle); 
 }
+
+key_handle& key_handle::operator=(const key_handle& other) noexcept
+{
+    if (this != &other) {
+        swap(key_handle(other));
+    }
+    return *this;
+}
+
+key_handle& key_handle::operator=(key_handle&& other) noexcept = default;
+
+key key_handle::key() const { return m_state ? m_state->key : registry::key(); }
+
+access_rights key_handle::rights() const noexcept { return m_state ? m_state->rights : access_rights::unknown; }
+
+key_handle::native_handle_type key_handle::native_handle() const noexcept
+{ return m_state ? m_state->handle : native_handle_type(); }
 
 bool key_handle::valid() const noexcept { return static_cast<bool>(m_state); }
 
@@ -716,8 +760,6 @@ bool key_handle::exists(string_view_type value_name)
 
 bool key_handle::exists(string_view_type value_name, std::error_code& ec)
 {
-    // TODO: check handle ???
-
     ec.clear();
     LSTATUS rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), 
                                  value_name.data(), nullptr, nullptr, nullptr, nullptr);
@@ -737,8 +779,6 @@ key_info key_handle::info(key_info_mask mask) const
 
 key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     ec.clear();
     FILETIME time;
     key_info info{};
@@ -772,8 +812,6 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
 
 value key_handle::read_value(string_view_type value_name) const
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     decltype(auto) res = read_value(value_name, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key(), {}, value_name);
@@ -782,8 +820,6 @@ value key_handle::read_value(string_view_type value_name) const
 
 value key_handle::read_value(string_view_type value_name, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     ec.clear();
     LSTATUS rc;
     details::value_state state;
@@ -802,8 +838,6 @@ value key_handle::read_value(string_view_type value_name, std::error_code& ec) c
 
 std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, access_rights rights) const
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     decltype(auto) res = create_key(subkey, rights, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key(), subkey);
@@ -812,8 +846,6 @@ std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, 
 
 std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, access_rights rights, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     ec.clear();
     DWORD disp;
     key_handle::native_handle_type hkey;
@@ -831,8 +863,6 @@ std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, 
 
 void key_handle::write_value(string_view_type value_name, const value& value) const
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     write_value(value_name, value, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key(), {}, value_name);
@@ -840,8 +870,6 @@ void key_handle::write_value(string_view_type value_name, const value& value) co
 
 void key_handle::write_value(string_view_type value_name, const value& value, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     ec.clear();
     LSTATUS rc = RegSetValueEx(reinterpret_cast<HKEY>(native_handle()), 
                                value_name.data(), 0, static_cast<DWORD>(value.type()), 
@@ -852,8 +880,6 @@ void key_handle::write_value(string_view_type value_name, const value& value, st
 
 bool key_handle::remove(const registry::key& subkey) const
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     decltype(auto) res = remove(subkey, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key(), subkey);
@@ -862,8 +888,6 @@ bool key_handle::remove(const registry::key& subkey) const
 
 bool key_handle::remove(const registry::key& subkey, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     ec.clear();
     LSTATUS rc;
     if (!RegDeleteKeyEx_) {
@@ -880,8 +904,6 @@ bool key_handle::remove(const registry::key& subkey, std::error_code& ec) const
 
 bool key_handle::remove(string_view_type value_name) const
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     decltype(auto) res = remove(value_name, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key(), {}, value_name);
@@ -890,8 +912,6 @@ bool key_handle::remove(string_view_type value_name) const
 
 bool key_handle::remove(string_view_type value_name, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     ec.clear();
     LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), value_name.data());
 
@@ -902,8 +922,6 @@ bool key_handle::remove(string_view_type value_name, std::error_code& ec) const
 
 std::uintmax_t key_handle::remove_all(const registry::key& subkey) const
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     decltype(auto) res = remove_all(subkey, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key(), subkey);
@@ -912,16 +930,12 @@ std::uintmax_t key_handle::remove_all(const registry::key& subkey) const
 
 std::uintmax_t key_handle::remove_all(const registry::key& subkey, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     // TODO: ...
     return 0;
 }
 
 bool key_handle::equivalent(const registry::key& key) const
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     decltype(auto) res = equivalent(key, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, this->key(), key);
@@ -930,8 +944,6 @@ bool key_handle::equivalent(const registry::key& key) const
 
 bool key_handle::equivalent(const registry::key& key, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     ec.clear();
     auto handle = key_handle::open(key, access_rights::query_value, ec);
     return !ec ? equivalent(handle) : false;
@@ -939,8 +951,6 @@ bool key_handle::equivalent(const registry::key& key, std::error_code& ec) const
 
 bool key_handle::equivalent(const key_handle& handle) const
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     decltype(auto) res = equivalent(handle, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, key(), handle.key());
@@ -949,17 +959,11 @@ bool key_handle::equivalent(const key_handle& handle) const
 
 bool key_handle::equivalent(const key_handle& handle, std::error_code& ec) const
 {
-    // TODO: check handle ???
-
     ec.clear();
     return nt_name(native_handle()) == nt_name(handle.native_handle());
 }
 
-void key_handle::swap(key_handle& other) noexcept
-{
-    using std::swap;
-    swap(m_state, other.m_state);
-}
+void key_handle::swap(key_handle& other) noexcept { m_state.swap(other.m_state); }
 
 
 //------------------------------------------------------------------------------------//
@@ -1118,8 +1122,6 @@ key_iterator::key_iterator(const key& key, std::error_code& ec)
 
 key_iterator::key_iterator(const key_handle& handle)
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     auto tmp = key_iterator(handle, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, handle.key());
@@ -1131,8 +1133,6 @@ key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
     , m_hkey(handle)
     , m_entry(handle)
 {
-    // TODO: check handle ???
-
     ec.clear();
     BOOST_SCOPE_EXIT_ALL(&) { 
         if (ec) swap(key_iterator());
@@ -1241,8 +1241,6 @@ recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& 
 
 recursive_key_iterator::recursive_key_iterator(const key_handle& handle)
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     auto tmp = recursive_key_iterator(handle, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, handle.key());
@@ -1251,8 +1249,6 @@ recursive_key_iterator::recursive_key_iterator(const key_handle& handle)
 
 recursive_key_iterator::recursive_key_iterator(const key_handle& handle, std::error_code& ec)
 {
-    // TODO: check handle ???
-
     // TODO: ...
 }
 
@@ -1347,8 +1343,6 @@ value_iterator::value_iterator(const key& key, std::error_code& ec)
 
 value_iterator::value_iterator(const key_handle& handle)
 {
-    // TODO: check handle ???
-
     std::error_code ec;
     auto tmp = value_iterator(handle, ec);
     if (ec) throw registry_error(ec, __FUNCTION__, handle.key());
@@ -1360,8 +1354,6 @@ value_iterator::value_iterator(const key_handle& handle, std::error_code& ec)
     , m_hkey(handle)
     , m_entry(handle, string_type())
 {
-    // TODO: check handle ???
-
     ec.clear();
     BOOST_SCOPE_EXIT_ALL(&) { if (ec) swap(value_iterator()); };
     key_info info = handle.info(key_info_mask::read_max_value_name_size, ec);
@@ -1462,8 +1454,6 @@ bool exists(const key& key, std::error_code& ec)
     key_handle::open(key, access_rights::query_value, ec);
     return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), false)
                                                 : (!ec ? true : false);
-
-    // TODO: ckeck for key emptiness
 }
 
 bool exists(const key& key, string_view_type value_name)
@@ -1480,8 +1470,6 @@ bool exists(const key& key, string_view_type value_name, std::error_code& ec)
     auto handle = key_handle::open(key, access_rights::query_value, ec);
     return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), false)
                                                 : (!ec ? handle.exists(value_name, ec) : false);
-
-    // TODO: ckeck for key emptiness
 }
 
 key_info info(const key& key, key_info_mask mask)
