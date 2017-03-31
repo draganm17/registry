@@ -1039,19 +1039,19 @@ namespace registry
         /*!
         @post `valid() == false`.
         */
-        key_handle() noexcept;
+        constexpr key_handle() noexcept = default;
 
         /*! \brief
         Constructs a key_handle which shares ownership of the handle managed by `other`. If `other` manages no handle,
         `*this` manages no handle too. */
-        key_handle(const key_handle& other) noexcept;
+        key_handle(const key_handle& other) noexcept = default;
 
         //! Constructs the handle with the contents of `other` using move semantics.
         /*!
         @post `other.valid() == false`.
         @post `*this` has the original value of `other`.
         */
-        key_handle(key_handle&& other) noexcept;
+        key_handle(key_handle&& other) noexcept = default;
 
         // TODO: ...
         key_handle(const weak_key_handle& handle);
@@ -1062,12 +1062,10 @@ namespace registry
         // TODO: ...
         key_handle(native_handle_type handle, const registry::key& key, access_rights rights);
 
-        ~key_handle();
-
         /*! \brief
         Replaces the managed handle with the one managed by `other`. If `*this` already owns an handle and it 
         is the last key_handle owning it, and `other` is not the same as `*this`, the owned handle is closed. */
-        key_handle& operator=(const key_handle& other) noexcept;
+        key_handle& operator=(const key_handle& other) noexcept = default;
 
         //! Replaces the contents of `*this` with those of `other` using move semantics.
         /*!
@@ -1075,7 +1073,7 @@ namespace registry
         @post `*this` has the original value of `other`.
         @return `*this`.
         */
-        key_handle& operator=(key_handle&& other) noexcept;
+        key_handle& operator=(key_handle&& other) noexcept = default;
 
     public:
         //! Returns the key this handle was constructed with.
@@ -1289,17 +1287,17 @@ namespace registry
         std::weak_ptr<key_handle::state> m_state;
 
     public:
-        weak_key_handle() noexcept;
+        constexpr weak_key_handle() noexcept = default;
 
-        weak_key_handle(const weak_key_handle&) noexcept;
+        weak_key_handle(const weak_key_handle&) noexcept = default;
 
-        weak_key_handle(weak_key_handle&&) noexcept;
+        weak_key_handle(weak_key_handle&&) noexcept = default;
 
         weak_key_handle(const key_handle& handle) noexcept;
 
-        weak_key_handle& operator=(const weak_key_handle&) noexcept;
+        weak_key_handle& operator=(const weak_key_handle&) noexcept = default;
 
-        weak_key_handle& operator=(weak_key_handle&&) noexcept;
+        weak_key_handle& operator=(weak_key_handle&&) noexcept = default;
 
     public:
         bool expired() const noexcept;

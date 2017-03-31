@@ -23,40 +23,39 @@ using namespace registry;
 
 class unique_hkey
 {
-    key_handle::native_handle_type m_handle;
+    struct deleter
+    {
+        void operator()(void* hkey) const noexcept
+        {
+            switch ((ULONG_PTR)hkey) {
+                case (ULONG_PTR)0x0:
+                case (ULONG_PTR)HKEY_CLASSES_ROOT:
+                case (ULONG_PTR)HKEY_CURRENT_USER:
+                case (ULONG_PTR)HKEY_LOCAL_MACHINE:
+                case (ULONG_PTR)HKEY_USERS:
+                case (ULONG_PTR)HKEY_PERFORMANCE_DATA:
+                case (ULONG_PTR)HKEY_PERFORMANCE_TEXT:
+                case (ULONG_PTR)HKEY_PERFORMANCE_NLSTEXT:
+                case (ULONG_PTR)HKEY_CURRENT_CONFIG:
+                case (ULONG_PTR)HKEY_DYN_DATA:
+                case (ULONG_PTR)HKEY_CURRENT_USER_LOCAL_SETTINGS: return;
+            }
+            ::RegCloseKey((HKEY)hkey);
+        }
+    };
+
+    std::unique_ptr<void, deleter> m_handle;
 
 public:
-    unique_hkey(const unique_hkey&) = delete;
-
-    unique_hkey(unique_hkey&) = delete;
-
-    constexpr unique_hkey(key_handle::native_handle_type handle) noexcept
-    : m_handle(handle)
+    constexpr unique_hkey(key_handle::native_handle_type hkey) noexcept
+    : m_handle((void*)hkey, deleter{})
     { }
 
-    unique_hkey& operator=(const unique_hkey&) = delete;
+    operator key_handle::native_handle_type&() noexcept 
+    { return *((key_handle::native_handle_type*)m_handle.get()); }
 
-    unique_hkey& operator=(unique_hkey&) = delete;
-
-    ~unique_hkey()
-    {
-        switch ((ULONG_PTR)m_handle) {
-            case (ULONG_PTR)0x0                              :
-            case (ULONG_PTR)HKEY_CLASSES_ROOT                :
-            case (ULONG_PTR)HKEY_CURRENT_USER                :
-            case (ULONG_PTR)HKEY_LOCAL_MACHINE               :
-            case (ULONG_PTR)HKEY_USERS                       :
-            case (ULONG_PTR)HKEY_PERFORMANCE_DATA            :
-            case (ULONG_PTR)HKEY_PERFORMANCE_TEXT            :
-            case (ULONG_PTR)HKEY_PERFORMANCE_NLSTEXT         :
-            case (ULONG_PTR)HKEY_CURRENT_CONFIG              :
-            case (ULONG_PTR)HKEY_DYN_DATA                    :
-            case (ULONG_PTR)HKEY_CURRENT_USER_LOCAL_SETTINGS : return;
-        }
-        ::RegCloseKey((HKEY)m_handle);
-    }
-
-    operator key_handle::native_handle_type&() noexcept { return m_handle; }
+    operator const key_handle::native_handle_type&() const noexcept 
+    { return *((const key_handle::native_handle_type*)m_handle.get()); }
 };
 
 
@@ -118,24 +117,6 @@ key_id key_id_from_string(string_view_type str) noexcept
                                [](auto&& lhs, auto&& rhs) { return iequals(lhs.first, rhs); });
 
     return it != key_map.end() && (*it).first == str ? (*it).second : key_id::none;
-}
-
-void close(key_handle::native_handle_type handle) noexcept
-{
-    switch ((ULONG_PTR)handle) {
-        case (ULONG_PTR)0x0                              :
-        case (ULONG_PTR)HKEY_CLASSES_ROOT                :
-        case (ULONG_PTR)HKEY_CURRENT_USER                :
-        case (ULONG_PTR)HKEY_LOCAL_MACHINE               :
-        case (ULONG_PTR)HKEY_USERS                       :
-        case (ULONG_PTR)HKEY_PERFORMANCE_DATA            :
-        case (ULONG_PTR)HKEY_PERFORMANCE_TEXT            :
-        case (ULONG_PTR)HKEY_PERFORMANCE_NLSTEXT         :
-        case (ULONG_PTR)HKEY_CURRENT_CONFIG              :
-        case (ULONG_PTR)HKEY_DYN_DATA                    :
-        case (ULONG_PTR)HKEY_CURRENT_USER_LOCAL_SETTINGS : return;
-    }
-    ::RegCloseKey((HKEY)handle);
 }
 
 std::uintmax_t remove_all_inside(const key& key, std::error_code& ec)
@@ -676,9 +657,9 @@ void value::swap(value& other) noexcept
 
 struct key_handle::state
 {
-    registry::key                   key;
-    access_rights                   rights;
-    key_handle::native_handle_type  handle;
+    unique_hkey    handle;
+    access_rights  rights;
+    registry::key  key;
 };
 
 key_handle key_handle::open(const registry::key& key, access_rights rights)
@@ -705,12 +686,6 @@ key_handle key_handle::open(const registry::key& key, access_rights rights, std:
     //                             : (ec = std::error_code(rc, std::system_category()), key_handle());
 }
 
-key_handle::key_handle() noexcept = default;
-
-key_handle::key_handle(const key_handle& other) noexcept = default;
-
-key_handle::key_handle(key_handle&& other) noexcept = default;
-
 key_handle::key_handle(const weak_key_handle& handle)
     : m_state(handle.m_state.lock())
 {
@@ -722,31 +697,15 @@ key_handle::key_handle(key_id id, access_rights rights)
 { }
 
 key_handle::key_handle(native_handle_type handle, const registry::key& key, access_rights rights)
-try : m_state(handle ? std::make_shared<state>(state{ key, rights, handle }) : nullptr)
-{ } catch(...) { close(handle); throw; }
-
-key_handle::~key_handle() 
-{
-    // TODO: close should be invoked from the deleter of the shared_ptr ???
-    if (m_state) close(m_state->handle); 
-}
-
-key_handle& key_handle::operator=(const key_handle& other) noexcept
-{
-    if (this != &other) {
-        swap(key_handle(other));
-    }
-    return *this;
-}
-
-key_handle& key_handle::operator=(key_handle&& other) noexcept = default;
+    : m_state(handle ? std::make_shared<state>(state{ handle, rights, key }) : nullptr)
+{ }
 
 key key_handle::key() const { return m_state ? m_state->key : registry::key(); }
 
 access_rights key_handle::rights() const noexcept { return m_state ? m_state->rights : access_rights::unknown; }
 
 key_handle::native_handle_type key_handle::native_handle() const noexcept
-{ return m_state ? m_state->handle : native_handle_type(); }
+{ return m_state ? static_cast<native_handle_type&>(m_state->handle) : native_handle_type(); }
 
 bool key_handle::valid() const noexcept { return static_cast<bool>(m_state); }
 
@@ -970,19 +929,9 @@ void key_handle::swap(key_handle& other) noexcept { m_state.swap(other.m_state);
 //                            class weak_key_handle                                   //
 //------------------------------------------------------------------------------------//
 
-weak_key_handle::weak_key_handle() noexcept = default;
-
-weak_key_handle::weak_key_handle(const weak_key_handle&) noexcept = default;
-
-weak_key_handle::weak_key_handle(weak_key_handle&&) noexcept = default;
-
 weak_key_handle::weak_key_handle(const key_handle& handle) noexcept
     : m_state(handle.m_state)
 { }
-
-weak_key_handle& weak_key_handle::operator=(const weak_key_handle&) noexcept = default;
-
-weak_key_handle& weak_key_handle::operator=(weak_key_handle&&) noexcept = default;
 
 bool weak_key_handle::expired() const noexcept { return m_state.expired(); }
 
