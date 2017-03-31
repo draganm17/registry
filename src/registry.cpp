@@ -255,17 +255,23 @@ key key::root_key() const { return has_root_key() ? key(*begin(), view()) : key(
 key key::leaf_key() const { return has_leaf_key() ? key(*--end(), view()) : key(string_view_type(), view()); }
 
 key key::parent_key() const
+{ return has_parent_key() ? key(begin(), --end(), view()) : key(string_view_type(), view()); }
+
+bool key::has_root_key() const noexcept { return begin() != end(); }
+
+bool key::has_leaf_key() const noexcept { return begin() != end(); }
+
+bool key::has_parent_key() const noexcept 
 {
-    return has_parent_key() ? key(begin(), --end(), view()) : key(string_view_type(), view());
+    auto beg_it = begin(), end_it = end();
+    return beg_it != end_it && ++beg_it != end_it;
 }
 
-bool key::has_root_key() const noexcept { return !m_name.empty(); }
-
-bool key::has_leaf_key() const noexcept { return !m_name.empty(); }
-
-bool key::has_parent_key() const noexcept { return !m_name.empty() && ++begin() != end(); }
-
-bool key::is_absolute() const noexcept { return !m_name.empty() && key_id_from_string(*begin()) != key_id::none; }
+bool key::is_absolute() const noexcept 
+{
+    const auto beg_it = begin(), end_it = end();
+    return beg_it != end_it && beg_it->data() == m_name.data() && key_id_from_string(*begin()) != key_id::none;
+}
 
 bool key::is_relative() const noexcept { return !is_absolute(); }
 
@@ -286,15 +292,18 @@ int key::compare(const key& other) const noexcept
 
 key::iterator key::begin() const noexcept
 {
-    size_t size = 0;
-    for (; size < m_name.size() && m_name[size] == TEXT('\\'); ++size);
-    for (; size < m_name.size() && m_name[size] != TEXT('\\'); ++size);
-    return reinterpret_cast<iterator&&>(details::key_iterator_state{ m_name, { m_name.data(), size } });
+    iterator it;
+    it.m_value = string_view_type(m_name.data(), 0);
+    it.m_key_name_view = string_view_type(m_name.data(), m_name.size());
+    return ++it;
 }
 
 key::iterator key::end() const noexcept
 {
-    return reinterpret_cast<iterator&&>(details::key_iterator_state{ m_name, { m_name.data() + m_name.size(), 0 } });
+    iterator it;
+    it.m_value = string_view_type(m_name.data() + m_name.size(), 0);
+    it.m_key_name_view = string_view_type(m_name.data(), m_name.size());
+    return it;
 }
 
 key& key::assign(string_view_type name, registry::view view)
@@ -306,7 +315,7 @@ key& key::assign(string_view_type name, registry::view view)
 
 key& key::append(string_view_type subkey)
 {
-    const bool add_slash = !(m_name.empty() || m_name.back() == TEXT('\\') ||
+    const bool add_slash = !(begin() == end() || m_name.back() == TEXT('\\') ||
                              subkey.empty() || subkey.front() == TEXT('\\'));
 
     m_name.reserve(m_name.size() + subkey.size() + static_cast<int>(add_slash));
@@ -354,22 +363,25 @@ bool key::iterator::operator!=(const iterator& rhs) const noexcept { return !(*t
 //                             class key::iterator                                    //
 //------------------------------------------------------------------------------------//
 
-key::iterator::reference key::iterator::operator*() const
+key::iterator::reference key::iterator::operator*() const noexcept
 {
-    assert(!m_value.empty());
+    // TODO: is end iterator assert
+
     return m_value;
 }
 
-key::iterator::pointer key::iterator::operator->() const
+key::iterator::pointer key::iterator::operator->() const noexcept
 {
-    assert(!m_value.empty());
+    // TODO: is end iterator assert
+
     return &m_value;
 }
 
-key::iterator& key::iterator::operator++()
+key::iterator& key::iterator::operator++() noexcept
 {
-    assert(!m_value.empty());
-    const auto end = m_key_string_view.end();
+    // TODO: is end iterator assert
+
+    const auto end = m_key_name_view.end();
 
     auto first = m_value.end();
     for (; first != end && *first == TEXT('\\'); ++first);
@@ -381,15 +393,25 @@ key::iterator& key::iterator::operator++()
     return *this;
 }
 
-key::iterator key::iterator::operator++(int) { auto tmp = *this; ++*this; return tmp; }
+key::iterator key::iterator::operator++(int) noexcept { auto tmp = *this; ++*this; return tmp; }
 
-key::iterator& key::iterator::operator--()
+key::iterator& key::iterator::operator--() noexcept
 {
-    // TODO: ...
+    // TODO: is begin iterator assert
+
+    const auto rbegin = m_key_name_view.begin() - 1;
+
+    auto last = m_value.begin() - 1;
+    for (; last != rbegin && *last == TEXT('\\'); --last);
+
+    auto first = last;
+    for (; first != rbegin && *first != TEXT('\\'); --first);
+
+    m_value = string_view_type(first, last - first);
     return *this;
 }
 
-key::iterator key::iterator::operator--(int) { auto tmp = *this; --*this; return tmp; }
+key::iterator key::iterator::operator--(int) noexcept { auto tmp = *this; --*this; return tmp; }
 
 
 //------------------------------------------------------------------------------------//

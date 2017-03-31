@@ -383,12 +383,6 @@ namespace registry
             view         m_view;
             string_type  m_name;
         };
-
-        struct key_iterator_state
-        {
-            string_view_type  m_value;
-            string_view_type  m_key_string_view;
-        };
     } //\endcond
 
     //------------------------------------------------------------------------------------//
@@ -402,7 +396,7 @@ namespace registry
     A key is composed of two parts: registry::view and the key::name(). The latter has the following syntax:
     1. root key (optional): the string representation of one of the predefined keys identifies (registry::key_id).
     2. subkey (optional): ...
-    
+    // TODO: ...
     */
     class key 
         : private details::key_state
@@ -418,12 +412,13 @@ namespace registry
         static const view default_view;
 
     public:
+        // TODO: ...
         static key from_key_id(key_id id);
 
     public:
         //! Default constructor.
         /*!
-        Equivalent to `key(key_id::none)`.
+        Equivalent to TODO: ...
         @post `*this == other`.
         */
         key() noexcept;
@@ -455,6 +450,7 @@ namespace registry
         >
         key(const Source& name, view view = default_view) : key(string_view_type(name), view) { }
 
+        // TODO: ...
         template <typename InputIt,
                   typename = std::enable_if_t<std::is_constructible<string_view_type, 
                                                                     std::iterator_traits<InputIt>::value_type>::value>
@@ -478,7 +474,7 @@ namespace registry
         key& operator=(key&& other) noexcept = default;
 
     public:
-        //! Returns the name of the key containing the predefined key identifier string followed by the subkey string.
+        //! Returns the name of the key.
         const string_type& name() const noexcept;
 
         //! Returns the registry view of the key.
@@ -486,19 +482,19 @@ namespace registry
 
         //! Returns the root component of the key.
         /*!
-        Equivalent to `has_root_key() ? key(*begin(), view()) : key(string_view_type(), view())`.
+        Equivalent to `has_root_key() ? key(*begin(), view()) : key(string_type(), view())`.
         */
         key root_key() const;
 
         //! Returns the leaf component of the key.
         /*!
-        Equivalent to `has_leaf_key() ? key(*--end(), view()) : key(string_view_type(), view())`.
+        Equivalent to `has_leaf_key() ? key(*--end(), view()) : key(string_type(), view())`.
         */
         key leaf_key() const;
 
         //! Returns the parent of the key.
         /*!
-        Equivalent to `has_parent_key() ? key(begin(), --end(), view()) : key(string_view_type(), view())`.
+        Equivalent to `has_parent_key() ? key(begin(), --end(), view()) : key(string_type(), view())`.
         */
         key parent_key() const;
 
@@ -516,7 +512,7 @@ namespace registry
 
         //! Checks if the key has a parent key.
         /*!
-        Equivalent to `!name().empty() && ++begin() != end()`.
+        Equivalent to `has_root_key() && ++begin() != end()`.
         */
         bool has_parent_key() const noexcept;
 
@@ -524,9 +520,10 @@ namespace registry
         /*!
         An absolute key is a key that unambiguously identifies the location of a registry key. The name of such key
         should begin with a predefined key identifier. \n
-        Examples:
-        - "HKEY_LOCAL_MACHINE\Software\Microsoft" is an absolute key because it begins with "HKEY_LOCAL_MACHINE";
-        - "Software\Microsoft" is an relative key, because it does not begin with a predefined key identifier.
+        For example:
+        - "Software\Microsoft" is an relative key.
+        - "\HKEY_LOCAL_MACHINE\Software\Microsoft" is an relative key (note the slash at the begining);
+        - "HKEY_LOCAL_MACHINE\Software\Microsoft" is an absolute key;
         */
         bool is_absolute() const noexcept;
 
@@ -550,8 +547,8 @@ namespace registry
         int compare(const key& other) const noexcept;
 
         /*! \brief
-        Returns an iterator to the first component of the key name. If the key name is empty, the returned iterator
-        is equal to end(). */
+        Returns an iterator to the first component of the key name. If the key name has no components, the returned
+        iterator is equal to end(). */
         iterator begin() const noexcept;
 
         /*! \brief
@@ -580,7 +577,7 @@ namespace registry
         /*!
         First, appends the key separator to the key name, except if any of the following conditions is true:
         - the separator would be redundant (the key name already ends with a separator);
-        - the key name is empty;
+        - the key name has no components, i.e. `begin() == end()`;
         - `subkey` is an empty string;
         - `subkey` begins with a key separator.
 
@@ -621,11 +618,12 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     //! A constant BidirectionalIterator with a value_type of registry::string_view_type.
-    class key::iterator 
-        : private details::key_iterator_state
+    class key::iterator
     {
+        friend class key;
+
         string_view_type  m_value;
-        string_view_type  m_key_string_view;
+        string_view_type  m_key_name_view;
 
     public:
         using value_type =        string_view_type;
@@ -634,23 +632,60 @@ namespace registry
         using reference =         const value_type&;
         using iterator_category = std::bidirectional_iterator_tag;
 
+    private:
+        iterator() noexcept = default;
+
     public:
+        //! Checks whether `*this` is equal to `rhs`.
+        /*!
+        Equivalent to `operator*().data() == rhs.operator*().data() && operator*().size() == rhs.operator*().size()`.
+        */
         bool operator==(const iterator& rhs) const noexcept;
 
+        //! Checks whether `*this` is not equal to `rhs`.
+        /*!
+        Equivalent to `!(*this == rhs)`.
+        */
         bool operator!=(const iterator& rhs) const noexcept;
 
-        reference operator*() const;
+        //! Accesses the pointed-to registry::string_view_type.
+        /*!
+        @pre `*this` is not the end iterator.
+        @return Value of the string_view_type referred to by this iterator.
+        */
+        reference operator*() const noexcept;
 
-        pointer operator->() const;
+        //! Accesses the pointed-to registry::string_view_type.
+        /*!
+        @pre `*this` is not the end iterator.
+        @return Pointer to the string_view_type referred to by this iterator.
+        */
+        pointer operator->() const noexcept;
 
     public:
-        iterator& operator++();
+        //! Advances the iterator to the next entry, then returns `*this`.
+        /*!
+        @pre `*this` is not the end iterator.
+        */
+        iterator& operator++() noexcept;
 
-        iterator operator++(int);
+        //! Makes a copy of `*this`, calls operator++(), then returns the copy.
+        /*!
+        @pre `*this` is not the end iterator.
+        */
+        iterator operator++(int) noexcept;
 
-        iterator& operator--();
+        //! Shifts the iterator to the previous entry, then returns `*this`.
+        /*!
+        @pre `*this` is not the begin iterator.
+        */
+        iterator& operator--() noexcept;
 
-        iterator operator--(int);
+        //! Makes a copy of `*this`, calls operator--(), then returns the copy.
+        /*!
+        @pre `*this` is not the begin iterator.
+        */
+        iterator operator--(int) noexcept;
     };
 
     //\cond HIDDEN_SYMBOLS
@@ -1102,7 +1137,7 @@ namespace registry
         //! Check whether the registry key specified by this handle contains the given value.
         /*!
         The key must have been opened with the access_rights::query_value access right.
-        @param[in] value_name - a null-terminated string containing the value name. An empty name correspond to the
+        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                                 default value.
         @return `true` if the given name corresponds to an existing registry value, `false` otherwise.
         @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
@@ -1137,7 +1172,7 @@ namespace registry
         //! Reads the content of an registry value contained inside the registry key specified by this handle.
         /*!
         The key must have been opened with the access_rights::query_value access right.
-        @param[in] value_name - a null-terminated string containing the value name. An empty name correspond to the 
+        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the 
                                 default value.
         @return An instance of registry::value.
         @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
@@ -1178,7 +1213,7 @@ namespace registry
         //! Writes an value to the registry key specified by this handle.
         /*!
         The key must have been opened with the access_rights::set_value access right.
-        @param[in] value_name - a null-terminated string containing the value name. An empty name correspond to the
+        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                                 default value.
         @param[in] value - the content of the value.
         @throw registry::registry_error on underlying OS API errors, constructed with the first key set to 
@@ -1210,7 +1245,7 @@ namespace registry
 
         //! Deletes an registry value from the registry key specified by this handle.
         /*!
-        @param[in] value_name - a null-terminated string containing the value name. An empty name correspond to the
+        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                                 default value.
         @return `true` if the value was deleted, `false` if it did not exist.
         @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
@@ -1608,17 +1643,17 @@ namespace registry
         // TODO: ...
         bool operator!=(const key_iterator& rhs) const noexcept;
 
-        //! Accesses the pointed-to registry::key.
+        //! Accesses the pointed-to registry::key_entry.
         /*!
         @pre `*this != key_iterator()`.
-        @return Value of the key referred to by this iterator.
+        @return Value of the key_entry referred to by this iterator.
         */
         reference operator*() const;
 
-        //! Accesses the pointed-to registry::key.
+        //! Accesses the pointed-to registry::key_entry.
         /*!
         @pre `*this != key_iterator()`.
-        @return Pointer to the key referred to by this iterator.
+        @return Pointer to the key_entry referred to by this iterator.
         */
         pointer operator->() const;
 
@@ -1740,17 +1775,17 @@ namespace registry
         // TODO: ...
         bool operator!=(const recursive_key_iterator& rhs) const noexcept;
 
-        //! Accesses the pointed-to registry::key.
+        //! Accesses the pointed-to registry::key_entry.
         /*!
         @pre `*this != recursive_key_iterator()`.
-        @return Value of the key referred to by this iterator.
+        @return Value of the key_entry referred to by this iterator.
         */
         reference operator*() const;
 
-        //! Accesses the pointed-to registry::key.
+        //! Accesses the pointed-to registry::key_entry.
         /*!
         @pre `*this != recursive_key_iterator()`.
-        @return Pointer to the key referred to by this iterator.
+        @return Pointer to the key_entry referred to by this iterator.
         */
         pointer operator->() const;
 
@@ -2128,7 +2163,7 @@ namespace registry
     //! Check whether a registry value exists.
     /*!
     @param[in] key - an absolute key specifying the location of the value.
-    @param[in] value_name - a null-terminated string containing the value name. An empty name correspond to the
+    @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                             default value.
     @return `true` if the given name corresponds to an existing registry value, `false` otherwise.
     @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key` and
@@ -2162,7 +2197,7 @@ namespace registry
     //! Reads the content of an existing registry value.
     /*!
     @param[in] key - an absolute key specifying the location of the value.
-    @param[in] value_name - a null-terminated string containing the value name. An empty name correspond to the 
+    @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the 
                             default value.
     @return An instance of registry::value.
     @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key` and
@@ -2206,7 +2241,7 @@ namespace registry
     //! Writes an value to an existing registry key.
     /*!
     @param[in] key - an absolute key specifying the location of the value.
-    @param[in] value_name - a null-terminated string containing the value name. An empty name correspond to the
+    @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                             default value.
     @param[in] value - the content of the value.
     @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key` and
@@ -2235,7 +2270,7 @@ namespace registry
 
     //! Deletes an registry value.
     /*!
-    @param[in] value_name - a null-terminated string containing the value name. An empty name correspond to the
+    @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                             default value.
     @return `true` if the value was deleted, `false` if it did not exist.
     @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`
