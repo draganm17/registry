@@ -84,34 +84,6 @@ void prepare_stage() noexcept
     RegCloseKey(hkey);
 }
 
-struct TEST_BAD_KEY_NAME
-{
-    void operator()() noexcept
-    {
-        using namespace registry;
-
-        // bad_key_name::what()
-        {
-            bad_key_name ex;
-            assert(strlen(ex.what()));
-        }
-    }
-};
-
-struct TEST_BAD_VALUE_TYPE
-{
-    void operator()() noexcept
-    {
-        using namespace registry;
-
-        // bad_value_cast::what()
-        {
-            bad_value_cast ex;
-            assert(strlen(ex.what()));
-        }
-    }
-};
-
 struct TEST_REGISTRY_ERROR
 {
     void operator()() noexcept
@@ -123,28 +95,28 @@ struct TEST_REGISTRY_ERROR
             const auto ec = std::make_error_code(std::errc::not_enough_memory);
             registry_error ex(ec, "test");
 
-            assert(ex.key1().empty());
-            assert(ex.key2().empty());
+            assert(ex.key1() == key());
+            assert(ex.key2() == key());
             assert(ex.value_name().empty());
         }
 
         // registry_error::registry_error(std::error_code, const std::string&, const key&)
         {
             const auto ec = std::make_error_code(std::errc::not_enough_memory);
-            registry_error ex(ec, "test", key_id::current_user);
+            registry_error ex(ec, "test", key::from_key_id(key_id::current_user));
 
-            assert(ex.key1() == key_id::current_user);
-            assert(ex.key2().empty());
+            assert(ex.key1() == key::from_key_id(key_id::current_user));
+            assert(ex.key2() == key());
             assert(ex.value_name().empty());
         }
 
         // registry_error::registry_error(std::error_code, const std::string&, const key&, const key&)
         {
             const auto ec = std::make_error_code(std::errc::not_enough_memory);
-            registry_error ex(ec, "test", key_id::current_user, key_id::local_machine);
+            registry_error ex(ec, "test", key::from_key_id(key_id::current_user), key::from_key_id(key_id::local_machine));
 
-            assert(ex.key1() == key_id::current_user);
-            assert(ex.key2() == key_id::local_machine);
+            assert(ex.key1() == key::from_key_id(key_id::current_user));
+            assert(ex.key2() == key::from_key_id(key_id::local_machine));
             assert(ex.value_name().empty());
         }
 
@@ -152,10 +124,11 @@ struct TEST_REGISTRY_ERROR
         //                                const key&, const key&, string_view_type)
         {
             const auto ec = std::make_error_code(std::errc::not_enough_memory);
-            registry_error ex(ec, "test", key_id::current_user, key_id::local_machine, TEXT("test"));
+            registry_error ex(ec, "test", key::from_key_id(key_id::current_user), 
+                              key::from_key_id(key_id::local_machine), TEXT("test"));
 
-            assert(ex.key1() == key_id::current_user);
-            assert(ex.key2() == key_id::local_machine);
+            assert(ex.key1() == key::from_key_id(key_id::current_user));
+            assert(ex.key2() == key::from_key_id(key_id::local_machine));
             assert(ex.value_name() == TEXT("test"));
         }
     }
@@ -163,197 +136,317 @@ struct TEST_REGISTRY_ERROR
 
 struct TEST_KEY
 {
-    void test_iterator() noexcept
-    {
-        using namespace registry;
-
-        key k = TEXT("HKEY_CURRENT_user\\Inner1\\\\Inner2\\");
-        auto it = k.begin();
-
-        assert(*it ==         TEXT("HKEY_CURRENT_user"));
-        assert(*++it ==       TEXT("Inner1"));
-        assert((it++, *it) == TEXT("Inner2"));
-        assert(++it ==        k.end());
-    }
-
     void operator()() noexcept
     {
         using namespace registry;
 
-        // class key::iterator
-        {
-            test_iterator();
-        }
-
         // default constructor
         {
             key k;
-            assert(k.empty());
-        }
-
-        // key::key(key_id, view view)
-        {
-            key k(key_id::current_user, view::view_32bit);
-            assert(!k.empty());
-            assert(k.root() == key_id::current_user);
-            assert(k.name() == TEXT("HKEY_CURRENT_USER"));
-            assert(k.view() == view::view_32bit);
-            assert(k.subkey().empty());
-            assert(!k.has_subkey() && k.subkey().empty());
-            assert(!k.has_parent_key() && k.parent_key().empty());
+            assert(k == key(string_type()));
         }
 
         // key::key(string_view_type, view)
         {
-            int exceptions = 0;
-
-            // invalid (empty) key string
-            try {
-                key k1 = TEXT("");
-            } catch(const bad_key_name&) {
-                ++exceptions;
-            }
-            assert(exceptions == 1);
-
-            // invalid (non-empty) key string
-            try {
-                key k2 = TEXT("HKEY_INVALID");
-            } catch(const bad_key_name&) {
-                ++exceptions;
-            }
-            assert(exceptions == 2);
-
-            // valid key string
-            key k3(TEXT("HKEY_CURRENT_user\\Test"), view::view_32bit);
-            assert(!k3.empty());
-            assert(k3.root() == key_id::current_user);
-            assert(k3.name() == TEXT("HKEY_CURRENT_user\\Test"));
-            assert(k3.view() == view::view_32bit);
-            assert(k3.has_subkey() && k3.subkey() == TEXT("Test"));
-            assert(k3.has_parent_key() && !k3.parent_key().empty());
+            key k(TEXT("HKEY_CURRENT_user\\Test"), view::view_32bit);
+            assert(k.name() == TEXT("HKEY_CURRENT_user\\Test"));
+            assert(k.view() == view::view_32bit);
         }
-        
-        // key::key(key_id, string_view_type, view)
+
+        // key::key(InputIt, InputIt, view)
         {
-            key k(key_id::local_machine, TEXT("Test\\Inner\\"), view::view_64bit);
-            assert(!k.empty());
-            assert(k.root() == key_id::local_machine);
-            assert(k.name() == TEXT("HKEY_LOCAL_MACHINE\\Test\\Inner\\"));
-            assert(k.view() == view::view_64bit);
-            assert(k.has_subkey() && k.subkey() == TEXT("Test\\Inner\\"));
-            assert(k.has_parent_key() && !k.parent_key().empty());
+            // TODO: ...
         }
 
         // ==, != operators
+        //{
+        //    key k1, k2;
+        //    key k3 = key_id::current_user;
+        //    key k4 = key_id::current_user;
+        //    key k5  (key_id::current_user, view::view_64bit);
+        //    key k6 = TEXT("HKEY_LOCAL_MACHINE");
+        //    key k7 = TEXT("HKEY_LOCAL_machine");
+        //
+        //    // a key is equal to itself
+        //    assert(  k1 == k1 );  // testing operator ==
+        //    assert(  k3 == k3 );
+        //    assert(!(k1 != k1));  // testing operator !=
+        //    assert(!(k3 != k3));
+        //
+        //    // two empty keys are equal
+        //    assert(  k1 == k2 );  // testing operator ==
+        //    assert(!(k1 != k2));  // testing operator !=
+        //
+        //    // an empty key is not equal to a non-empty one
+        //    assert(!(k1 == k3));  // testing operator ==
+        //    assert(  k1 != k3 );  // testing operator !=
+        //
+        //    // two non-empty identical keys are equal
+        //    assert(  k3 == k4 );  // testing operator ==
+        //    assert(!(k3 != k4));  // testing operator !=
+        //
+        //    // two different keys are not equal
+        //    assert(!(k4 == k5));  // testing operator ==
+        //    assert(!(k6 == k7));
+        //    assert(  k4 != k5 );  // testing operator !=
+        //    assert(  k6 != k7 );
+        //}
+
+        // key::compare()
         {
-            key k1, k2;
-            key k3 = key_id::current_user;
-            key k4 = key_id::current_user;
-            key k5  (key_id::current_user, view::view_64bit);
-            key k6 = TEXT("HKEY_LOCAL_MACHINE");
-            key k7 = TEXT("HKEY_LOCAL_machine");
-
-            // a key is equal to itself
-            assert(  k1 == k1 );  // testing operator ==
-            assert(  k3 == k3 );
-            assert(!(k1 != k1));  // testing operator !=
-            assert(!(k3 != k3));
-
-            // two empty keys are equal
-            assert(  k1 == k2 );  // testing operator ==
-            assert(!(k1 != k2));  // testing operator !=
-
-            // an empty key is not equal to a non-empty one
-            assert(!(k1 == k3));  // testing operator ==
-            assert(  k1 != k3 );  // testing operator !=
-
-            // two non-empty identical keys are equal
-            assert(  k3 == k4 );  // testing operator ==
-            assert(!(k3 != k4));  // testing operator !=
-
-            // two different keys are not equal
-            assert(!(k4 == k5));  // testing operator ==
-            assert(!(k6 == k7));
-            assert(  k4 != k5 );  // testing operator !=
-            assert(  k6 != k7 );
+            // TODO: ...
         }
 
-        // copy / move
+        // key::begin()
+        // key::end()
+        // key::iterator
         {
-            key k1(TEXT("HKEY_LOCAL_MACHINE\\Test"), view::view_64bit);
+            key k01;
+            assert(k01.begin() == k01.end());
 
-            // copy construction
-            key k2 = k1;
-            assert(k1 == k2);
+            key k02 = TEXT("\\");
+            assert(k02.begin() == k02.end());
 
-            // copy assignment
-            key k3;
-            k3 = k1;
-            assert(k1 == k3);
+            key k03 = TEXT("\\\\");
+            assert(k03.begin() == k03.end());
 
-            // move construction
-            key k4 = std::move(k2);
-            assert(k4 == k1);
+            key k04 = TEXT("Test");
+            assert(std::distance(k04.begin(), k04.end()) == 1);
+            assert(*k04.begin() == TEXT("Test"));
 
-            // move assignment
-            key k5 = std::move(k3);
-            assert(k5 == k1);
+            key k05 = TEXT("\\Test");
+            assert(std::distance(k05.begin(), k05.end()) == 1);
+            assert(*k05.begin() == TEXT("Test"));
+
+            key k06 = TEXT("Test\\");
+            assert(std::distance(k06.begin(), k06.end()) == 1);
+            assert(*k06.begin() == TEXT("Test"));
+
+            key k07 = TEXT("\\\\Test\\\\");
+            assert(std::distance(k07.begin(), k07.end()) == 1);
+            assert(*k07.begin() == TEXT("Test"));
+
+            key k08 = TEXT("Test1\\Test2\\Test3");
+            assert(std::distance(k08.begin(), k08.end()) == 3);
+            assert(*k08.begin() == TEXT("Test1"));
+            assert(*(++k08.begin()) == TEXT("Test2"));
+            assert(*(++(++k08.begin())) == TEXT("Test3"));
+
+            key k09 = TEXT("\\Test1\\Test2\\Test3");
+            assert(std::distance(k09.begin(), k09.end()) == 3);
+            assert(*k09.begin() == TEXT("Test1"));
+            assert(*(++k09.begin()) == TEXT("Test2"));
+            assert(*(++(++k09.begin())) == TEXT("Test3"));
+
+            key k10 = TEXT("Test1\\Test2\\Test3\\");
+            assert(std::distance(k10.begin(), k10.end()) == 3);
+            assert(*k10.begin() == TEXT("Test1"));
+            assert(*(++k10.begin()) == TEXT("Test2"));
+            assert(*(++(++k10.begin())) == TEXT("Test3"));
+
+            key k11 = TEXT("\\\\Test1\\Test2\\\\Test3\\\\");
+            assert(std::distance(k11.begin(), k11.end()) == 3);
+            assert(*k11.begin() == TEXT("Test1"));
+            assert(*(++k11.begin()) == TEXT("Test2"));
+            assert(*(++(++k11.begin())) == TEXT("Test3"));
+
+            key k12 = TEXT("Test1\\Test2\\Test3");
+            auto k12_it1 = k12.begin();
+            std::advance(k12_it1, 3);
+            assert(k12_it1 == k12.end());
+
+            auto k12_it2 = k12.end();
+            assert(*--k12_it2 == TEXT("Test3"));
+            assert(*--k12_it2 == TEXT("Test2"));
+            assert(*--k12_it2 == TEXT("Test1"));
         }
 
-        // key::append
+        // key::has_root_key()
         {
-            key k = TEXT("HKEY_CURRENT_USER\\Test");
-            k.append(TEXT("Inner1\\")).append(TEXT("Inner2\\\\")).append(TEXT("Inner3"));
-            assert(k.name() == TEXT("HKEY_CURRENT_USER\\Test\\Inner1\\Inner2\\\\Inner3"));
+            key k1;
+            assert(k1.has_root_key() == (k1.begin() != k1.end()));
+
+            key k2 = TEXT("Test");
+            assert(k2.has_root_key() == (k2.begin() != k2.end()));
+
+            key k3 = TEXT("Test1\\Test2\\Test3");
+            assert(k3.has_root_key() == (k3.begin() != k3.end()));
         }
 
-        // key::replace_root
+        // key::has_leaf_key()
         {
-            key k = TEXT("HKEY_CURRENT_USER\\Test");
-            k.replace_root(key_id::local_machine);
-            assert(k.root() == key_id::local_machine);
-            assert(k.name() == TEXT("HKEY_LOCAL_MACHINE\\Test"));
+            key k1;
+            assert(k1.has_leaf_key() == (k1.begin() != k1.end()));
+
+            key k2 = TEXT("Test");
+            assert(k2.has_leaf_key() == (k2.begin() != k2.end()));
+
+            key k3 = TEXT("Test1\\Test2\\Test3");
+            assert(k3.has_leaf_key() == (k3.begin() != k3.end()));
         }
 
-        // key::replace_subkey
+        // key::has_parent_key()
         {
-            key k = TEXT("HKEY_CURRENT_USER\\Test\\");
-            k.replace_subkey(TEXT("Test2\\Inner"));
-            assert(k.root() == key_id::current_user);
-            assert(k.subkey() == TEXT("Test2\\Inner"));
-            assert(k.name() == TEXT("HKEY_CURRENT_USER\\Test2\\Inner"));
+            key k1;
+            assert(k1.has_parent_key() == (k1.has_root_key() && ++k1.begin() != k1.end()));
+
+            key k2 = TEXT("Test");
+            assert(k2.has_parent_key() == (k2.has_root_key() && ++k2.begin() != k2.end()));
+
+            key k3 = TEXT("Test1\\Test2\\Test3");
+            assert(k3.has_parent_key() == (k3.has_root_key() && ++k3.begin() != k3.end()));
         }
 
-        // key::replace_view
+        // key::root_key()
         {
-            key k = TEXT("HKEY_CURRENT_USER\\Test");
-            k.replace_view(view::view_64bit);
-            assert(k.view() == view::view_64bit);
+            key k1;
+            assert(k1.root_key() == (k1.has_root_key() ? key(*k1.begin(), k1.view()) : key(string_type(), k1.view())));
+
+            key k2 = TEXT("Test");
+            assert(k2.root_key() == (k2.has_root_key() ? key(*k2.begin(), k2.view()) : key(string_type(), k2.view())));
+
+            key k3 = TEXT("Test1\\Test2\\Test3");
+            assert(k3.root_key() == (k3.has_root_key() ? key(*k3.begin(), k3.view()) : key(string_type(), k3.view())));
         }
 
-        // key::remove_subkey
+        // key::leaf_key()
         {
-            key k1(TEXT("HKEY_CURRENT_USER\\Test\\Inner"));
-            k1.remove_subkey();
-            assert(k1.has_subkey() == false);
+            key k1;
+            assert(k1.leaf_key() == (k1.has_leaf_key() ? key(*--k1.end(), k1.view()) : key(string_type(), k1.view())));
+
+            key k2 = TEXT("Test");
+            assert(k2.leaf_key() == (k2.has_leaf_key() ? key(*--k2.end(), k2.view()) : key(string_type(), k2.view())));
+
+            key k3 = TEXT("Test1\\Test2\\Test3");
+            assert(k3.leaf_key() == (k3.has_leaf_key() ? key(*--k3.end(), k3.view()) : key(string_type(), k3.view())));
+        }
+
+        // key::parent_key()
+        {
+            key k1;
+            assert(k1.parent_key() == (k1.has_parent_key() ? key(k1.begin(), --k1.end(), k1.view()) : key(string_type(), k1.view())));
+
+            key k2 = TEXT("Test");
+            assert(k2.parent_key() == (k2.has_parent_key() ? key(k2.begin(), --k2.end(), k2.view()) : key(string_type(), k2.view())));
+
+            key k3 = TEXT("Test1\\Test2\\Test3");
+            assert(k2.parent_key() == (k2.has_parent_key() ? key(k2.begin(), --k2.end(), k2.view()) : key(string_type(), k2.view())));
+        }
+
+        // key::is_absolute()
+        // key::is_relative()
+        {
+            key k1;
+            assert(!k1.is_absolute());
+            assert(k1.is_relative() == !k1.is_absolute());
+
+            key k2 = TEXT("Test1\\Test2\\Test3");
+            assert(!k2.is_absolute());
+            assert(k2.is_relative() == !k2.is_absolute());
+
+            key k3 = TEXT("\\HKEY_CURRENT_USER\\Test2\\Test3");
+            assert(!k3.is_absolute());
+            assert(k3.is_relative() == !k3.is_absolute());
+
+            key k4 = TEXT("HKEY_CURRENT_USER\\Test2\\Test3");
+            assert(k4.is_absolute());
+            assert(k4.is_relative() == !k4.is_absolute());
+        }
+
+        // key::assign(string_view_type, view)
+        {
+            key k1(TEXT("Test1"), view::view_32bit);
+            key k2(TEXT("Test1\\Test2\\Test3"), view::view_64bit);
+
+            assert(k1.assign(k2.name(), k2.view()) == k2);
+        }
+
+        // key::assign(InputIt, InputIt, view)
+        {
+            // TODO: ...
+        }
+
+        // key::append(string_view_type)
+        {
+            // redundant separator case 1
+            key k1 = TEXT("HKEY_CURRENT_USER\\");
+            assert(k1.append(TEXT("Test")).name() == TEXT("HKEY_CURRENT_USER\\Test"));
+
+            // redundant separator case 2
+            key k2 = TEXT("");
+            key k3 = TEXT("\\\\");
+            assert(k2.append(TEXT("Test")).name() == TEXT("Test"));
+            assert(k3.append(TEXT("Test")).name() == TEXT("\\\\Test"));
+
+            // redundant separator case 3
+            key k4 = TEXT("HKEY_CURRENT_USER");
+            assert(k4.append(TEXT("")).name() == TEXT("HKEY_CURRENT_USER"));
+
+            // redundant separator case 4
+            key k5 = TEXT("HKEY_CURRENT_USER");
+            assert(k5.append(TEXT("\\Test")).name() == TEXT("HKEY_CURRENT_USER\\Test"));
+
+            // adds a separator
+            key k6 = TEXT("HKEY_CURRENT_USER");
+            assert(k6.append(TEXT("Test")).name() == TEXT("HKEY_CURRENT_USER\\Test"));
+        }
+
+        // key::concat(string_view_type)
+        {
+            key k1, k1_copy = k1;
+            assert(k1.concat(TEXT("Test")) == key(k1_copy.name() + TEXT("Test"), k1_copy.view()));
+
+            key k2 = TEXT("HKEY_CURRENT_USER"), k2_copy = k2;
+            assert(k2.concat(TEXT("Test")) == key(k2_copy.name() + TEXT("Test"), k2_copy.view()));
+
+            key k3 = TEXT("HKEY_CURRENT_USER\\"), k3_copy = k3;
+            assert(k3.concat(TEXT("Test")) == key(k3_copy.name() + TEXT("Test"), k3_copy.view()));
+        }
+
+        // key::remove_leaf()
+        {
+            key k1 = TEXT("HKEY_CURRENT_USER");
+            assert(k1.remove_leaf().name() == TEXT(""));
+
+            key k2 = TEXT("HKEY_CURRENT_USER\\");
+            assert(k2.remove_leaf().name() == TEXT(""));
+
+            key k3 = TEXT("\\HKEY_CURRENT_USER\\");
+            assert(k3.remove_leaf().name() == TEXT(""));
+
+            key k4 = TEXT("HKEY_CURRENT_USER\\Test");
+            assert(k4.remove_leaf().name() == TEXT("HKEY_CURRENT_USER"));
+
+            key k5 = TEXT("HKEY_CURRENT_USER\\Test\\\\");
+            assert(k5.remove_leaf().name() == TEXT("HKEY_CURRENT_USER"));
+        }
+
+        // key::key::replace_leaf(string_view_type)
+        {
+            key k1 = TEXT("HKEY_CURRENT_USER"), k1_copy = k1;
+            assert(k1.replace_leaf(TEXT("replacement")) == k1_copy.remove_leaf().append(TEXT("replacement")));
+
+            key k2 = TEXT("HKEY_CURRENT_USER\\"), k2_copy = k2;
+            assert(k2.replace_leaf(TEXT("replacement")) == k2_copy.remove_leaf().append(TEXT("replacement")));
+
+            key k3 = TEXT("\\HKEY_CURRENT_USER\\"), k3_copy = k3;
+            assert(k3.replace_leaf(TEXT("replacement")) == k3_copy.remove_leaf().append(TEXT("replacement")));
+
+            key k4 = TEXT("HKEY_CURRENT_USER\\Test"), k4_copy = k4;
+            assert(k4.replace_leaf(TEXT("replacement")) == k4_copy.remove_leaf().append(TEXT("replacement")));
+
+            key k5 = TEXT("HKEY_CURRENT_USER\\Test\\\\"), k5_copy = k5;
+            assert(k5.replace_leaf(TEXT("replacement")) == k5_copy.remove_leaf().append(TEXT("replacement")));
         }
 
         // key::swap
         {
-            const key ref1 = key_id::current_user;
-            const key ref2(TEXT("HKEY_LOCAL_MACHINE\\Test"), view::view_64bit);
+            key k1(TEXT("HKEY_CURRENT_USER\\Test"), view::view_32bit),  k1_copy = k1;
+            key k2(TEXT("HKEY_LOCAL_MACHINE\\Test"), view::view_64bit), k2_copy = k2;
 
-            key copy1 = ref1;
-            key copy2 = ref2;
-            swap(copy1, copy2);
-            assert(copy1 == ref2 && copy2 == ref1);
+            swap(k1, k2);
+            assert(k1 == k2_copy && k2 == k1_copy);
         }
-        //{
-        //    key k(TEXT("HKEY_CURRENT_user\\Test\\Inner\\"));
-        //    assert((k = k.parent_key()) == key(TEXT("HKEY_CURRENT_user\\Test")));
-        //    assert((k = k.parent_key()) == key(TEXT("HKEY_CURRENT_user")));
-        //    assert((k = k.parent_key()) == key());
-        //}
     }
 };
 
@@ -561,28 +654,6 @@ struct TEST_VALUE
             assert(  v3 != v4 );
         }
 
-        // copy / move
-        {
-            value v1(sz_value_tag{}, TEXT("test"));
-
-            // copy construction
-            value v2 = v1;
-            assert(v1 == v2);
-
-            // copy assignment
-            value v3;
-            v3 = v1;
-            assert(v1 == v3);
-
-            // move construction
-            value v4 = std::move(v2);
-            assert(v4 == v1);
-
-            // move assignment
-            value v5 = std::move(v3);
-            assert(v5 == v1);
-        }
-
         // assign(none_value_tag)
         {
             value v1(none_value_tag{});
@@ -674,17 +745,17 @@ struct TEST_VALUE
 
         // value::swap
         {
-            const value ref1(sz_value_tag{}, TEXT("test_1"));
-            const value ref2(expand_sz_value_tag{}, TEXT("test_2"));
+            value v1(sz_value_tag{}, TEXT("test_1")),        v1_copy = v1;
+            value v2(expand_sz_value_tag{}, TEXT("test_2")), v2_copy = v2;
 
-            value copy1 = ref1;
-            value copy2 = ref2;
-            swap(copy1, copy2);
-            assert(copy1 == ref2 && copy2 == ref1);
+            swap(v1, v2);
+            assert(v1 == v2_copy && v2 == v1_copy);
         }
     }
 };
 
+
+/*
 struct TEST_VALUE_ENTRY
 {
     void operator()() noexcept
@@ -1357,7 +1428,6 @@ struct TEST_FREE_FUNCTIONS
             assert(remove_all(k2, ec) == 3 && !ec && !exists(k2));
         }
 
-        /*
 
         //equivalent
         {
@@ -1374,28 +1444,24 @@ struct TEST_FREE_FUNCTIONS
             auto ans = equivalent(k1, k2);
             assert((is_64bit_machine && ans == false) || (!is_64bit_machine && ans == true));
         }
-
-        */
     }
 };
-
+*/
 
 int main()
 {
-    prepare_stage();
-    BOOST_SCOPE_EXIT_ALL(&) { clear_stage(); };
+    //prepare_stage();
+    //BOOST_SCOPE_EXIT_ALL(&) { clear_stage(); };
 
     try {
-        TEST_BAD_KEY_NAME()();
-        TEST_BAD_VALUE_TYPE()();
         TEST_REGISTRY_ERROR()();
         TEST_KEY()();
         TEST_VALUE()();
-        TEST_VALUE_ENTRY()();
-        TEST_KEY_ITERATOR()();
-        TEST_RECURSIVE_KEY_ITERATOR()();
-        TEST_VALUE_ITERATOR()();
-        TEST_FREE_FUNCTIONS()();
+        //TEST_VALUE_ENTRY()();
+        //TEST_KEY_ITERATOR()();
+        //TEST_RECURSIVE_KEY_ITERATOR()();
+        //TEST_VALUE_ITERATOR()();
+        //TEST_FREE_FUNCTIONS()();
     } catch (...) {
         assert(false);
     }
