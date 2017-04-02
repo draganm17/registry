@@ -698,11 +698,13 @@ key key_handle::key() const { return m_state ? m_state->key : registry::key(); }
 access_rights key_handle::rights() const noexcept { return m_state ? m_state->rights : access_rights::unknown; }
 
 key_handle::native_handle_type key_handle::native_handle() const noexcept
-{ return m_state ? static_cast<native_handle_type>(m_state->handle) : native_handle_type(); }
+{
+    return m_state ? static_cast<native_handle_type>(m_state->handle) : native_handle_type{};
+}
 
 bool key_handle::valid() const noexcept { return static_cast<bool>(m_state); }
 
-bool key_handle::exists(string_view_type value_name)
+bool key_handle::exists(string_view_type value_name) const
 {
     std::error_code ec;
     decltype(auto) res = exists(value_name, ec);
@@ -710,7 +712,7 @@ bool key_handle::exists(string_view_type value_name)
     return res;
 }
 
-bool key_handle::exists(string_view_type value_name, std::error_code& ec)
+bool key_handle::exists(string_view_type value_name, std::error_code& ec) const
 {
     ec.clear();
     LSTATUS rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), 
@@ -759,7 +761,7 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
         info.last_write_time = key_time_type::clock::from_time_t(file_time_to_time_t(time));
     }
 
-    return !ec ? info : key_info();
+    return !ec ? info : key_info{};
 }
 
 value key_handle::read_value(string_view_type value_name) const
@@ -1053,6 +1055,14 @@ void value_entry::swap(value_entry& other) noexcept
 //                              class key_iterator                                    //
 //------------------------------------------------------------------------------------//
 
+struct key_iterator::state
+{
+    uint32_t                              idx;
+    key_handle                            hkey;
+    key_entry                             entry;
+    std::vector<string_type::value_type>  buffer;
+};
+
 key_iterator::key_iterator(const key& key)
 {
     std::error_code ec;
@@ -1064,13 +1074,10 @@ key_iterator::key_iterator(const key& key)
 key_iterator::key_iterator(const key& key, std::error_code& ec)
 {
     ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) {
-        if (ec) swap(key_iterator());
-        if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear();
-    };
-
     auto handle = open(key, access_rights::enumerate_sub_keys, ec);
-    if (!ec) swap(key_iterator(handle, ec));
+
+    if (!ec) swap(key_iterator(handle, ec)); else
+    if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear();
 }
 
 key_iterator::key_iterator(const key_handle& handle)
@@ -1082,43 +1089,33 @@ key_iterator::key_iterator(const key_handle& handle)
 }
 
 key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
-    : m_idx(-1)
-    , m_hkey(handle)
-    , m_entry(handle)
+    : m_state(std::make_shared<state>(state{ uint32_t(-1), handle, key_entry(handle) }))
 {
     ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) { if (ec) swap(key_iterator()); };
+    BOOST_SCOPE_EXIT_ALL(&) { if (ec) m_state.reset(); };
     key_info info = handle.info(key_info_mask::read_max_subkey_size, ec);
 
     if (!ec) {
-        m_buffer.resize(++info.max_subkey_size, TEXT('_'));
-        m_entry.m_key.append({ m_buffer.data(), m_buffer.size() });
+        m_state->buffer.resize(++info.max_subkey_size, TEXT('_'));
+        m_state->entry.m_key.append({ m_state->buffer.data(), m_state->buffer.size() });
         increment(ec);
     }
 }
 
-bool key_iterator::operator==(const key_iterator& rhs) const noexcept
-{
-    // TODO: ...
-    return 0;
-
-    //return (!m_state || !rhs.m_state) ? (!m_state && !rhs.m_state)
-    //                                  : (reinterpret_cast<key&>(m_state->key_state) == 
-    //                                     reinterpret_cast<key&>(rhs.m_state->key_state));
-}
+bool key_iterator::operator==(const key_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
 
 bool key_iterator::operator!=(const key_iterator& rhs) const noexcept { return !(*this == rhs); }
 
 key_iterator::reference key_iterator::operator*() const
 {
     assert(*this != key_iterator());
-    return m_entry;
+    return m_state->entry;
 }
 
 key_iterator::pointer key_iterator::operator->() const
 {
     assert(*this != key_iterator());
-    return &m_entry;
+    return &m_state->entry;
 }
 
 key_iterator& key_iterator::operator++()
@@ -1137,7 +1134,7 @@ key_iterator& key_iterator::increment(std::error_code& ec)
 
     ec.clear();
     BOOST_SCOPE_EXIT_ALL(&) {
-        if (ec) swap(key_iterator());
+        if (ec) m_state.reset();
         if (ec.value() == ERROR_NO_MORE_ITEMS) ec.clear();
     };
 
@@ -1146,26 +1143,20 @@ key_iterator& key_iterator::increment(std::error_code& ec)
     //       iterator was constructed. Therefore this behaviour is consistent with what the class documentation states.
 
     do {
-        DWORD buffer_size = m_buffer.size();
-        HKEY hkey = reinterpret_cast<HKEY>(m_hkey.native_handle());
-        LSTATUS rc = RegEnumKeyEx(hkey, ++m_idx, m_buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
+        DWORD buffer_size = m_state->buffer.size();
+        HKEY hkey = reinterpret_cast<HKEY>(m_state->hkey.native_handle());
+        LSTATUS rc = RegEnumKeyEx(hkey, ++m_state->idx, m_state->buffer.data(), 
+                                  &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
         if (!(ec = std::error_code(rc, std::system_category()))) {
-            m_entry.m_key.replace_leaf({ m_buffer.data(), buffer_size });
+            m_state->entry.m_key.replace_leaf({ m_state->buffer.data(), buffer_size });
         }
     } while (ec.value() == ERROR_MORE_DATA);
 
     return *this;
 }
 
-void key_iterator::swap(key_iterator& other) noexcept
-{
-    using std::swap;
-    swap(m_idx, other.m_idx);
-    swap(m_hkey, other.m_hkey);
-    swap(m_entry, other.m_entry);
-    swap(m_buffer, other.m_buffer);
-}
+void key_iterator::swap(key_iterator& other) noexcept { m_state.swap(other.m_state); }
 
 
 //------------------------------------------------------------------------------------//
@@ -1206,8 +1197,8 @@ recursive_key_iterator::recursive_key_iterator(const key_handle& handle, std::er
 
 bool recursive_key_iterator::operator==(const recursive_key_iterator& rhs) const noexcept
 {
-    return (m_stack.empty() || rhs.m_stack.empty()) ? (m_stack.empty() && rhs.m_stack.empty())
-                                                    : (m_stack.back() == rhs.m_stack.back());
+    return 0;
+    // TODO: ...
 }
 
 bool recursive_key_iterator::operator!=(const recursive_key_iterator& rhs) const noexcept { return !(*this == rhs); }
@@ -1273,6 +1264,15 @@ void recursive_key_iterator::swap(recursive_key_iterator& other) noexcept { m_st
 //                             class value_iterator                                   //
 //------------------------------------------------------------------------------------//
 
+struct value_iterator::state
+{
+    uint32_t                              idx;
+    key_handle                            hkey;
+    value_entry                           entry;
+    std::vector<string_type::value_type>  buffer;
+
+};
+
 value_iterator::value_iterator(const key& key)
 {
     std::error_code ec;
@@ -1284,13 +1284,10 @@ value_iterator::value_iterator(const key& key)
 value_iterator::value_iterator(const key& key, std::error_code& ec)
 {
     ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) {
-        if (ec) swap(value_iterator());
-        if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear();
-    };
-
     auto handle = open(key, access_rights::query_value, ec);
-    if (!ec) swap(value_iterator(handle, ec));
+
+    if (!ec) swap(value_iterator(handle, ec)); else
+    if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear();
 }
 
 value_iterator::value_iterator(const key_handle& handle)
@@ -1302,43 +1299,33 @@ value_iterator::value_iterator(const key_handle& handle)
 }
 
 value_iterator::value_iterator(const key_handle& handle, std::error_code& ec)
-    : m_idx(-1)
-    , m_hkey(handle)
-    , m_entry(handle, string_type())
+    : m_state(std::make_shared<state>(state{ uint32_t(-1), handle, value_entry(handle, string_type()) }))
 {
     ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) { if (ec) swap(value_iterator()); };
+    BOOST_SCOPE_EXIT_ALL(&) { if (ec) m_state.reset(); };
     key_info info = handle.info(key_info_mask::read_max_value_name_size, ec);
 
     if (!ec) {
-        m_buffer.resize(++info.max_value_name_size);
-        m_entry.m_value_name.reserve(info.max_value_name_size);
+        m_state->buffer.resize(++info.max_value_name_size);
+        m_state->entry.m_value_name.reserve(info.max_value_name_size);
         increment(ec);
     }
 }
 
-bool value_iterator::operator==(const value_iterator& rhs) const noexcept
-{
-    // TODO: ...
-    return 0;
-
-    //return (!m_state || !rhs.m_state) ? (!m_state && !rhs.m_state)
-    //                                  : (reinterpret_cast<value_entry&>(m_state->entry_state) ==
-    //                                     reinterpret_cast<value_entry&>(rhs.m_state->entry_state));
-}
+bool value_iterator::operator==(const value_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
 
 bool value_iterator::operator!=(const value_iterator& rhs) const noexcept { return !(*this == rhs); }
 
 value_iterator::reference value_iterator::operator*() const
 {
     assert(*this != value_iterator());
-    return m_entry;
+    return m_state->entry;
 }
 
 value_iterator::pointer value_iterator::operator->() const
 {
     assert(*this != value_iterator());
-    return &m_entry;
+    return &m_state->entry;
 }
 
 value_iterator& value_iterator::operator++()
@@ -1357,7 +1344,7 @@ value_iterator& value_iterator::increment(std::error_code& ec)
 
     ec.clear();
     BOOST_SCOPE_EXIT_ALL(&) {
-        if (ec) swap(value_iterator());
+        if (ec) m_state.reset();
         if (ec.value() == ERROR_NO_MORE_ITEMS) ec.clear();
     };
 
@@ -1366,31 +1353,43 @@ value_iterator& value_iterator::increment(std::error_code& ec)
     //       iterator was constructed. Therefore this behaviour is consistent with what the class documentation states.
 
     do {
-        DWORD buffer_size = m_buffer.size();
-        HKEY hkey = reinterpret_cast<HKEY>(m_hkey.native_handle());
-        LSTATUS rc = RegEnumValue(hkey, ++m_idx, m_buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
+        DWORD buffer_size = m_state->buffer.size();
+        HKEY hkey = reinterpret_cast<HKEY>(m_state->hkey.native_handle());
+        LSTATUS rc = RegEnumValue(hkey, ++m_state->idx, m_state->buffer.data(), 
+                                  &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
         if (!(ec = std::error_code(rc, std::system_category()))) {
-            m_entry.m_value_name.assign(m_buffer.data(), buffer_size);
+            m_state->entry.m_value_name.assign(m_state->buffer.data(), buffer_size);
         }
     } while (ec.value() == ERROR_MORE_DATA);
 
     return *this;
 }
 
-void value_iterator::swap(value_iterator& other) noexcept 
-{ 
-    using std::swap;
-    swap(m_idx, other.m_idx);
-    swap(m_hkey, other.m_hkey);
-    swap(m_entry, other.m_entry);
-    swap(m_buffer, other.m_buffer);
-}
+void value_iterator::swap(value_iterator& other) noexcept { m_state.swap(other.m_state); }
 
 
 //------------------------------------------------------------------------------------//
 //                             NON-MEMBER FUNCTIONS                                   //
 //------------------------------------------------------------------------------------//
+
+space_info space()
+{
+    std::error_code ec;
+    decltype(auto) res = space(ec);
+    if (ec) throw registry_error(ec, __FUNCTION__);
+    return res;
+}
+
+space_info space(std::error_code& ec)
+{
+    ec.clear();
+    space_info info;
+    BOOL success = GetSystemRegistryQuota(reinterpret_cast<DWORD*>(&info.capacity), 
+                                          reinterpret_cast<DWORD*>(&info.size));
+
+    return success ? info : (ec = std::error_code(GetLastError(), std::system_category()), space_info{});
+}
 
 key_handle open(const key& key, access_rights rights)
 {
@@ -1465,7 +1464,7 @@ key_info info(const key& key, key_info_mask mask, std::error_code& ec)
 {
     ec.clear();
     auto handle = open(key, access_rights::query_value, ec);
-    return !ec ? handle.info(mask, ec) : key_info();
+    return !ec ? handle.info(mask, ec) : key_info{};
 }
 
 value read_value(const key& key, string_view_type value_name)

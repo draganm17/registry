@@ -303,6 +303,31 @@ namespace registry
         key_time_type  last_write_time;
     };
 
+    //! Defines a type of object that stores information about the size of the registry on the system.
+    struct space_info
+    {
+        /*! The maximum size that the registry is allowed to attain on this system, in bytes. */
+        uint32_t  capacity;
+
+        /*! The current size of the registry, in bytes. */
+        uint32_t  size;
+    };
+
+    // TODO: ...
+    template <typename T> struct hash;
+
+    // TODO: ...
+    template <> struct hash<key>
+    {
+        size_t operator()(const key& key) const noexcept;
+    };
+
+    // TODO: ...
+    template <> struct hash<value>
+    {
+        size_t operator()(const value& value) const noexcept;
+    };
+
     //------------------------------------------------------------------------------------//
     //                             class bad_value_cast                                   //
     //------------------------------------------------------------------------------------//
@@ -362,7 +387,7 @@ namespace registry
         Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
         the first key is set to `key1`, the second key is set to `key2`, the value name is set to `value_name`.*/
         registry_error(std::error_code ec, const std::string& msg,
-            const key& key1, const key& key2, string_view_type value_name);
+                       const key& key1, const key& key2, string_view_type value_name);
 
     public:
         //! Returns the first key that was stored in the exception object.
@@ -412,14 +437,17 @@ namespace registry
         static const view default_view;
 
     public:
-        // TODO: ...
+        //! Constructs an key object from a given predefined key identifier.
+        /*!
+        The name of the returned key is equal to the string representation of the predefined key identifier. The 
+        returned key is an absolute key.
+        */
         static key from_key_id(key_id id);
 
     public:
         //! Default constructor.
         /*!
-        Equivalent to TODO: ...
-        @post `*this == other`.
+        Equivalent to `key(string_type())`.
         */
         key() noexcept;
 
@@ -588,7 +616,7 @@ namespace registry
 
         //! Concatenates the key name with `subkey` without introducing a key separator.
         /*!
-        Equivalent to `*this = key(name().append(subkey.data(), subkey.size()), view())`.
+        Equivalent to `*this = key(name() + static_cast<string_type>(subkey)), view())`.
         @return `*this`.
         */
         key& concat(string_view_type subkey);
@@ -632,9 +660,6 @@ namespace registry
         using reference =         const value_type&;
         using iterator_category = std::bidirectional_iterator_tag;
 
-    private:
-        iterator() noexcept = default;
-
     public:
         //! Checks whether `*this` is equal to `rhs`.
         /*!
@@ -650,14 +675,14 @@ namespace registry
 
         //! Accesses the pointed-to registry::string_view_type.
         /*!
-        @pre `*this` is not the end iterator.
+        @pre `*this` is a valid iterator and not the end iterator.
         @return Value of the string_view_type referred to by this iterator.
         */
         reference operator*() const noexcept;
 
         //! Accesses the pointed-to registry::string_view_type.
         /*!
-        @pre `*this` is not the end iterator.
+        @pre `*this` is a valid iterator and not the end iterator.
         @return Pointer to the string_view_type referred to by this iterator.
         */
         pointer operator->() const noexcept;
@@ -665,25 +690,25 @@ namespace registry
     public:
         //! Advances the iterator to the next entry, then returns `*this`.
         /*!
-        @pre `*this` is not the end iterator.
+        @pre `*this` is a valid iterator and not the end iterator.
         */
         iterator& operator++() noexcept;
 
         //! Makes a copy of `*this`, calls operator++(), then returns the copy.
         /*!
-        @pre `*this` is not the end iterator.
+        @pre `*this` is a valid iterator and not the end iterator.
         */
         iterator operator++(int) noexcept;
 
         //! Shifts the iterator to the previous entry, then returns `*this`.
         /*!
-        @pre `*this` is not the begin iterator.
+        @pre `*this` is a valid iterator and not the begin iterator.
         */
         iterator& operator--() noexcept;
 
         //! Makes a copy of `*this`, calls operator--(), then returns the copy.
         /*!
-        @pre `*this` is not the begin iterator.
+        @pre `*this` is a valid iterator and not the begin iterator.
         */
         iterator operator--(int) noexcept;
     };
@@ -1056,7 +1081,7 @@ namespace registry
 
     A key_handle may also own no handle, in which case it is called `invalid`.
     */
-    // TODO: describe the internal umplementation ???
+    // TODO: describe the internal implementation ???
     class key_handle
     {
         friend class weak_key_handle;
@@ -1086,10 +1111,19 @@ namespace registry
         */
         key_handle(key_handle&& other) noexcept = default;
 
-        // TODO: ...
+        //! Constructs a key_handle which shares ownership of the handle managed by `handle`.
+        /*!
+        @throw registry::bad_weak_key_handle if `handle.expired() == true`.
+        */
         key_handle(const weak_key_handle& handle);
 
         // TODO: ...
+        /*!
+        @post `valid() == true`.
+        @post `key() == registry::key::from_key_id(id)`.
+        @post `this->rights() == rights`.
+        @post `native_handle() == static_cast<native_handle_type>(id)`.
+        */
         key_handle(key_id id, access_rights rights = access_rights::unknown);
 
         // TODO: ...
@@ -1112,21 +1146,21 @@ namespace registry
         key_handle& operator=(key_handle&& other) noexcept = default;
 
     public:
-        //! Returns the key this handle was constructed with.
+        //! Returns the key this handle was initialized with.
         /*!
-        @throw TODO: ...
+        @return An value of type registry::key. If `valid() == false` returns `registry::key()`.
         */
         registry::key key() const;
 
-        //! Returns the access rights this handle was constructed with.
+        //! Returns the access rights this handle was initialized with.
         /*!
-        @throw TODO: ...
+        @return An value of type registry::access_rights. If `valid() == false` returns `access_rights::unknown`.
         */
         access_rights rights() const noexcept;
 
         //! Returns the underlying implementation-defined native handle object suitable for use with WinAPI.
         /*!
-        @throw TODO: ...
+        @return An value of type native_handle_type. If `valid() == false` returns `native_handle_type{}`.
         */
         native_handle_type native_handle() const noexcept;
 
@@ -1144,13 +1178,13 @@ namespace registry
                `this->key()` and the value name set to `value_name`. std::bad_alloc may be thrown if memory 
                allocation fails.
         */
-        bool exists(string_view_type value_name);
+        bool exists(string_view_type value_name) const;
 
         //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
         /*!
         Returns `false` on error.
         */
-        bool exists(string_view_type value_name, std::error_code& ec);
+        bool exists(string_view_type value_name, std::error_code& ec) const;
 
         //! Retrieves information about the registry key specified by this handle.
         /*!
@@ -1161,11 +1195,11 @@ namespace registry
         @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
                `this->key()`. std::bad_alloc may be thrown if memory allocation fails.
         */
-        key_info info(key_info_mask mask) const;
+        key_info info(key_info_mask mask = key_info_mask::all) const;
 
         //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
         /*!
-        Returns `key_info()` on error.
+        Returns `key_info{}` on error.
         */
         key_info info(key_info_mask mask, std::error_code& ec) const;
 
@@ -1389,7 +1423,6 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     class key_entry 
-        //: private details::key_entry_state
     {
         friend class key_iterator;
         friend class recursive_key_iterator;
@@ -1416,10 +1449,10 @@ namespace registry
         key_entry(key_entry&& other) noexcept = default;
 
         // TODO: ...
-        key_entry(const key& key);
+        explicit key_entry(const key& key);
 
         // TODO: ...
-        key_entry(const key_handle& handle);
+        explicit key_entry(const key_handle& handle);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -1438,13 +1471,16 @@ namespace registry
         key_entry& operator=(key_entry&& other) noexcept = default;
 
     public:
-        //! Returns the key that was stored in the value entry object.
+        //! Returns the key that was stored in the key entry object.
         const key& key() const noexcept;
 
         // TODO: ...
-        key_info info(key_info_mask mask) const;
+        key_info info(key_info_mask mask = key_info_mask::all) const;
 
-        // TODO: ...
+        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+        /*!
+        Returns `key_info{}` on error.
+        */
         key_info info(key_info_mask mask, std::error_code& ec) const;
 
     public:
@@ -1458,22 +1494,11 @@ namespace registry
         void swap(key_entry& other) noexcept;
     };
 
-    //\cond HIDDEN_SYMBOLS
-    namespace details
-    {
-        //struct value_entry_state
-        //{
-        //    key          m_key;
-        //    string_type  m_value_name;
-        //};
-    } //\endcond
-
     //------------------------------------------------------------------------------------//
     //                              class value_entry                                     //
     //------------------------------------------------------------------------------------//
 
-    class value_entry 
-        //: private details::value_entry_state
+    class value_entry
     {
         friend class value_iterator;
 
@@ -1563,10 +1588,8 @@ namespace registry
     */
     class key_iterator
     {
-        uint32_t                              m_idx;
-        key_handle                            m_hkey;
-        key_entry                             m_entry;
-        std::vector<string_type::value_type>  m_buffer;
+        struct state;
+        std::shared_ptr<state> m_state;
 
     public:
         using value_type =        key_entry;
@@ -1849,10 +1872,8 @@ namespace registry
     */
     class value_iterator
     {
-        uint32_t                              m_idx;
-        key_handle                            m_hkey;
-        value_entry                           m_entry;
-        std::vector<string_type::value_type>  m_buffer;
+        struct state;
+        std::shared_ptr<state> m_state;
 
     public:
         using value_type =        value_entry;
@@ -2129,6 +2150,20 @@ namespace registry
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(value_iterator& lhs, value_iterator& rhs) noexcept;
 
+    //! Retrieves the information about the size of the registry on the system.
+    /*!
+    @return an instance of space_info.
+    @throw registry::registry_error on underlying OS API errors, constructed. std::bad_alloc may be thrown if memory 
+           allocation fails.
+    */
+    space_info space();
+
+    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+    /*!
+    Returns `space_info{}` on error.
+    */
+    space_info space(std::error_code& ec);
+
     //! Opens a registry key and returns a handle to that key. 
     /*!
     @param[in] key - an absolute key specifying the registry key that this function opens.
@@ -2186,11 +2221,11 @@ namespace registry
     @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`.
            std::bad_alloc may be thrown if memory allocation fails.
     */
-    key_info info(const key& key, key_info_mask mask);
+    key_info info(const key& key, key_info_mask mask = key_info_mask::all);
 
     //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
     /*!
-    Returns `key_info()` on error.
+    Returns `key_info{}` on error.
     */
     key_info info(const key& key, key_info_mask mask, std::error_code& ec);
 
