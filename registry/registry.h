@@ -467,6 +467,8 @@ namespace registry
 
         //! Constructs the key from a key name string and a registry view.
         /*!
+        @post `this->name() == static_cast<string_type>(name)`.
+        @post `this->view() == view`.
         @param[in] name - a key name string.
         @param[in] view - a registry view.
         */
@@ -711,6 +713,10 @@ namespace registry
         @pre `*this` is a valid iterator and not the begin iterator.
         */
         iterator operator--(int) noexcept;
+
+    public:
+        //! Swaps the contents of `*this` and `other`.
+        void swap(iterator& other) noexcept;
     };
 
     //\cond HIDDEN_SYMBOLS
@@ -721,14 +727,6 @@ namespace registry
             value_type       m_type;
             byte_array_type  m_data;
         };
-
-        //template <typename It>
-        //auto make_string_enumerator(It first, It last) -> decltype(auto)
-        //{
-        //    return [first = std::move(first), last = std::move(last)](string_view_type &val) mutable -> bool {
-        //        return first != last ? (val = string_view_type(*first++), true) : false;
-        //    };
-        //}
     } //\endcond
 
     //------------------------------------------------------------------------------------//

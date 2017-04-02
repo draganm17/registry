@@ -109,11 +109,11 @@ key_id key_id_from_string(string_view_type str) noexcept
         key_map_value_type{ TEXT("HKEY_USERS"),                       key_id::users                       }
     };
 
-    using boost::iequals;
+    using boost::ilexicographical_compare;
     auto it = std::lower_bound(key_map.begin(), key_map.end(), str,
-                               [](auto&& lhs, auto&& rhs) { return iequals(lhs.first, rhs); });
+                               [](auto&& lhs, auto&& rhs) { return ilexicographical_compare(lhs.first, rhs); });
 
-    return it != key_map.end() && (*it).first == str ? (*it).second : key_id::none;
+    return (it != key_map.end() && (*it).first == str) ? (*it).second : key_id::none;
 }
 
 std::uintmax_t remove_all_inside(const key& key, std::error_code& ec)
@@ -270,7 +270,7 @@ bool key::has_parent_key() const noexcept
 bool key::is_absolute() const noexcept 
 {
     const auto beg_it = begin(), end_it = end();
-    return beg_it != end_it && beg_it->data() == m_name.data() && key_id_from_string(*begin()) != key_id::none;
+    return beg_it != end_it && beg_it->data() == m_name.data() && key_id_from_string(*beg_it) != key_id::none;
 }
 
 bool key::is_relative() const noexcept { return !is_absolute(); }
@@ -407,11 +407,17 @@ key::iterator& key::iterator::operator--() noexcept
     auto first = last;
     for (; first != rbegin && *first != TEXT('\\'); --first);
 
-    m_value = string_view_type(first, last - first);
+    m_value = string_view_type(++first, ++last - first);
     return *this;
 }
 
 key::iterator key::iterator::operator--(int) noexcept { auto tmp = *this; --*this; return tmp; }
+
+void key::iterator::swap(iterator& other) noexcept 
+{
+    m_value.swap(other.m_value);
+    m_key_name_view.swap(other.m_key_name_view);
+}
 
 
 //------------------------------------------------------------------------------------//
@@ -1174,9 +1180,8 @@ recursive_key_iterator::recursive_key_iterator(const key& key)
 recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& ec)
 {
     ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) { if (ec || (!m_stack.empty() && m_stack.back() == key_iterator())) m_stack.clear(); };
-
     m_stack.emplace_back(key, ec);
+    if (ec || m_stack.back() == key_iterator()) m_stack.clear();
 }
 
 recursive_key_iterator::recursive_key_iterator(const key_handle& handle)
@@ -1190,9 +1195,8 @@ recursive_key_iterator::recursive_key_iterator(const key_handle& handle)
 recursive_key_iterator::recursive_key_iterator(const key_handle& handle, std::error_code& ec)
 {
     ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) { if (ec) m_stack.clear(); };
-
     m_stack.emplace_back(handle, ec);
+    if (ec) m_stack.clear();
 }
 
 bool recursive_key_iterator::operator==(const recursive_key_iterator& rhs) const noexcept
