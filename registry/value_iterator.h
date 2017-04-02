@@ -232,8 +232,6 @@ namespace registry
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
 
-    // TODO: operators for key_entry
-
     //! Checks whether `lhs` is equal to `rhs`.
     bool operator==(const value_entry& lhs, const value_entry& rhs) noexcept;
 

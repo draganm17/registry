@@ -83,6 +83,7 @@ namespace registry
         @post `this->rights() == rights`.
         @post `native_handle() == static_cast<native_handle_type>(id)`.
         */
+        // TODO: optimization for handlers that represent a predefined key
         key_handle(key_id id, access_rights rights = access_rights::unknown);
 
         // TODO: ...
@@ -401,6 +402,22 @@ namespace registry
 
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(key_handle& lhs, key_handle& rhs) noexcept;
+
+    //! Opens a registry key and returns a handle to that key. 
+    /*!
+    @param[in] key - an absolute key specifying the registry key that this function opens.
+    @param[in] rights - the access rights for the key to be opened.
+    @return a valid key_handle object.
+    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`. 
+           std::bad_alloc may be thrown if memory allocation fails.
+    */
+    key_handle open(const key& key, access_rights rights);
+
+    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+    /*!
+    Returns `key_handle()` on error.
+    */
+    key_handle open(const key& key, access_rights rights, std::error_code& ec);
 
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //

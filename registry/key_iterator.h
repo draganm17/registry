@@ -376,7 +376,26 @@ namespace registry
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
 
-    // TODO: operators for key_entry
+    //! Checks whether `lhs` is equal to `rhs`.
+    bool operator==(const key_entry& lhs, const key_entry& rhs) noexcept;
+
+    //! Checks whether `lhs` is not equal to `rhs`.
+    bool operator!=(const key_entry& lhs, const key_entry& rhs) noexcept;
+
+    //! Checks whether `lhs` is less than `rhs`.
+    bool operator<(const key_entry& lhs, const key_entry& rhs) noexcept;
+
+    //! Checks whether `lhs` is greater than `rhs`.
+    bool operator>(const key_entry& lhs, const key_entry& rhs) noexcept;
+
+    //! Checks whether `lhs` is less than or equal to `rhs`.
+    bool operator<=(const key_entry& lhs, const key_entry& rhs) noexcept;
+
+    //! Checks whether `lhs` is greater than or equal to `rhs`.
+    bool operator>=(const key_entry& lhs, const key_entry& rhs) noexcept;
+
+    //! Swaps the contents of `lhs` and `rhs`.
+    void swap(key_entry& lhs, key_entry& rhs) noexcept;
 
     //! Returns `it` unchanged.
     const key_iterator& begin(const key_iterator& it) noexcept;
@@ -400,7 +419,19 @@ namespace registry
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
 
-    // TODO: operators for key_entry
+    inline bool operator==(const key_entry& lhs, const key_entry& rhs) noexcept { return lhs.key() == rhs.key(); }
+
+    inline bool operator!=(const key_entry& lhs, const key_entry& rhs) noexcept { return !(lhs == rhs); }
+
+    inline bool operator<(const key_entry& lhs, const key_entry& rhs) noexcept { return lhs.key() < rhs.key(); }
+
+    inline bool operator>(const key_entry& lhs, const key_entry& rhs) noexcept { return lhs.key() > rhs.key(); }
+
+    inline bool operator<=(const key_entry& lhs, const key_entry& rhs) noexcept { return !(lhs > rhs); }
+
+    inline bool operator>=(const key_entry& lhs, const key_entry& rhs) noexcept { return !(lhs < rhs); }
+
+    inline void swap(key_entry& lhs, key_entry& rhs) noexcept { lhs.swap(rhs); }
 
     inline const key_iterator& begin(const key_iterator& it) noexcept { return it; }
 

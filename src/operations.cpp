@@ -28,35 +28,6 @@ space_info space(std::error_code& ec)
     return success ? info : (ec = std::error_code(GetLastError(), std::system_category()), space_info{});
 }
 
-key_handle open(const key& key, access_rights rights)
-{
-    std::error_code ec;
-    decltype(auto) res = open(key, rights, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    return res;
-}
-
-key_handle open(const key& key, access_rights rights, std::error_code& ec)
-{
-    ec.clear();
-    if (!key.is_absolute()) {
-        ec = std::error_code(ERROR_FILE_NOT_FOUND, std::system_category());
-        return key_handle();
-    }
-
-    auto it = key.begin();
-    const auto root = key_id_from_string(*it);
-    const auto subkey = ++it != key.end() ? it->data() : TEXT("");
-
-    LRESULT rc;
-    key_handle::native_handle_type hkey;
-    rc = RegOpenKeyEx(reinterpret_cast<HKEY>(root), subkey, 0,
-                      static_cast<DWORD>(rights) | static_cast<DWORD>(key.view()), reinterpret_cast<HKEY*>(&hkey));
-
-    return (rc == ERROR_SUCCESS) ? key_handle(hkey, key, rights)
-                                 : (ec = std::error_code(rc, std::system_category()), key_handle());
-}
-
 bool exists(const key& key)
 {
    std::error_code ec;

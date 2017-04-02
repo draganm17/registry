@@ -28,22 +28,6 @@ namespace registry
     */
     space_info space(std::error_code& ec);
 
-    //! Opens a registry key and returns a handle to that key. 
-    /*!
-    @param[in] key - an absolute key specifying the registry key that this function opens.
-    @param[in] rights - the access rights for the key to be opened.
-    @return a valid key_handle object.
-    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`. 
-           std::bad_alloc may be thrown if memory allocation fails.
-    */
-    key_handle open(const key& key, access_rights rights);
-
-    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-    /*!
-    Returns `key_handle()` on error.
-    */
-    key_handle open(const key& key, access_rights rights, std::error_code& ec);
-
     //! Check whether a registry key exist. 
     /*!
     @param[in] key - an absolute key specifying the registry key that this function checks the existence of.
