@@ -1,10 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <exception>
 #include <initializer_list>
-#include <iterator>
 #include <typeinfo>
+#include <type_traits>
 #include <vector>
 
 #include <registry/types.h>
@@ -389,7 +388,6 @@ namespace registry
         */
         value& assign(value_type type, byte_array_view_type data);
 
-    public:
         //! Swaps the contents of `*this` and `other`.
         void swap(value& other) noexcept;
     };

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <iterator>
+#include <type_traits>
 
 #include <registry/types.h>
 

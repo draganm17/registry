@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <system_error>
 
 #include <registry/key.h>
-#include <registry/key_handle.h>
 #include <registry/types.h>
 #include <registry/value.h>
 

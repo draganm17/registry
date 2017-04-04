@@ -1,6 +1,7 @@
 #include <cassert>
 #include <Windows.h>
 
+#include <registry/key_handle.h>
 #include <registry/operations.h>
 
 
