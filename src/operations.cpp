@@ -10,22 +10,42 @@ namespace registry {
 //                             NON-MEMBER FUNCTIONS                                   //
 //------------------------------------------------------------------------------------//
 
-space_info space()
+bool create_key(const key& key)
 {
     std::error_code ec;
-    decltype(auto) res = space(ec);
-    if (ec) throw registry_error(ec, __FUNCTION__);
+    decltype(auto) res = create_key(key, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, key);
     return res;
 }
 
-space_info space(std::error_code& ec)
+bool create_key(const key& key, std::error_code& ec)
 {
     ec.clear();
-    space_info info;
-    BOOL success = GetSystemRegistryQuota(reinterpret_cast<DWORD*>(&info.capacity), 
-                                          reinterpret_cast<DWORD*>(&info.size));
+    registry::key base_key = key, subkey;
+    key_handle handle = open(base_key, access_rights::create_sub_key, ec);
 
-    return success ? info : (ec = std::error_code(GetLastError(), std::system_category()), space_info{});
+    while ((!ec || ec.value() == ERROR_FILE_NOT_FOUND) && base_key.has_parent_key()) {
+        subkey = base_key.leaf_key().append(subkey.name());
+        handle = open(base_key.remove_leaf(), access_rights::create_sub_key, ec);
+    }
+    return !ec ? handle.create_key(subkey, access_rights::query_value, ec).second : false;
+}
+
+bool equivalent(const key& key1, const key& key2)
+{
+    std::error_code ec;
+    decltype(auto) res = equivalent(key1, key2, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, key1, key2);
+    return res;
+}
+
+bool equivalent(const key& key1, const key& key2, std::error_code& ec)
+{
+    ec.clear();
+    auto handle1 = open(key1, access_rights::query_value, ec);
+    auto handle2 = !ec ? open(key2, access_rights::query_value, ec) : key_handle();
+
+    return !ec ? handle1.equivalent(handle2, ec) : false;
 }
 
 bool exists(const key& key)
@@ -90,41 +110,6 @@ value read_value(const key& key, string_view_type value_name, std::error_code& e
     return !ec ? handle.read_value(value_name, ec) : value();
 }
 
-bool create_key(const key& key)
-{
-    std::error_code ec;
-    decltype(auto) res = create_key(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    return res;
-}
-
-bool create_key(const key& key, std::error_code& ec)
-{
-    ec.clear();
-    registry::key base_key = key, subkey;
-    key_handle handle = open(base_key, access_rights::create_sub_key, ec);
-
-    while ((!ec || ec.value() == ERROR_FILE_NOT_FOUND) && base_key.has_parent_key()) {
-        subkey = base_key.leaf_key().append(subkey.name());
-        handle = open(base_key.remove_leaf(), access_rights::create_sub_key, ec);
-    }
-    return !ec ? handle.create_key(subkey, access_rights::query_value, ec).second : false;
-}
-
-void write_value(const key& key, string_view_type value_name, const value& value)
-{
-    std::error_code ec;
-    write_value(key, value_name, value, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key, {}, value_name);
-}
-
-void write_value(const key& key, string_view_type value_name, const value& value, std::error_code& ec)
-{
-    ec.clear();
-    auto handle = open(key, access_rights::set_value, ec);
-    if (!ec) handle.write_value(value_name, value, ec);
-}
-
 bool remove(const key& key)
 {
     std::error_code ec;
@@ -185,21 +170,36 @@ std::uintmax_t remove_all(const key& key, std::error_code& ec)
     //return ec ? static_cast<std::uintmax_t>(-1) : keys_deleted;
 }
 
-bool equivalent(const key& key1, const key& key2)
+space_info space()
 {
     std::error_code ec;
-    decltype(auto) res = equivalent(key1, key2, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key1, key2);
+    decltype(auto) res = space(ec);
+    if (ec) throw registry_error(ec, __FUNCTION__);
     return res;
 }
 
-bool equivalent(const key& key1, const key& key2, std::error_code& ec)
+space_info space(std::error_code& ec)
 {
     ec.clear();
-    auto handle1 = open(key1, access_rights::query_value, ec);
-    auto handle2 = !ec ? open(key2, access_rights::query_value, ec) : key_handle();
+    space_info info;
+    BOOL success = GetSystemRegistryQuota(reinterpret_cast<DWORD*>(&info.capacity), 
+                                          reinterpret_cast<DWORD*>(&info.size));
 
-    return !ec ? handle1.equivalent(handle2, ec) : false;
+    return success ? info : (ec = std::error_code(GetLastError(), std::system_category()), space_info{});
+}
+
+void write_value(const key& key, string_view_type value_name, const value& value)
+{
+    std::error_code ec;
+    write_value(key, value_name, value, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, key, {}, value_name);
+}
+
+void write_value(const key& key, string_view_type value_name, const value& value, std::error_code& ec)
+{
+    ec.clear();
+    auto handle = open(key, access_rights::set_value, ec);
+    if (!ec) handle.write_value(value_name, value, ec);
 }
 
 }  // namespace registry

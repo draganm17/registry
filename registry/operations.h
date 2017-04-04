@@ -14,19 +14,38 @@ namespace registry
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
 
-    //! Retrieves the information about the size of the registry on the system.
+    //! Creates a registry key.
     /*!
-    @return an instance of space_info.
-    @throw registry::registry_error on underlying OS API errors, constructed. std::bad_alloc may be thrown if memory 
-           allocation fails.
+    If the key already exists, the function has no effect (the returned value is `false`). The function creates 
+    all missing keys in the specified path.
+    @param[in] key - an absolute key specifying the registry key that this function creates.
+    @return `true` if key creation is successful, `false` otherwise.
+    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`.
+           std::bad_alloc may be thrown if memory allocation fails.
     */
-    space_info space();
+    bool create_key(const key& key);
+
+    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument. 
+    /*!
+    Returns `false` on error.
+    */
+    bool create_key(const key& key, std::error_code& ec);
+
+    //! Checks whether two existing keys, refer to the same registry key.
+    /*!
+    @param[in] key1 - an absolute key specifying the path to the first key.
+    @param[in] key2 - an absolute key specifying the path to the second key.
+    @return `true` if `key1` and `key2` resolve to the same registry key, else `false`.
+    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key1` and 
+           the second key set to `key2`. std::bad_alloc may be thrown if memory allocation fails.
+    */
+    bool equivalent(const key& key1, const key& key2);
 
     //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
     /*!
-    Returns `space_info{}` on error.
+    Returns `false` on error.
     */
-    space_info space(std::error_code& ec);
+    bool equivalent(const key& key1, const key& key2, std::error_code& ec);
 
     //! Check whether a registry key exist. 
     /*!
@@ -94,47 +113,6 @@ namespace registry
     */
     value read_value(const key& key, string_view_type value_name, std::error_code& ec);
 
-    //! Creates a registry key.
-    /*!
-    The parent key must already exist. If the key already exists, the function does nothing (this condition is not 
-    treated as an error).
-    @param[in] key - the key.
-    @return `true` if key creation is successful, `false` otherwise.
-    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`. 
-           std::bad_alloc may be thrown if memory allocation fails.
-    */
-
-    //! Creates a registry key.
-    /*!
-    If the key already exists, the function has no effect (the returned value is `false`). The function creates 
-    all missing keys in the specified path.
-    @param[in] key - an absolute key specifying the registry key that this function creates.
-    @return `true` if key creation is successful, `false` otherwise.
-    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`.
-           std::bad_alloc may be thrown if memory allocation fails.
-    */
-    bool create_key(const key& key);
-
-    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument. 
-    /*!
-    Returns `false` on error.
-    */
-    bool create_key(const key& key, std::error_code& ec);
-
-    //! Writes an value to an existing registry key.
-    /*!
-    @param[in] key - an absolute key specifying the location of the value.
-    @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
-                            default value.
-    @param[in] value - the content of the value.
-    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key` and
-           the value name set to `value_name`. std::bad_alloc may be thrown if memory allocation fails.
-    */
-    void write_value(const key& key, string_view_type value_name, const value& value);
-
-    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-    void write_value(const key& key, string_view_type value_name, const value& value, std::error_code& ec);
-
     //! Deletes an registry key.
     /*!
     The key to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_all` function. \n
@@ -183,20 +161,42 @@ namespace registry
     */
     std::uintmax_t remove_all(const key& key, std::error_code& ec);
 
-    //! Checks whether two existing keys, refer to the same registry key.
+    //! Retrieves the information about the size of the registry on the system.
     /*!
-    @param[in] key1 - an absolute key specifying the path to the first key.
-    @param[in] key2 - an absolute key specifying the path to the second key.
-    @return `true` if `key1` and `key2` resolve to the same registry key, else `false`.
-    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key1` and 
-           the second key set to `key2`. std::bad_alloc may be thrown if memory allocation fails.
+    @return an instance of space_info.
+    @throw registry::registry_error on underlying OS API errors, constructed. std::bad_alloc may be thrown if memory 
+           allocation fails.
     */
-    bool equivalent(const key& key1, const key& key2);
+    space_info space();
 
     //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
     /*!
-    Returns `false` on error.
+    Returns `space_info{}` on error.
     */
-    bool equivalent(const key& key1, const key& key2, std::error_code& ec);
+    space_info space(std::error_code& ec);
+
+    //! Creates a registry key.
+    /*!
+    The parent key must already exist. If the key already exists, the function does nothing (this condition is not 
+    treated as an error).
+    @param[in] key - the key.
+    @return `true` if key creation is successful, `false` otherwise.
+    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`. 
+           std::bad_alloc may be thrown if memory allocation fails.
+    */
+
+    //! Writes an value to an existing registry key.
+    /*!
+    @param[in] key - an absolute key specifying the location of the value.
+    @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
+                            default value.
+    @param[in] value - the content of the value.
+    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key` and
+           the value name set to `value_name`. std::bad_alloc may be thrown if memory allocation fails.
+    */
+    void write_value(const key& key, string_view_type value_name, const value& value);
+
+    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+    void write_value(const key& key, string_view_type value_name, const value& value, std::error_code& ec);
 
 } // namespace registry

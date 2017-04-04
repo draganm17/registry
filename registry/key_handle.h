@@ -128,6 +128,66 @@ namespace registry
         bool valid() const noexcept;
 
     public:
+        //! Creates a subkey inside the registry key specified by this handle.
+        /*!
+        If the key already exists, the function opens it. The function creates all missing keys in the specified path. \n
+        The calling process must have access_rights::create_sub_key access to the key specified by this handle. The 
+        access rights the key was opened with does not affect the operation.
+        @param[in] subkey - an relative key specifying the subkey that this function opens or creates. If the subkey
+                            name is an empty string the function will return a new handle to the key specified by this
+                            handle.
+        @param[in] rights - the access rights for the key to be created.
+        @return a pair consisting of an handle to the opened or created key and a `bool` denoting whether the key 
+                was created.
+        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
+               `this->key()` and the second key set to `subkey`. std::bad_alloc may be thrown if memory allocation 
+               fails.
+        */
+        std::pair<key_handle, bool> create_key(const registry::key& subkey, access_rights rights) const;
+
+        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+        /*!
+        Returns `std::make_pair(key_handle(), false)` on error.
+        */
+        std::pair<key_handle, bool> create_key(const registry::key& subkey, access_rights rights, std::error_code& ec) const;
+
+        /*! \brief 
+        Checks whether the registry key specified by this handle and the registry key specified by 
+        `key` refer to the same registry key. */
+        /*!
+        The key must have been opened with the access_rights::query_value access right.
+        @param[in] key - an absolute registry key.
+        @return `true` if `*this` and `key` resolve to the same registry key, else `false`.
+        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to 
+               `this->key()` and the second key set to `key`. std::bad_alloc may be thrown if memory allocation fails.
+        */
+        bool equivalent(const registry::key& key) const;
+
+        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+        /*!
+        Returns `false` on error.
+        */
+        bool equivalent(const registry::key& key, std::error_code& ec) const;
+
+        /*! \brief 
+        Checks whether the registry key specified by this handle and the registry key specified by 
+        `handle` refer to the same registry key. */
+        /*!
+        Both keys must have been opened with the access_rights::query_value access right.
+        @param[in] handle - a handle to an opened registry key.
+        @return `true` if `*this` and `handle` resolve to the same registry key, else `false`.
+        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to 
+               `this->key()` and the second key set to `handle.key()`. std::bad_alloc may be thrown if memory 
+               allocation fails.
+        */
+        bool equivalent(const key_handle& handle) const;
+
+        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
+        /*!
+        Returns `false` on error.
+        */
+        bool equivalent(const key_handle& handle, std::error_code& ec) const;
+
         //! Check whether the registry key specified by this handle contains the given value.
         /*!
         The key must have been opened with the access_rights::query_value access right.
@@ -181,44 +241,6 @@ namespace registry
         */
         value read_value(string_view_type value_name, std::error_code& ec) const;
 
-        //! Creates a subkey inside the registry key specified by this handle.
-        /*!
-        If the key already exists, the function opens it. The function creates all missing keys in the specified path. \n
-        The calling process must have access_rights::create_sub_key access to the key specified by this handle. The 
-        access rights the key was opened with does not affect the operation.
-        @param[in] subkey - an relative key specifying the subkey that this function opens or creates. If the subkey
-                            name is an empty string the function will return a new handle to the key specified by this
-                            handle.
-        @param[in] rights - the access rights for the key to be created.
-        @return a pair consisting of an handle to the opened or created key and a `bool` denoting whether the key 
-                was created.
-        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
-               `this->key()` and the second key set to `subkey`. std::bad_alloc may be thrown if memory allocation 
-               fails.
-        */
-        std::pair<key_handle, bool> create_key(const registry::key& subkey, access_rights rights) const;
-
-        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        /*!
-        Returns `std::make_pair(key_handle(), false)` on error.
-        */
-        std::pair<key_handle, bool> create_key(const registry::key& subkey, access_rights rights, std::error_code& ec) const;
-
-        //! Writes an value to the registry key specified by this handle.
-        /*!
-        The key must have been opened with the access_rights::set_value access right.
-        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
-                                default value.
-        @param[in] value - the content of the value.
-        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to 
-               `this->key()` and the value name set to `value_name`. std::bad_alloc may be thrown if memory 
-               allocation fails.
-        */
-        void write_value(string_view_type value_name, const value& value) const;
-
-        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        void write_value(string_view_type value_name, const value& value, std::error_code& ec) const;
-
         //! Deletes an subkey from the registry key specified by this handle.
         /*!
         The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_all` function. \n
@@ -263,42 +285,20 @@ namespace registry
         */
         std::uintmax_t remove_all(const registry::key& subkey, std::error_code& ec) const;
 
-        /*! \brief 
-        Checks whether the registry key specified by this handle and the registry key specified by 
-        `key` refer to the same registry key. */
+        //! Writes an value to the registry key specified by this handle.
         /*!
-        The key must have been opened with the access_rights::query_value access right.
-        @param[in] key - an absolute registry key.
-        @return `true` if `*this` and `key` resolve to the same registry key, else `false`.
+        The key must have been opened with the access_rights::set_value access right.
+        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
+                                default value.
+        @param[in] value - the content of the value.
         @throw registry::registry_error on underlying OS API errors, constructed with the first key set to 
-               `this->key()` and the second key set to `key`. std::bad_alloc may be thrown if memory allocation fails.
-        */
-        bool equivalent(const registry::key& key) const;
-
-        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        /*!
-        Returns `false` on error.
-        */
-        bool equivalent(const registry::key& key, std::error_code& ec) const;
-
-        /*! \brief 
-        Checks whether the registry key specified by this handle and the registry key specified by 
-        `handle` refer to the same registry key. */
-        /*!
-        Both keys must have been opened with the access_rights::query_value access right.
-        @param[in] handle - a handle to an opened registry key.
-        @return `true` if `*this` and `handle` resolve to the same registry key, else `false`.
-        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to 
-               `this->key()` and the second key set to `handle.key()`. std::bad_alloc may be thrown if memory 
+               `this->key()` and the value name set to `value_name`. std::bad_alloc may be thrown if memory 
                allocation fails.
         */
-        bool equivalent(const key_handle& handle) const;
+        void write_value(string_view_type value_name, const value& value) const;
 
         //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        /*!
-        Returns `false` on error.
-        */
-        bool equivalent(const key_handle& handle, std::error_code& ec) const;
+        void write_value(string_view_type value_name, const value& value, std::error_code& ec) const;
 
     public:
         //! Swaps the contents of `*this` and `other`.

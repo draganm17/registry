@@ -50,20 +50,6 @@ public:
     { return (const key_handle::native_handle_type)m_handle.get(); }
 };
 
-struct small_state
-{
-    unique_hkey    handle;
-};
-
-struct full_state : small_state
-{
-    access_rights  rights;
-    registry::key  key;
-};
-
-const auto STATE_1 = std::make_shared<small_state>(small_state{ });
-
-
 const auto NtQueryKey_ = []() noexcept
 {
     using F = DWORD(WINAPI*)(HANDLE, int, PVOID, ULONG, PULONG);
@@ -174,6 +160,60 @@ key_handle::native_handle_type key_handle::native_handle() const noexcept
 
 bool key_handle::valid() const noexcept { return static_cast<bool>(m_state); }
 
+std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, access_rights rights) const
+{
+    std::error_code ec;
+    decltype(auto) res = create_key(subkey, rights, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, key(), subkey);
+    return res;
+}
+
+std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, access_rights rights, std::error_code& ec) const
+{
+    ec.clear();
+    DWORD disp;
+    key_handle::native_handle_type hkey;
+    const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(subkey.view());
+    LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), subkey.name().data(), 0, nullptr,
+                                REG_OPTION_NON_VOLATILE, sam_desired, nullptr, reinterpret_cast<HKEY*>(&hkey), &disp);
+    
+    if (rc == ERROR_SUCCESS) {
+        // NOTE: the new key will have the same view as the subkey.
+        auto new_key = registry::key(key().name(), subkey.view()).append(subkey.name());
+        return std::make_pair(key_handle(hkey, std::move(new_key), rights), disp == REG_CREATED_NEW_KEY);
+    }
+    return (ec = std::error_code(rc, std::system_category()), std::make_pair(key_handle(), false));
+}
+
+bool key_handle::equivalent(const registry::key& key) const
+{
+    std::error_code ec;
+    decltype(auto) res = equivalent(key, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, this->key(), key);
+    return res;
+}
+
+bool key_handle::equivalent(const registry::key& key, std::error_code& ec) const
+{
+    ec.clear();
+    auto handle = open(key, access_rights::query_value, ec);
+    return !ec ? equivalent(handle) : false;
+}
+
+bool key_handle::equivalent(const key_handle& handle) const
+{
+    std::error_code ec;
+    decltype(auto) res = equivalent(handle, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, key(), handle.key());
+    return res;
+}
+
+bool key_handle::equivalent(const key_handle& handle, std::error_code& ec) const
+{
+    ec.clear();
+    return nt_name(native_handle()) == nt_name(handle.native_handle());
+}
+
 bool key_handle::exists(string_view_type value_name) const
 {
     std::error_code ec;
@@ -260,48 +300,6 @@ value key_handle::read_value(string_view_type value_name, std::error_code& ec) c
                                  : (ec = std::error_code(rc, std::system_category()), value());
 }
 
-std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, access_rights rights) const
-{
-    std::error_code ec;
-    decltype(auto) res = create_key(subkey, rights, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key(), subkey);
-    return res;
-}
-
-std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, access_rights rights, std::error_code& ec) const
-{
-    ec.clear();
-    DWORD disp;
-    key_handle::native_handle_type hkey;
-    const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(subkey.view());
-    LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), subkey.name().data(), 0, nullptr,
-                                REG_OPTION_NON_VOLATILE, sam_desired, nullptr, reinterpret_cast<HKEY*>(&hkey), &disp);
-    
-    if (rc == ERROR_SUCCESS) {
-        // NOTE: the new key will have the same view as the subkey.
-        auto new_key = registry::key(key().name(), subkey.view()).append(subkey.name());
-        return std::make_pair(key_handle(hkey, std::move(new_key), rights), disp == REG_CREATED_NEW_KEY);
-    }
-    return (ec = std::error_code(rc, std::system_category()), std::make_pair(key_handle(), false));
-}
-
-void key_handle::write_value(string_view_type value_name, const value& value) const
-{
-    std::error_code ec;
-    write_value(value_name, value, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key(), {}, value_name);
-}
-
-void key_handle::write_value(string_view_type value_name, const value& value, std::error_code& ec) const
-{
-    ec.clear();
-    LSTATUS rc = RegSetValueEx(reinterpret_cast<HKEY>(native_handle()), 
-                               value_name.data(), 0, static_cast<DWORD>(value.type()), 
-                               value.data().data(), static_cast<DWORD>(value.data().size()));
-    
-    if (rc != ERROR_SUCCESS) ec = std::error_code(rc, std::system_category());
-}
-
 bool key_handle::remove(const registry::key& subkey) const
 {
     std::error_code ec;
@@ -358,33 +356,21 @@ std::uintmax_t key_handle::remove_all(const registry::key& subkey, std::error_co
     return 0;
 }
 
-bool key_handle::equivalent(const registry::key& key) const
+void key_handle::write_value(string_view_type value_name, const value& value) const
 {
     std::error_code ec;
-    decltype(auto) res = equivalent(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, this->key(), key);
-    return res;
+    write_value(value_name, value, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, key(), {}, value_name);
 }
 
-bool key_handle::equivalent(const registry::key& key, std::error_code& ec) const
+void key_handle::write_value(string_view_type value_name, const value& value, std::error_code& ec) const
 {
     ec.clear();
-    auto handle = open(key, access_rights::query_value, ec);
-    return !ec ? equivalent(handle) : false;
-}
-
-bool key_handle::equivalent(const key_handle& handle) const
-{
-    std::error_code ec;
-    decltype(auto) res = equivalent(handle, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key(), handle.key());
-    return res;
-}
-
-bool key_handle::equivalent(const key_handle& handle, std::error_code& ec) const
-{
-    ec.clear();
-    return nt_name(native_handle()) == nt_name(handle.native_handle());
+    LSTATUS rc = RegSetValueEx(reinterpret_cast<HKEY>(native_handle()), 
+                               value_name.data(), 0, static_cast<DWORD>(value.type()), 
+                               value.data().data(), static_cast<DWORD>(value.data().size()));
+    
+    if (rc != ERROR_SUCCESS) ec = std::error_code(rc, std::system_category());
 }
 
 void key_handle::swap(key_handle& other) noexcept { m_state.swap(other.m_state); }
