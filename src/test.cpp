@@ -201,9 +201,9 @@ struct TEST_KEY
 
             assert(key(TEXT("AAA\\BBB")).compare(key(TEXT("AAA\\AAA"))) > 0);
 
-            assert(key(TEXT("AAA\\BBB"), view::view_32bit).compare(key(TEXT("AAA\\BBB"), view::view_64bit)) > 0);
+            assert(key(TEXT("AAA\\AAA"), view::view_32bit).compare(key(TEXT("AAA\\BBB"), view::view_64bit)) > 0);
 
-            assert(key(TEXT("AAA\\BBB"), view::view_64bit).compare(key(TEXT("AAA\\BBB"), view::view_32bit)) < 0);
+            assert(key(TEXT("AAA\\BBB"), view::view_64bit).compare(key(TEXT("AAA\\AAA"), view::view_32bit)) < 0);
         }
 
         // key::begin()

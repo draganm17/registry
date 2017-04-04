@@ -335,7 +335,7 @@ namespace registry
     /*!
     @return A hash value such that if for two keys, `k1 == k2` then `hash_value(k1) == hash_value(k2)`.
     */
-    size_t hash_value(const key& key) noexcept;
+    size_t hash_value(const key& key) noexcept; // TODO: implement
 
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(key& lhs, key& rhs) noexcept;
