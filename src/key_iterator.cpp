@@ -3,9 +3,42 @@
 
 #include <boost/scope_exit.hpp>
 
+#include <registry/details/utils.impl.h>
 #include <registry/key_iterator.h>
 #include <registry/operations.h>
 
+
+namespace 
+{
+    using namespace registry;
+
+    key_info_mask get_mask(const key_info& info) noexcept
+    {
+        constexpr key_info empty_v{};
+        key_info_mask mask = key_info_mask::none;
+
+        if (info.subkeys             != empty_v.subkeys)             mask |= key_info_mask::read_subkeys;
+        if (info.values              != empty_v.values)              mask |= key_info_mask::read_values;
+        if (info.max_subkey_size     != empty_v.max_subkey_size)     mask |= key_info_mask::read_max_subkey_size;
+        if (info.max_value_name_size != empty_v.max_value_name_size) mask |= key_info_mask::read_max_value_name_size;
+        if (info.max_value_data_size != empty_v.max_value_data_size) mask |= key_info_mask::read_max_value_data_size;
+        if (info.last_write_time     != empty_v.last_write_time)     mask |= key_info_mask::read_last_write_time;
+
+        return mask;
+    }
+
+    void update(key_info& dst, key_info& src) noexcept
+    {
+        constexpr key_info empty_v{};
+
+        if (src.subkeys             != empty_v.subkeys)             dst.subkeys = src.subkeys;
+        if (src.values              != empty_v.values)              dst.values = src.values;
+        if (src.max_subkey_size     != empty_v.max_subkey_size)     dst.max_subkey_size = src.max_subkey_size;
+        if (src.max_value_name_size != empty_v.max_value_name_size) dst.max_value_name_size = src.max_value_name_size;
+        if (src.max_value_data_size != empty_v.max_value_data_size) dst.max_value_data_size = src.max_value_data_size;
+        if (src.last_write_time     != empty_v.last_write_time)     dst.last_write_time = src.last_write_time;
+    }
+}
 
 namespace registry {
 
@@ -15,12 +48,33 @@ namespace registry {
 
 key_entry::key_entry(const registry::key& key)
     : m_key(key)
-{ }
+{
+    refresh();
+}
+
+key_entry::key_entry(const registry::key& key, std::error_code& ec)
+    : m_key(key)
+{
+    ec.clear();
+    refresh(ec);
+    if (ec) swap(key_entry());
+}
 
 key_entry::key_entry(const key_handle& handle)
     : m_key(handle.key())
     , m_key_handle(handle)
-{ }
+{
+    refresh();
+}
+
+key_entry::key_entry(const key_handle& handle, std::error_code& ec)
+    : m_key(handle.key())
+    , m_key_handle(handle)
+{
+    ec.clear();
+    refresh(ec);
+    if (ec) swap(key_entry());
+}
 
 const registry::key& key_entry::key() const noexcept { return m_key; }
 
@@ -35,14 +89,24 @@ key_info key_entry::info(key_info_mask mask) const
 key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 {
     ec.clear();
-    auto handle = m_key_handle.lock();
-    return handle.valid() ? handle.info(mask, ec) : registry::info(m_key, mask, ec);
+    auto info = m_key_info;
+    if ((mask = mask & ~get_mask(m_key_info)) != key_info_mask::none) {
+        auto handle = m_key_handle.lock();
+        update(info, handle.valid() ? handle.info(mask, ec) : registry::info(m_key, mask, ec));
+    }
+    return !ec ? info : key_info{};
 }
 
 key_entry& key_entry::assign(const registry::key& key)
 { 
     m_key = key;
     m_key_handle.swap(weak_key_handle());
+    return *this;
+}
+
+key_entry& key_entry::assign(const registry::key& key, std::error_code& ec)
+{
+    // TODO: ...
     return *this;
 }
 
@@ -53,7 +117,31 @@ key_entry& key_entry::assign(const key_handle& handle)
     return *this;
 }
 
-void key_entry::swap(key_entry& other) noexcept { m_key.swap(other.m_key); }
+key_entry& key_entry::assign(const key_handle& handle, std::error_code& ec)
+{
+    // TODO: ...
+    return *this;
+}
+
+void key_entry::refresh(key_info_mask mask)
+{
+    std::error_code ec;
+    refresh(mask, ec);
+    if (ec) throw registry_error(ec, __FUNCTION__, m_key);
+}
+
+void key_entry::refresh(key_info_mask mask, std::error_code& ec)
+{
+    ec.clear();
+    auto handle = m_key_handle.lock();
+    update(m_key_info, handle.valid() ? handle.info(mask, ec) : registry::info(m_key, mask, ec));
+}
+
+void key_entry::swap(key_entry& other) noexcept
+{
+    // TODO: ...
+    //m_key.swap(other.m_key);
+}
 
 
 //------------------------------------------------------------------------------------//
@@ -148,13 +236,16 @@ key_iterator& key_iterator::increment(std::error_code& ec)
     //       iterator was constructed. Therefore this behaviour is consistent with what the class documentation states.
 
     do {
+        FILETIME time;
         DWORD buffer_size = m_state->buffer.size();
         HKEY hkey = reinterpret_cast<HKEY>(m_state->hkey.native_handle());
         LSTATUS rc = RegEnumKeyEx(hkey, ++m_state->idx, m_state->buffer.data(), 
-                                  &buffer_size, nullptr, nullptr, nullptr, nullptr);
+                                  &buffer_size, nullptr, nullptr, nullptr, &time);
 
         if (!(ec = std::error_code(rc, std::system_category()))) {
-            m_state->entry.m_key.replace_leaf({ m_state->buffer.data(), buffer_size });
+            auto& entry = m_state->entry;
+            entry.m_key.replace_leaf({ m_state->buffer.data(), buffer_size });
+            entry.m_key_info.last_write_time = key_time_type::clock::from_time_t(details::file_time_to_time_t(time));
         }
     } while (ec.value() == ERROR_MORE_DATA);
 

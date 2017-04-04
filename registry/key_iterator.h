@@ -43,7 +43,13 @@ namespace registry
         explicit key_entry(const key& key);
 
         // TODO: ...
+        key_entry(const key& key, std::error_code& ec);
+
+        // TODO: ...
         explicit key_entry(const key_handle& handle);
+
+        // TODO: ...
+        explicit key_entry(const key_handle& handle, std::error_code& ec);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -79,13 +85,24 @@ namespace registry
         key_entry& assign(const registry::key& key);
 
         // TODO: ...
+        key_entry& assign(const registry::key& key, std::error_code& ec);
+
+        // TODO: ...
         key_entry& assign(const registry::key_handle& handle);
+
+        // TODO: ...
+        key_entry& assign(const registry::key_handle& handle, std::error_code& ec);
+
+        void refresh(key_info_mask mask = key_info_mask::all);
+
+        void refresh(key_info_mask mask, std::error_code& ec);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_entry& other) noexcept;
 
     private:
         registry::key    m_key;
+        key_info         m_key_info;
         weak_key_handle  m_key_handle;
     };
 
