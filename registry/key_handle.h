@@ -210,7 +210,7 @@ namespace registry
         /*!
         The key must have been opened with the access_rights::query_value access right.
         @param[in] mask - a mask specifying which fields of key_id structure are filled out and which aren't.
-                          The fields of key_id whick aren't filled out will have default-constructed values.
+                          The fields of key_id whick aren't filled out will have default-assigned values.
         @return an instance of key_info.
         @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
                `this->key()`. std::bad_alloc may be thrown if memory allocation fails.
