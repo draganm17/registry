@@ -153,11 +153,6 @@ struct TEST_KEY
             assert(k.view() == view::view_32bit);
         }
 
-        // key::key(InputIt, InputIt, view)
-        {
-            // TODO: ...
-        }
-
         // ==, != operators
         //{
         //    key k1, k2;
@@ -192,9 +187,23 @@ struct TEST_KEY
         //    assert(  k6 != k7 );
         //}
 
-        // key::compare()
+        // key::compare(const key&)
         {
-            // TODO: ...
+            assert(key().compare(key()) == 0);
+
+            assert(key(TEXT("AAA")).compare(key(TEXT("AAA"))) == 0);
+
+            assert(key(TEXT("AAA\\BBB")).compare(key(TEXT("AAA\\BBB"))) == 0);
+
+            assert(key(TEXT("AAA\\BBB")).compare(key(TEXT("aAa\\\\bBb\\"))) == 0);
+
+            assert(key(TEXT("AAA\\BBB")).compare(key(TEXT("AAA\\CCC"))) < 0);
+
+            assert(key(TEXT("AAA\\BBB")).compare(key(TEXT("AAA\\AAA"))) > 0);
+
+            assert(key(TEXT("AAA\\BBB"), view::view_32bit).compare(key(TEXT("AAA\\BBB"), view::view_64bit)) > 0);
+
+            assert(key(TEXT("AAA\\BBB"), view::view_64bit).compare(key(TEXT("AAA\\BBB"), view::view_32bit)) < 0);
         }
 
         // key::begin()
@@ -324,13 +333,13 @@ struct TEST_KEY
         // key::parent_key()
         {
             key k1;
-            assert(k1.parent_key() == (k1.has_parent_key() ? key(k1.begin(), --k1.end(), k1.view()) : key(string_type(), k1.view())));
+            assert(k1.parent_key() == key(string_type(), k1.view()));
 
             key k2 = TEXT("Test");
-            assert(k2.parent_key() == (k2.has_parent_key() ? key(k2.begin(), --k2.end(), k2.view()) : key(string_type(), k2.view())));
+            assert(k2.parent_key() == key(string_type(), k2.view()));
 
-            key k3 = TEXT("Test1\\Test2\\Test3");
-            assert(k2.parent_key() == (k2.has_parent_key() ? key(k2.begin(), --k2.end(), k2.view()) : key(string_type(), k2.view())));
+            key k3 = TEXT("Test1\\Test2\\\\Test3\\");
+            assert(k3.parent_key() == key(TEXT("Test1\\Test2"), k3.view()));
         }
 
         // key::is_absolute()
@@ -359,11 +368,6 @@ struct TEST_KEY
             key k2(TEXT("Test1\\Test2\\Test3"), view::view_64bit);
 
             assert(k1.assign(k2.name(), k2.view()) == k2);
-        }
-
-        // key::assign(InputIt, InputIt, view)
-        {
-            // TODO: ...
         }
 
         // key::append(string_view_type)
@@ -446,6 +450,31 @@ struct TEST_KEY
 
             swap(k1, k2);
             assert(k1 == k2_copy && k2 == k1_copy);
+        }
+
+        // hash support
+        {
+            // TODO: ...
+
+            /*
+            key k01, k02;
+            assert(hash_value(k01) == hash_value(k02));
+
+            key k03 = TEXT("HKEY_CURRENT_USER\\Test"), k04 = k03;
+            assert(hash_value(k03) == hash_value(k04));
+
+            key k05 = TEXT("HKEY_CURRENT_USER\\Test");
+            key k06 = TEXT("HKEY_CURRENT_user\\\\Test\\");
+            assert(hash_value(k05) == hash_value(k06));
+
+            key k07(TEXT("HKEY_CURRENT_USER", view::view_32bit));
+            key k08(TEXT("HKEY_CURRENT_USER", view::view_64bit));
+            assert(hash_value(k05) != hash_value(k06));
+
+            key k09 = TEXT("HKEY_CURRENT_USER\\Test1");
+            key k10 = TEXT("HKEY_CURRENT_USER\\\\Test1\\Test2");
+            assert(hash_value(k09) != hash_value(k10));
+            */
         }
     }
 };

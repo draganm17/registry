@@ -78,13 +78,6 @@ namespace registry
         >
         key(const Source& name, view view = default_view) : key(string_view_type(name), view) { }
 
-        // TODO: ...
-        template <typename InputIt,
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, 
-                                                                    std::iterator_traits<InputIt>::value_type>::value>
-        >
-        key(InputIt first, InputIt last, registry::view view = default_view) { /* TODO: ... */ }
-
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
         @post `*this == other`.
@@ -122,7 +115,9 @@ namespace registry
 
         //! Returns the parent of the key.
         /*!
-        Equivalent to `has_parent_key() ? key(begin(), --end(), view()) : key(string_type(), view())`.
+        Returns `key(string_type(), view())` if `!has_parent_key()` or there's only a single element in the key 
+        name (`begin() == --end()`). The resulting key is constructed by appending all elements in a range 
+        [`begin()`, `--end()`) to an key constructed as `key(string_type(), view())`.
         */
         key parent_key() const;
 
@@ -194,13 +189,6 @@ namespace registry
         */
         key& assign(string_view_type name, registry::view view = default_view);
 
-        // TODO: ...
-        template <typename InputIt,
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, 
-                                                                    std::iterator_traits<InputIt>::value_type>::value>
-        >
-        key& assign(InputIt first, InputIt last, registry::view view = default_view) { return *this; /* TODO: ... */ }
-
         //! Appends elements to the key name.
         /*!
         First, appends the key separator to the key name, except if any of the following conditions is true:
@@ -223,7 +211,6 @@ namespace registry
 
         //! Removes a single leaf component.
         /*!
-        Equivalent to `*this = parent_key()`.
         @pre `has_leaf_key() == true`.
         @return `*this`.
         */
@@ -343,6 +330,12 @@ namespace registry
 
     //! Checks whether `lhs` is greater than or equal to `rhs`. Equivalent to `lhs.compare(rhs) >= 0`.
     bool operator>=(const key& lhs, const key& rhs) noexcept;
+
+    //! Calculates a hash value for a key object.
+    /*!
+    @return A hash value such that if for two keys, `k1 == k2` then `hash_value(k1) == hash_value(k2)`.
+    */
+    size_t hash_value(const key& key) noexcept;
 
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(key& lhs, key& rhs) noexcept;

@@ -3,7 +3,7 @@
 #include <cassert>
 #include <Windows.h>
 
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include <registry/key.h>
 
@@ -87,7 +87,15 @@ key key::root_key() const { return has_root_key() ? key(*begin(), view()) : key(
 key key::leaf_key() const { return has_leaf_key() ? key(*--end(), view()) : key(string_view_type(), view()); }
 
 key key::parent_key() const
-{ return has_parent_key() ? key(begin(), --end(), view()) : key(string_view_type(), view()); }
+{
+    auto first = begin(), last = end();
+    key key(string_view_type(), view());
+
+    if (first != last && first != --last) {
+        for (; first != last; ++first) key.append(*first);
+    }
+    return key;
+}
 
 bool key::has_root_key() const noexcept { return begin() != end(); }
 
