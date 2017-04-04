@@ -1,14 +1,12 @@
 #include <algorithm>
-#include <array>
 #include <cassert>
-#include <locale>
-#include <numeric>
 #include <Windows.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/endian/arithmetic.hpp>
 #include <boost/scope_exit.hpp>
 
+#include <registry/details/utils.impl.h>
 #include <registry/key_handle.h>
 
 
@@ -93,12 +91,6 @@ std::uintmax_t remove_all_inside(const key& key, std::error_code& ec)
 
     // TODO: ...
     throw 0;
-}
-
-time_t file_time_to_time_t(const FILETIME time) noexcept
-{
-    const uint64_t t = (static_cast<uint64_t>(time.dwHighDateTime) << 32) | time.dwLowDateTime;
-    return static_cast<time_t>((t - 116444736000000000ll) / 10000000);
 }
 
 std::wstring nt_name(key_handle::native_handle_type handle)
@@ -268,7 +260,7 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
     ec = std::error_code(rc, std::system_category());
 
     if (!ec && read_last_write_time) {
-        info.last_write_time = key_time_type::clock::from_time_t(file_time_to_time_t(time));
+        info.last_write_time = key_time_type::clock::from_time_t(details::file_time_to_time_t(time));
     }
 
     return !ec ? info : key_info{};
@@ -423,7 +415,7 @@ key_handle open(const key& key, access_rights rights, std::error_code& ec)
     }
 
     auto it = key.begin();
-    const auto root = key_id_from_string(*it);
+    const auto root = details::key_id_from_string(*it);
     const auto subkey = ++it != key.end() ? it->data() : TEXT("");
 
     LRESULT rc;
