@@ -8,16 +8,6 @@
 
 namespace registry
 {
-    //\cond HIDDEN_SYMBOLS
-    namespace details
-    {
-        struct key_state
-        {
-            view         m_view;
-            string_type  m_name;
-        };
-    } //\endcond
-
     //------------------------------------------------------------------------------------//
     //                                   class key                                        //
     //------------------------------------------------------------------------------------//
@@ -32,7 +22,6 @@ namespace registry
     // TODO: ...
     */
     class key 
-        : private details::key_state
     {
     public:
         class iterator;
@@ -47,8 +36,8 @@ namespace registry
     public:
         //! Constructs an key object from a given predefined key identifier.
         /*!
-        The name of the returned key is equal to the string representation of the predefined key identifier. The 
-        returned key is an absolute key.
+        The name of the returned key is equal to the string representation of the predefined key identifier, the key 
+        view is equal to `default_view`. The returned key is an absolute key.
         */
         static key from_key_id(key_id id);
 
@@ -57,7 +46,7 @@ namespace registry
         /*!
         Equivalent to `key(string_type())`.
         */
-        key() noexcept;
+        key() noexcept = default;
 
         //! Constructs the key with the copy of the contents of `other`.
         /*!
@@ -249,6 +238,11 @@ namespace registry
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key& other) noexcept;
+
+    private:
+        registry::view  m_view = default_view;
+        string_type     m_name;
+
     };
 
     //------------------------------------------------------------------------------------//

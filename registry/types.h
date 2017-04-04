@@ -265,9 +265,6 @@ namespace registry
     class registry_error 
         : public std::system_error
     {
-        struct storage;
-        std::shared_ptr<storage> m_info;
-
     public:
         //! Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`.
         registry_error(std::error_code ec, const std::string& msg);
@@ -299,6 +296,10 @@ namespace registry
 
         //! Returns the value name that was stored in the exception object.
         const string_type& value_name() const noexcept;
+
+    private:
+        struct storage;
+        std::shared_ptr<storage> m_info;
     };
    
     //------------------------------------------------------------------------------------//

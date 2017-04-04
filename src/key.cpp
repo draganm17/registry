@@ -73,12 +73,9 @@ const view key::default_view =
 
 key key::from_key_id(key_id id) { return key(key_id_to_string(id)); }
 
-key::key() noexcept
-    : details::key_state{ default_view }
-{ }
-
 key::key(string_view_type name, registry::view view)
-    : details::key_state{ view, static_cast<string_type>(name) }
+    : m_view(view)
+    , m_name(static_cast<string_type>(name))
 { }
 
 const string_type& key::name() const noexcept { return m_name; }

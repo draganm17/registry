@@ -21,9 +21,6 @@ namespace registry
         friend class key_iterator;
         friend class recursive_key_iterator;
 
-        key              m_key;
-        weak_key_handle  m_key_handle;
-
     public:
         // TODO: ...
         key_entry() noexcept = default;
@@ -86,6 +83,10 @@ namespace registry
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_entry& other) noexcept;
+
+    private:
+        registry::key    m_key;
+        weak_key_handle  m_key_handle;
     };
 
     //------------------------------------------------------------------------------------//
@@ -103,9 +104,6 @@ namespace registry
     */
     class key_iterator
     {
-        struct state;
-        std::shared_ptr<state> m_state;
-
     public:
         using value_type =        key_entry;
         using difference_type =   ptrdiff_t;
@@ -221,6 +219,10 @@ namespace registry
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_iterator& other) noexcept;
+
+    private:
+        struct state;
+        std::shared_ptr<state> m_state;
     };
 
     //------------------------------------------------------------------------------------//
@@ -239,8 +241,6 @@ namespace registry
     // TODO: key_options ...
     class recursive_key_iterator
     {
-        std::vector<key_iterator> m_stack;
-
     public:
         using value_type =        key_entry;
         using difference_type =   ptrdiff_t;
@@ -370,6 +370,9 @@ namespace registry
 
         //! Swaps the contents of `*this` and `other`.
         void swap(recursive_key_iterator& other) noexcept;
+
+    private:
+        std::vector<key_iterator> m_stack;
     };
 
     //------------------------------------------------------------------------------------//
