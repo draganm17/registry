@@ -418,7 +418,7 @@ namespace registry
     /*!
     @return A hash value such that if for two values, `v1 == v2` then `hash_value(v1) == hash_value(v2)`.
     */
-    size_t hash_value(const value& value) noexcept; // TODO: implement
+    size_t hash_value(const value& value) noexcept;
 
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(value& lhs, value& rhs) noexcept;
