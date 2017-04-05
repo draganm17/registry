@@ -484,30 +484,14 @@ struct TEST_VALUE
         {
             value v(sz_value_tag{}, TEXT("test"));
             assert(v.type() == value_type::sz);
-            //assert(!v.data().empty());
             assert(v.to_string() == TEXT("test"));
-
-            int exceptions = 0;
-            try { v.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-            assert(exceptions == 4);
         }
 
         // value::value(expand_sz_value_tag, string_view_type)
         {
             value v(expand_sz_value_tag{}, TEXT("test"));
             assert(v.type() == value_type::expand_sz);
-            //assert(!v.data().empty());
             assert(v.to_string() == TEXT("test"));
-
-            int exceptions = 0;
-            try { v.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-            assert(exceptions == 4);
         }
 
         // value::value(binary_value_tag, byte_array_view_type)
@@ -537,108 +521,147 @@ struct TEST_VALUE
         {
             value v(dword_value_tag{}, 42);
             assert(v.type() == value_type::dword);
-            //assert(!v.data().empty());
             assert(v.to_uint32() == 42 && v.to_uint64() == 42);
-
-            int exceptions = 0;
-            try { v.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-            assert(exceptions == 3);
         }
 
         // value::value(dword_big_endian_value_tag, uint32_t);
         {
             value v(dword_big_endian_value_tag{}, 42);
             assert(v.type() == value_type::dword_big_endian);
-            //assert(!v.data().empty());
             assert(v.to_uint32() == 42 && v.to_uint64() == 42);
-
-            int exceptions = 0;
-            try { v.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-            assert(exceptions == 3);
         }
 
         // value::value(link_value_tag, string_view_type)
         {
             value v(link_value_tag{}, TEXT("test"));
             assert(v.type() == value_type::link);
-            //assert(!v.data().empty());
             assert(v.to_string() == TEXT("test"));
-
-            int exceptions = 0;
-            try { v.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-            assert(exceptions == 4);
         }
 
         // value::value(multi_sz_value_tag, const Sequence&)
         {
             const std::vector<string_type> seq_in{ TEXT("test_1"), TEXT("test_2") };
             value v(multi_sz_value_tag{}, seq_in);
-            assert(v.type() == value_type::multi_sz);
-            //assert(!v.data().empty());
             auto seq_out = v.to_strings();
-            assert(std::equal(seq_in.begin(), seq_in.end(), seq_out.begin(), seq_out.end()));
 
-            int exceptions = 0;
-            try { v.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-            assert(exceptions == 4);
+            assert(v.type() == value_type::multi_sz);
+            assert(std::equal(seq_out.begin(), seq_out.end(), seq_in.begin(), seq_in.end()));
         }
 
         // value::value(multi_sz_value_tag, InputIt, InputIt)
         {
             const auto seq_in = { TEXT("test_1"), TEXT("test_2") };
             value v(multi_sz_value_tag{}, seq_in.begin(), seq_in.end());
-            assert(v.type() == value_type::multi_sz);
-            //assert(!v.data().empty());
             auto seq_out = v.to_strings();
-            assert(std::equal(seq_in.begin(), seq_in.end(), seq_out.begin(), seq_out.end()));
 
-            int exceptions = 0;
-            try { v.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-            assert(exceptions == 4);
+            assert(v.type() == value_type::multi_sz);
+            assert(std::equal(seq_out.begin(), seq_out.end(), seq_in.begin(), seq_in.end()));
         }
 
         // value::value(multi_sz_value_tag, std::initializer_list<String>)
         {
             const auto seq_in = { TEXT("test_1"), TEXT("test_2") };
             value v(multi_sz_value_tag{}, seq_in);
-            assert(v.type() == value_type::multi_sz);
-            //assert(!v.data().empty());
             auto seq_out = v.to_strings();
-            assert(std::equal(seq_in.begin(), seq_in.end(), seq_out.begin(), seq_out.end()));
 
-            int exceptions = 0;
-            try { v.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-            assert(exceptions == 4);
+            assert(v.type() == value_type::multi_sz);
+            assert(std::equal(seq_out.begin(), seq_out.end(), seq_in.begin(), seq_in.end()));
         }
 
         // value::value(qword_value_tag, uint64_t)
         {
             value v(qword_value_tag{}, 42);
             assert(v.type() == value_type::qword);
-            //assert(!v.data().empty());
             assert(v.to_uint64() == 42);
+        }
 
+        // value::to_uint32()
+        // value::to_uint64()
+        // value::to_string()
+        // value::to_strings()
+        // value::to_byte_array()
+        {
             int exceptions = 0;
-            try { v.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-            try { v.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            const std::array<uint8_t, 2> bytes{ 4, 2 };
+
+            value v1;
+            try { v1.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v1.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v1.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v1.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v1.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            assert(exceptions == 5);
+
+            exceptions = 0;
+            value v2(sz_value_tag{}, TEXT("test"));
+            try { v2.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v2.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v2.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v2.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v2.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            assert(exceptions == 4);
+
+            exceptions = 0;
+            value v3(expand_sz_value_tag{}, TEXT("test"));
+            try { v3.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v3.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v3.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v3.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v3.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            assert(exceptions == 4);
+
+            exceptions = 0;
+            value v4(binary_value_tag{}, { bytes.data(), bytes.size() });
+            try { v4.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v4.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v4.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v4.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v4.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            assert(exceptions == 4);
+
+            exceptions = 0;
+            value v5(dword_value_tag{}, 42);
+            try { v5.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v5.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v5.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v5.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v5.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            assert(exceptions == 3);
+
+            exceptions = 0;
+            value v6(dword_big_endian_value_tag{}, 42);
+            try { v6.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v6.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v6.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v6.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v6.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            assert(exceptions == 3);
+
+            exceptions = 0;
+            value v7(link_value_tag{}, TEXT("test"));
+            try { v7.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v7.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v7.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v7.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v7.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            assert(exceptions == 4);
+
+            exceptions = 0;
+            value v8(multi_sz_value_tag{}, { TEXT("test1"), TEXT("test2") });
+            try { v8.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v8.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v8.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v8.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v8.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
+            assert(exceptions == 4);
+
+            exceptions = 0;
+            value v9(qword_value_tag{}, 42);
+            try { v9.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v9.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v9.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
+            try { v9.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
+            try { v9.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
             assert(exceptions == 4);
         }
 

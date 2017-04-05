@@ -211,7 +211,7 @@ namespace registry
 
         //! Removes a single leaf component.
         /*!
-        @pre `has_leaf_key() == true`.
+        @pre `has_leaf_key()`.
         @return `*this`.
         */
         key& remove_leaf();
@@ -219,7 +219,7 @@ namespace registry
         //! Replaces a single leaf component with `replacement`.
         /*!
         Equivalent to `remove_leaf().append(replacement)`.
-        @pre `has_leaf_key() == true`.
+        @pre `has_leaf_key()`.
         @return `*this`.
         */
         key& replace_leaf(string_view_type replacement);

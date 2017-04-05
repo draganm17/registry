@@ -86,7 +86,7 @@ namespace registry
         //! Constructs a value of type value_type::none.
         /*!
         @post `type() == value_type::none`.
-        @post `data().empty() == true`.
+        @post `data().empty()`.
         @param[in] tag - value type tag.
         */
         explicit value(none_value_tag tag = {}) noexcept;
@@ -148,7 +148,7 @@ namespace registry
         //! Constructs a value of type value_type::multi_sz.
         /*!
         @post `type() == value_type::multi_sz`.
-        @post TODO: ...
+        @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), BEGIN(value), END(value))`.
         @param[in] tag - value type tag.
         @param[in] value - a container, such as Sequence::value_type should be explicitly convertible to 
                            registry::string_view_type.
@@ -161,7 +161,7 @@ namespace registry
         //! Constructs a value of type value_type::multi_sz.
         /*!
         @post `type() == value_type::multi_sz`.
-        @post TODO: ...
+        @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), first, last)`.
         @param[in] tag - value type tag.
         @param[in] first, last - input iterators, such as std::iterator_traits<InputIt>::value_type should be 
                                  explicitly convertible to registry::string_view_type.
@@ -175,7 +175,7 @@ namespace registry
         //! Constructs a value of type value_type::multi_sz.
         /*!
         @post `type() == value_type::multi_sz`.
-        @post TODO: ...
+        @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), init.begin(), init.end())`.
         @param[in] tag - value type tag.
         @param[in] init - an object of type std::initializer_list<T>, such as T should be explicitly convertible to 
                           registry::string_view_type.
