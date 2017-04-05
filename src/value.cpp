@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 #include <boost/endian/arithmetic.hpp>
+#include <boost/functional/hash.hpp>
 
 #include <registry/value.h>
 
@@ -261,6 +262,18 @@ void value::swap(value& other) noexcept
     using std::swap;
     swap(m_type, other.m_type);
     swap(m_data, other.m_data);
+}
+
+
+//------------------------------------------------------------------------------------//
+//                             NON-MEMBER FUNCTIONS                                   //
+//------------------------------------------------------------------------------------//
+
+size_t hash_value(const value& value) noexcept
+{
+    const auto data = value.data();
+    size_t hash = std::hash<value_type>()(value.type());
+    return boost::hash_combine(hash, boost::hash_range(data.begin(), data.end())), hash;
 }
 
 }  // namespace registry

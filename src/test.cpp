@@ -7,8 +7,8 @@
 #include <boost/endian/arithmetic.hpp>
 #include <boost/scope_exit.hpp>
 
-
 #include <registry/registry.h>
+
 
 void clear_stage() noexcept
 {
@@ -779,6 +779,15 @@ struct TEST_VALUE
 
             swap(v1, v2);
             assert(v1 == v2_copy && v2 == v1_copy);
+        }
+
+        // hash
+        {
+            value v1, v2;
+            assert(hash_value(v1) == hash_value(v2));
+
+            value v3(sz_value_tag{}, TEXT("Test")), v4 = v3;
+            assert(hash_value(v3) == hash_value(v4));
         }
     }
 };

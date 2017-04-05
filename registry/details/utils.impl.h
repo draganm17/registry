@@ -13,13 +13,13 @@
 namespace registry {
 namespace details {
 
-    time_t file_time_to_time_t(const FILETIME& time) noexcept
+    inline time_t file_time_to_time_t(const FILETIME& time) noexcept
     {
         const uint64_t t = (static_cast<uint64_t>(time.dwHighDateTime) << 32) | time.dwLowDateTime;
         return static_cast<time_t>((t - 116444736000000000ll) / 10000000);
     }
 
-    string_view_type key_id_to_string(key_id id) noexcept
+    inline string_view_type key_id_to_string(key_id id) noexcept
     {
         switch(id)
         {
@@ -36,7 +36,7 @@ namespace details {
         };
     }
 
-    key_id key_id_from_string(string_view_type str) noexcept
+    inline key_id key_id_from_string(string_view_type str) noexcept
     {
         using key_map_value_type = std::pair<string_view_type, key_id>;
         using key_map_type = std::array<key_map_value_type, 9>;
