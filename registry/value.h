@@ -65,6 +65,9 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     //! Represents a registry value.
+    /*!
+    TODO: detailed description ...
+    */
     class value 
         : private details::value_state
     {

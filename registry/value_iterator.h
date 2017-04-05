@@ -177,10 +177,10 @@ namespace registry
         value_iterator& operator=(value_iterator&& other) noexcept = default;
 
     public:
-        // TODO: ...
+        //! Checks whether `*this` is equal to `rhs`.
         bool operator==(const value_iterator& rhs) const noexcept;
 
-        // TODO: ...
+        //! Checks whether `*this` is not equal to `rhs`.
         bool operator!=(const value_iterator& rhs) const noexcept;
 
         //! Accesses the pointed-to registry::value_entry.
@@ -267,8 +267,6 @@ namespace registry
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
-
-    // TODO: operators for key_entry
 
     inline bool operator==(const value_entry& lhs, const value_entry& rhs) noexcept 
     { return lhs.key() == rhs.key() && lhs.value_name() == rhs.value_name(); }

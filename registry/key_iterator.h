@@ -174,10 +174,10 @@ namespace registry
         key_iterator& operator=(key_iterator&& other) noexcept = default;
 
     public:
-        // TODO: ...
+        //! Checks whether `*this` is equal to `rhs`.
         bool operator==(const key_iterator& rhs) const noexcept;
 
-        // TODO: ...
+        //! Checks whether `*this` is not equal to `rhs`.
         bool operator!=(const key_iterator& rhs) const noexcept;
 
         //! Accesses the pointed-to registry::key_entry.
@@ -308,10 +308,10 @@ namespace registry
         recursive_key_iterator& operator=(recursive_key_iterator&& other) noexcept = default;
 
     public:
-        // TODO: ...
+        //! Checks whether `*this` is equal to `rhs`.
         bool operator==(const recursive_key_iterator& rhs) const noexcept;
 
-        // TODO: ...
+        //! Checks whether `*this` is not equal to `rhs`.
         bool operator!=(const recursive_key_iterator& rhs) const noexcept;
 
         //! Accesses the pointed-to registry::key_entry.
