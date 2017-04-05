@@ -82,9 +82,10 @@ namespace registry
     //! Retrieves information about a registry key.
     /*!
     @param[in] key - an absolute key specifying the registry key that this function queries the information about.
-    @param[in] mask - a mask specifying which fields of key_id structure are filled out and which aren't.
-                      The fields of key_id which aren't filled out will have default-assigned values.
-    @return an instance of key_info.
+    @param[in] mask - a mask specifying which members of key_id are filled out and which aren't. The members which 
+                      aren't filled out will be set to `static_cast<uint32_t>(-1)`, except for `last_write_time`, 
+                      which default value is `key_time_type::min()`.
+    @return An instance of key_info.
     @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`.
            std::bad_alloc may be thrown if memory allocation fails.
     */
@@ -92,7 +93,8 @@ namespace registry
 
     //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
     /*!
-    Returns `key_info{}` on error.
+    Sets all but `last_write_time` members of the returned value to `static_cast<uint32_t>(-1)` on error.
+    `last_write_time` member is set to `key_time_type::min()`.
     */
     key_info info(const key& key, key_info_mask mask, std::error_code& ec);
 
@@ -171,7 +173,7 @@ namespace registry
 
     //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
     /*!
-    Returns `space_info{}` on error.
+    Sets all members of the returned value to `static_cast<uint32_t>(-1)` on error.
     */
     space_info space(std::error_code& ec);
 

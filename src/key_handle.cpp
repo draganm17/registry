@@ -236,8 +236,8 @@ key_info key_handle::info(key_info_mask mask) const
 key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
 {
     ec.clear();
-    FILETIME time;
-    key_info info{};
+    constexpr key_info invalid_info{ uint32_t(-1), uint32_t(-1), uint32_t(-1), 
+                                     uint32_t(-1), uint32_t(-1), key_time_type::min() };
 
     const bool read_subkeys =             (mask & key_info_mask::read_subkeys)             != key_info_mask::none;
     const bool read_values =              (mask & key_info_mask::read_values)              != key_info_mask::none;
@@ -246,6 +246,8 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
     const bool read_max_value_data_size = (mask & key_info_mask::read_max_value_data_size) != key_info_mask::none;
     const bool read_last_write_time =     (mask & key_info_mask::read_last_write_time)     != key_info_mask::none;
 
+    FILETIME time;
+    key_info info = invalid_info;
     LSTATUS rc = RegQueryInfoKey(
         reinterpret_cast<HKEY>(native_handle()), nullptr, nullptr, nullptr,
         read_subkeys             ? reinterpret_cast<DWORD*>(&info.subkeys)             : nullptr,
@@ -263,7 +265,7 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
         info.last_write_time = key_time_type::clock::from_time_t(details::file_time_to_time_t(time));
     }
 
-    return !ec ? info : key_info{};
+    return !ec ? info : invalid_info;
 }
 
 value key_handle::read_value(string_view_type value_name) const

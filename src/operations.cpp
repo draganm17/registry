@@ -92,8 +92,11 @@ key_info info(const key& key, key_info_mask mask)
 key_info info(const key& key, key_info_mask mask, std::error_code& ec)
 {
     ec.clear();
+    constexpr key_info invalid_info{ uint32_t(-1), uint32_t(-1), uint32_t(-1), 
+                                     uint32_t(-1), uint32_t(-1), key_time_type::min() };
+
     auto handle = open(key, access_rights::query_value, ec);
-    return !ec ? handle.info(mask, ec) : key_info{};
+    return !ec ? handle.info(mask, ec) : invalid_info;
 }
 
 value read_value(const key& key, string_view_type value_name)
@@ -183,10 +186,12 @@ space_info space(std::error_code& ec)
 {
     ec.clear();
     space_info info;
+    constexpr space_info invalid_info{ uint32_t(-1), uint32_t(-1) };
+
     BOOL success = GetSystemRegistryQuota(reinterpret_cast<DWORD*>(&info.capacity), 
                                           reinterpret_cast<DWORD*>(&info.size));
 
-    return success ? info : (ec = std::error_code(GetLastError(), std::system_category()), space_info{});
+    return success ? info : (ec = std::error_code(GetLastError(), std::system_category()), invalid_info);
 }
 
 void write_value(const key& key, string_view_type value_name, const value& value)

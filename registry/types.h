@@ -226,23 +226,23 @@ namespace registry
     struct key_info
     {
         /*! The number of subkeys that are contained by the key. */
-        uint32_t       subkeys =              uint32_t(-1);
+        uint32_t       subkeys;
 
         /*! The number of values that are associated with the key. */
-        uint32_t       values =               uint32_t(-1);
+        uint32_t       values;
 
         /*!  The size of the key's subkey with the longest name, in characters, not including the terminating 
         null character. */
-        uint32_t       max_subkey_size =      uint32_t(-1);
+        uint32_t       max_subkey_size;
 
         /*! The size of the key's longest value name, in characters, not including the terminating null character. */
-        uint32_t       max_value_name_size =  uint32_t(-1);
+        uint32_t       max_value_name_size;
 
         /*! The size of the longest data component among the key's values, in bytes. */
-        uint32_t       max_value_data_size =  uint32_t(-1);
+        uint32_t       max_value_data_size;
 
         /*! The last time that the key or any of its value entries is modified. */
-        key_time_type  last_write_time =      key_time_type::min();
+        key_time_type  last_write_time;
     };
 
     //! Defines a type of object that stores information about the size of the registry on the system.
