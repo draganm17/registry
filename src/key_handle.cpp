@@ -40,13 +40,107 @@ class unique_hkey
     std::unique_ptr<void, deleter> m_handle;
 
 public:
+    constexpr unique_hkey(key_id id) noexcept
+    : m_handle((void*)id, deleter{})
+    { }
+
     constexpr unique_hkey(key_handle::native_handle_type hkey) noexcept
     : m_handle((void*)hkey, deleter{})
     { }
 
+    operator key_id() const noexcept { throw 0; /* TODO: ... */ }
+    //{ return reinterpret_cast<key_id>(m_handle.get()); }
+
     operator key_handle::native_handle_type() const noexcept 
-    { return (const key_handle::native_handle_type)m_handle.get(); }
+    { return reinterpret_cast<key_handle::native_handle_type>(m_handle.get()); }
 };
+
+/*
+class key_handle_state
+{
+    unique_hkey m_hkey;
+
+public:
+    key_handle_state(key_handle::native_handle_type hkey) noexcept
+    : m_hkey(hkey)
+    { assert(hkey != key_handle::native_handle_type{}); }
+
+public:
+    virtual key key() const { return registry::key::from_key_id(m_hkey); }
+
+    virtual access_rights rights() const noexcept { return access_rights::unknown; }
+
+    key_handle::native_handle_type native_handle() const noexcept { return m_hkey; }
+};
+
+class key_handle_extended_state : public key_handle_state
+{
+    access_rights m_rights;
+    registry::key m_key;
+
+public:
+    key_handle_extended_state(key_handle::native_handle_type hkey, const registry::key& key, access_rights rights)
+    : key_handle_state(hkey)
+    , m_rights(rights)
+    , m_key(key)
+    { }
+
+public:
+    virtual registry::key key() const { return m_key; }
+
+    virtual access_rights rights() const noexcept { return m_rights; }
+};
+*/
+
+struct key_handle_state
+{
+    unique_hkey    handle = key_id::none;
+    access_rights  rights = access_rights::unknown;
+    registry::key  key =    key::from_key_id(handle);
+};
+
+struct key_handle_states_pool
+{
+    key_handle_state classes_root                { key_id::classes_root };
+    key_handle_state current_user                { key_id::current_user };
+    key_handle_state local_machine               { key_id::local_machine };
+    key_handle_state users                       { key_id::users };
+    key_handle_state performance_data            { key_id::performance_data };
+    key_handle_state performance_text            { key_id::performance_text };
+    key_handle_state performance_nlstext         { key_id::performance_nlstext };
+    key_handle_state current_config              { key_id::current_config };
+    key_handle_state current_user_local_settings { key_id::current_user_local_settings };
+};
+
+const auto key_handle_states_pool_ptr = std::make_shared<key_handle_states_pool>();
+
+std::shared_ptr<key_handle_state> make_state(key_id id) noexcept
+{
+    auto& pool = key_handle_states_pool_ptr;
+    using R = std::shared_ptr<key_handle_state>;
+
+    switch (id) {
+        case key_id::classes_root:                return R(pool, &pool->classes_root);
+        case key_id::current_user:                return R(pool, &pool->current_user);
+        case key_id::local_machine:               return R(pool, &pool->local_machine);
+        case key_id::users:                       return R(pool, &pool->users);
+        case key_id::performance_data:            return R(pool, &pool->performance_data);
+        case key_id::performance_text:            return R(pool, &pool->performance_text);
+        case key_id::performance_nlstext:         return R(pool, &pool->performance_nlstext);
+        case key_id::current_config:              return R(pool, &pool->current_config);
+        case key_id::current_user_local_settings: return R(pool, &pool->current_user_local_settings);
+    }
+    return R();
+}
+
+std::shared_ptr<key_handle_state> make_state(key_handle::native_handle_type hkey, 
+                                             const registry::key& key, access_rights rights)
+{
+    const bool invalid = (hkey == key_handle::native_handle_type{});
+    
+    return invalid ? std::shared_ptr<key_handle_state>()
+                   : std::make_shared<key_handle_state>(key_handle_state{ hkey, rights, key });
+}
 
 const auto NtQueryKey_ = []() noexcept
 {
@@ -120,12 +214,7 @@ namespace registry {
 //                                class key_handle                                    //
 //------------------------------------------------------------------------------------//
 
-struct key_handle::state
-{
-    unique_hkey    handle;
-    access_rights  rights;
-    registry::key  key;
-};
+struct key_handle::state : key_handle_state { };
 
 key_handle::key_handle(const weak_key_handle& handle)
     : m_state(handle.m_state.lock())
@@ -133,12 +222,12 @@ key_handle::key_handle(const weak_key_handle& handle)
     if (handle.expired()) throw bad_weak_key_handle();
 }
 
-key_handle::key_handle(key_id id, access_rights rights)
-    : key_handle(static_cast<native_handle_type>(id), registry::key::from_key_id(id), rights)
+key_handle::key_handle(key_id id) noexcept
+    : m_state(std::static_pointer_cast<state>(make_state(id)))
 { }
 
 key_handle::key_handle(native_handle_type handle, const registry::key& key, access_rights rights)
-    : m_state(handle ? std::make_shared<state>(state{ handle, rights, key }) : nullptr)
+    : m_state(std::static_pointer_cast<state>(make_state(handle, key, rights)))
 { }
 
 key key_handle::key() const { return m_state ? m_state->key : registry::key(); }

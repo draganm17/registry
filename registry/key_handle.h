@@ -84,7 +84,7 @@ namespace registry
         @post `native_handle() == static_cast<native_handle_type>(id)`.
         */
         // TODO: optimization for handlers that represent a predefined key
-        key_handle(key_id id, access_rights rights = access_rights::unknown);
+        key_handle(key_id id) noexcept;
 
         // TODO: ...
         key_handle(native_handle_type handle, const registry::key& key, access_rights rights);
