@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <cassert>
+#include <locale>
 #include <Windows.h>
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/functional/hash.hpp>
 
 #include <registry/details/utils.impl.h>
 #include <registry/key.h>
@@ -207,6 +209,21 @@ void key::iterator::swap(iterator& other) noexcept
 {
     m_value.swap(other.m_value);
     m_key_name_view.swap(other.m_key_name_view);
+}
+
+
+//------------------------------------------------------------------------------------//
+//                             NON-MEMBER FUNCTIONS                                   //
+//------------------------------------------------------------------------------------//
+
+size_t hash_value(const key& key) noexcept
+{
+    const auto locale = std::locale();
+    size_t hash = std::hash<view>()(key.view());
+    for (auto it = key.begin(); it != key.end(); ++it) {
+        std::for_each(it->begin(), it->end(), [&](auto c) { boost::hash_combine(hash, std::tolower(c, locale)); });
+    }
+    return hash;
 }
 
 }  // namespace registry

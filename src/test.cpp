@@ -454,9 +454,6 @@ struct TEST_KEY
 
         // hash support
         {
-            // TODO: ...
-
-            /*
             key k01, k02;
             assert(hash_value(k01) == hash_value(k02));
 
@@ -466,15 +463,6 @@ struct TEST_KEY
             key k05 = TEXT("HKEY_CURRENT_USER\\Test");
             key k06 = TEXT("HKEY_CURRENT_user\\\\Test\\");
             assert(hash_value(k05) == hash_value(k06));
-
-            key k07(TEXT("HKEY_CURRENT_USER", view::view_32bit));
-            key k08(TEXT("HKEY_CURRENT_USER", view::view_64bit));
-            assert(hash_value(k05) != hash_value(k06));
-
-            key k09 = TEXT("HKEY_CURRENT_USER\\Test1");
-            key k10 = TEXT("HKEY_CURRENT_USER\\\\Test1\\Test2");
-            assert(hash_value(k09) != hash_value(k10));
-            */
         }
     }
 };
@@ -781,7 +769,7 @@ struct TEST_VALUE
             assert(v1 == v2_copy && v2 == v1_copy);
         }
 
-        // hash
+        // hash support
         {
             value v1, v2;
             assert(hash_value(v1) == hash_value(v2));
