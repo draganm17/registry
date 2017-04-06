@@ -55,43 +55,6 @@ public:
     { return reinterpret_cast<key_handle::native_handle_type>(m_handle.get()); }
 };
 
-/*
-class key_handle_state
-{
-    unique_hkey m_hkey;
-
-public:
-    key_handle_state(key_handle::native_handle_type hkey) noexcept
-    : m_hkey(hkey)
-    { assert(hkey != key_handle::native_handle_type{}); }
-
-public:
-    virtual key key() const { return registry::key::from_key_id(m_hkey); }
-
-    virtual access_rights rights() const noexcept { return access_rights::unknown; }
-
-    key_handle::native_handle_type native_handle() const noexcept { return m_hkey; }
-};
-
-class key_handle_extended_state : public key_handle_state
-{
-    access_rights m_rights;
-    registry::key m_key;
-
-public:
-    key_handle_extended_state(key_handle::native_handle_type hkey, const registry::key& key, access_rights rights)
-    : key_handle_state(hkey)
-    , m_rights(rights)
-    , m_key(key)
-    { }
-
-public:
-    virtual registry::key key() const { return m_key; }
-
-    virtual access_rights rights() const noexcept { return m_rights; }
-};
-*/
-
 struct key_handle_state
 {
     unique_hkey    handle = key_id::none;
