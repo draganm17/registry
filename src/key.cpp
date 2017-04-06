@@ -10,6 +10,51 @@
 #include <registry/key.h>
 
 
+namespace
+{
+using namespace registry;
+
+class key_pool
+{
+private:
+    key_pool() = default;
+
+public:
+    static const key_pool& instance() { static const key_pool pool; return pool; }
+
+public:
+    const key& get(key_id id) const noexcept
+    {
+        switch (id) {
+            case key_id::classes_root:                 return m_classes_root;
+            case key_id::current_user:                 return m_current_user;
+            case key_id::local_machine:                return m_local_machine;
+            case key_id::users:                        return m_users;
+            case key_id::performance_data:             return m_performance_data;
+            case key_id::performance_text:             return m_performance_text;
+            case key_id::performance_nlstext:          return m_performance_nlstext;
+            case key_id::current_config:               return m_current_config;
+            case key_id::current_user_local_settings:  return m_current_user_local_settings;
+        }
+        return m_unknown;
+    }
+
+private:
+    const key m_classes_root =                key(details::key_id_to_string(key_id::classes_root));
+    const key m_current_user =                key(details::key_id_to_string(key_id::current_user));
+    const key m_local_machine =               key(details::key_id_to_string(key_id::local_machine));
+    const key m_users =                       key(details::key_id_to_string(key_id::users));
+    const key m_performance_data =            key(details::key_id_to_string(key_id::performance_data));
+    const key m_performance_text =            key(details::key_id_to_string(key_id::performance_text));
+    const key m_performance_nlstext =         key(details::key_id_to_string(key_id::performance_nlstext));
+    const key m_current_config =              key(details::key_id_to_string(key_id::current_config));
+    const key m_current_user_local_settings = key(details::key_id_to_string(key_id::current_user_local_settings));
+    const key m_unknown =                     key();
+};
+
+}
+
+
 namespace registry {
 
 //------------------------------------------------------------------------------------//
@@ -23,7 +68,7 @@ const view key::default_view =
     view::view_32bit;
 #endif
 
-key key::from_key_id(key_id id) { return key(details::key_id_to_string(id)); }
+key key::from_key_id(key_id id) { return key_pool::instance().get(id); }
 
 key::key(string_view_type name, registry::view view)
     : m_view(view)
