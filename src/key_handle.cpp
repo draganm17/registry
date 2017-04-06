@@ -62,48 +62,50 @@ struct key_handle_state
     registry::key  key =    key::from_key_id(handle);
 };
 
-struct key_handle_state_pool
+class key_handle_pool
 {
-    key_handle_state classes_root                { key_id::classes_root };
-    key_handle_state current_user                { key_id::current_user };
-    key_handle_state local_machine               { key_id::local_machine };
-    key_handle_state users                       { key_id::users };
-    key_handle_state performance_data            { key_id::performance_data };
-    key_handle_state performance_text            { key_id::performance_text };
-    key_handle_state performance_nlstext         { key_id::performance_nlstext };
-    key_handle_state current_config              { key_id::current_config };
-    key_handle_state current_user_local_settings { key_id::current_user_local_settings };
-};
+private:
+    struct pool_t
+    {
+        key_handle_state classes_root                { key_id::classes_root };
+        key_handle_state current_user                { key_id::current_user };
+        key_handle_state local_machine               { key_id::local_machine };
+        key_handle_state users                       { key_id::users };
+        key_handle_state performance_data            { key_id::performance_data };
+        key_handle_state performance_text            { key_id::performance_text };
+        key_handle_state performance_nlstext         { key_id::performance_nlstext };
+        key_handle_state current_config              { key_id::current_config };
+        key_handle_state current_user_local_settings { key_id::current_user_local_settings };
+    };
 
-const auto key_handle_state_pool_ptr = std::make_shared<key_handle_state_pool>();
+private:
+    key_handle_pool() = default;
 
-std::shared_ptr<key_handle_state> make_state(key_id id) noexcept
-{
-    auto& pool = key_handle_state_pool_ptr;
-    using R = std::shared_ptr<key_handle_state>;
+public:
+    static const key_handle_pool& instance() { static const key_handle_pool pool; return pool; }
 
-    switch (id) {
-        case key_id::classes_root:                return R(pool, &pool->classes_root);
-        case key_id::current_user:                return R(pool, &pool->current_user);
-        case key_id::local_machine:               return R(pool, &pool->local_machine);
-        case key_id::users:                       return R(pool, &pool->users);
-        case key_id::performance_data:            return R(pool, &pool->performance_data);
-        case key_id::performance_text:            return R(pool, &pool->performance_text);
-        case key_id::performance_nlstext:         return R(pool, &pool->performance_nlstext);
-        case key_id::current_config:              return R(pool, &pool->current_config);
-        case key_id::current_user_local_settings: return R(pool, &pool->current_user_local_settings);
+public:
+    std::shared_ptr<key_handle_state> get(key_id id) const noexcept
+    {
+        using R = std::shared_ptr<key_handle_state>;
+
+        switch (id) {
+            case key_id::classes_root:                return R(m_pool, &m_pool->classes_root);
+            case key_id::current_user:                return R(m_pool, &m_pool->current_user);
+            case key_id::local_machine:               return R(m_pool, &m_pool->local_machine);
+            case key_id::users:                       return R(m_pool, &m_pool->users);
+            case key_id::performance_data:            return R(m_pool, &m_pool->performance_data);
+            case key_id::performance_text:            return R(m_pool, &m_pool->performance_text);
+            case key_id::performance_nlstext:         return R(m_pool, &m_pool->performance_nlstext);
+            case key_id::current_config:              return R(m_pool, &m_pool->current_config);
+            case key_id::current_user_local_settings: return R(m_pool, &m_pool->current_user_local_settings);
+        }
+        return R();
     }
-    return R();
-}
 
-std::shared_ptr<key_handle_state> make_state(key_handle::native_handle_type hkey, 
-                                             const registry::key& key, access_rights rights)
-{
-    const bool invalid = (hkey == key_handle::native_handle_type{});
-    
-    return invalid ? std::shared_ptr<key_handle_state>()
-                   : std::make_shared<key_handle_state>(key_handle_state{ hkey, rights, key });
-}
+private:
+    const std::shared_ptr<pool_t> m_pool = std::make_shared<pool_t>();
+};
 
 const auto NtQueryKey_ = []() noexcept
 {
@@ -185,12 +187,13 @@ key_handle::key_handle(const weak_key_handle& handle)
     if (handle.expired()) throw bad_weak_key_handle();
 }
 
-key_handle::key_handle(key_id id) noexcept
-    : m_state(std::static_pointer_cast<state>(make_state(id)))
+key_handle::key_handle(key_id id)
+    : m_state(std::static_pointer_cast<state>(key_handle_pool::instance().get(id)))
 { }
 
 key_handle::key_handle(native_handle_type handle, const registry::key& key, access_rights rights)
-    : m_state(std::static_pointer_cast<state>(make_state(handle, key, rights)))
+    : m_state(handle == native_handle_type{} ? nullptr :
+        std::static_pointer_cast<state>(std::make_shared<key_handle_state>(key_handle_state{ handle, rights, key })))
 { }
 
 key key_handle::key() const { return m_state ? m_state->key : registry::key(); }
