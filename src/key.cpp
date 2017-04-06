@@ -36,6 +36,8 @@ view key::view() const noexcept { return m_view; }
 
 key key::root_key() const { return has_root_key() ? key(*begin(), view()) : key(string_view_type(), view()); }
 
+key_id key::root_key_id() const { return details::key_id_from_string(*begin()); }
+
 key key::leaf_key() const { return has_leaf_key() ? key(*--end(), view()) : key(string_view_type(), view()); }
 
 key key::parent_key() const
@@ -62,7 +64,8 @@ bool key::has_parent_key() const noexcept
 bool key::is_absolute() const noexcept 
 {
     const auto beg_it = begin(), end_it = end();
-    return beg_it != end_it && beg_it->data() == m_name.data() && details::key_id_from_string(*beg_it) != key_id::none;
+    return beg_it != end_it && beg_it->data() == m_name.data() && 
+           details::key_id_from_string(*beg_it) != key_id::unknown;
 }
 
 bool key::is_relative() const noexcept { return !is_absolute(); }

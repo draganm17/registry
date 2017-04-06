@@ -50,9 +50,6 @@ namespace registry
     https://msdn.microsoft.com/en-us/library/windows/desktop/ms724836 */
     enum class key_id : uintptr_t 
     {
-        // TODO: ...
-        none =                         0x00000000,
-
         /*! Identifies the registry key HKEY_CLASSES_ROOT. \n
         Registry entries subordinate to this key define types (or classes) of documents and the properties 
         associated with those types. */
@@ -92,7 +89,10 @@ namespace registry
         /*! Identifies the registry key HKEY_CURRENT_USER_LOCAL_SETTINGS. \n
         Registry entries subordinate to this key define preferences of the current user that are local to the
         machine. */
-        current_user_local_settings =  0x80000007
+        current_user_local_settings =  0x80000007,
+
+        //* Unknown key identifier. */
+        unknown =                      0x00000000
     };
 
     /*! On 64-bit Windows, portions of the registry entries are stored separately for 32-bit application and 64-bit

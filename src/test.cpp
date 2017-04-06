@@ -342,6 +342,59 @@ struct TEST_KEY
             assert(k3.parent_key() == key(TEXT("Test1\\Test2"), k3.view()));
         }
 
+        // key::root_key_id()
+        // key::from_key_id(key_id)
+        {
+            key k01 = key::from_key_id(key_id::classes_root);
+            assert(k01.view() == key::default_view);
+            assert(k01.name() == TEXT("HKEY_CLASSES_ROOT"));
+            assert(k01.root_key_id() == key_id::classes_root);
+
+            key k02 = key::from_key_id(key_id::current_user);
+            assert(k02.view() == key::default_view);
+            assert(k02.name() == TEXT("HKEY_CURRENT_USER"));
+            assert(k02.root_key_id() == key_id::current_user);
+
+            key k03 = key::from_key_id(key_id::local_machine);
+            assert(k03.view() == key::default_view);
+            assert(k03.name() == TEXT("HKEY_LOCAL_MACHINE"));
+            assert(k03.root_key_id() == key_id::local_machine);
+
+            key k04 = key::from_key_id(key_id::users);
+            assert(k04.view() == key::default_view);
+            assert(k04.name() == TEXT("HKEY_USERS"));
+            assert(k04.root_key_id() == key_id::users);
+
+            key k05 = key::from_key_id(key_id::performance_data);
+            assert(k05.view() == key::default_view);
+            assert(k05.name() == TEXT("HKEY_PERFORMANCE_DATA"));
+            assert(k05.root_key_id() == key_id::performance_data);
+            
+            key k06 = key::from_key_id(key_id::performance_text);
+            assert(k06.view() == key::default_view);
+            assert(k06.name() == TEXT("HKEY_PERFORMANCE_TEXT"));
+            assert(k06.root_key_id() == key_id::performance_text);
+
+            key k07 = key::from_key_id(key_id::performance_nlstext);
+            assert(k07.view() == key::default_view);
+            assert(k07.name() == TEXT("HKEY_PERFORMANCE_NLSTEXT"));
+            assert(k07.root_key_id() == key_id::performance_nlstext);
+            
+            key k08 = key::from_key_id(key_id::current_config);
+            assert(k08.view() == key::default_view);
+            assert(k08.name() == TEXT("HKEY_CURRENT_CONFIG"));
+            assert(k08.root_key_id() == key_id::current_config);
+            
+            key k09 = key::from_key_id(key_id::current_user_local_settings);
+            assert(k09.view() == key::default_view);
+            assert(k09.name() == TEXT("HKEY_CURRENT_USER_LOCAL_SETTINGS"));
+            assert(k09.root_key_id() == key_id::current_user_local_settings);
+            
+            key k10 = key::from_key_id(key_id::unknown);
+            assert(k10 == key());
+            assert(k10.root_key_id() == key_id::unknown);
+        }
+
         // key::is_absolute()
         // key::is_relative()
         {
