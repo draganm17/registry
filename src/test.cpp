@@ -856,6 +856,105 @@ struct TEST_VALUE
     }
 };
 
+struct TEST_KEY_HANDLE
+{
+    void operator()() noexcept
+    {
+        using namespace registry;
+
+        // default constructor
+        {
+            key_handle h;
+            assert(!h.valid());
+        }
+
+        // key_handle::key_handle(const weak_key_handle&);
+        {
+            // TODO: ...
+        }
+
+        // key_handle::key_handle(key_id)
+        // key_handle::key()
+        // key_handle::rights()
+        // key_handle::native_handle()
+        // key_handle::valid()
+        {
+            key_handle h01 = key_id::classes_root;
+            assert(h01.valid());
+            assert(h01.key() == key::from_key_id(key_id::classes_root));
+            assert(h01.rights() == access_rights::unknown);
+            assert(h01.native_handle() == static_cast<key_handle::native_handle_type>(key_id::classes_root));
+
+            key_handle h02 = key_id::current_config;
+            assert(h02.valid());
+            assert(h02.key() == key::from_key_id(key_id::current_config));
+            assert(h02.rights() == access_rights::unknown);
+            assert(h02.native_handle() == static_cast<key_handle::native_handle_type>(key_id::current_config));
+
+            key_handle h03 = key_id::current_user;
+            assert(h03.valid());
+            assert(h03.key() == key::from_key_id(key_id::current_user));
+            assert(h03.rights() == access_rights::unknown);
+            assert(h03.native_handle() == static_cast<key_handle::native_handle_type>(key_id::current_user));
+
+            key_handle h04 = key_id::current_user_local_settings;
+            assert(h04.valid());
+            assert(h04.key() == key::from_key_id(key_id::current_user_local_settings));
+            assert(h04.rights() == access_rights::unknown);
+            assert(h04.native_handle() == static_cast<key_handle::native_handle_type>(key_id::current_user_local_settings));
+
+            key_handle h05 = key_id::current_user_local_settings;
+            assert(h05.valid());
+            assert(h05.key() == key::from_key_id(key_id::current_user_local_settings));
+            assert(h05.rights() == access_rights::unknown);
+            assert(h05.native_handle() == static_cast<key_handle::native_handle_type>(key_id::current_user_local_settings));
+
+            key_handle h06 = key_id::local_machine;
+            assert(h06.valid());
+            assert(h06.key() == key::from_key_id(key_id::local_machine));
+            assert(h06.rights() == access_rights::unknown);
+            assert(h06.native_handle() == static_cast<key_handle::native_handle_type>(key_id::local_machine));
+
+            key_handle h07 = key_id::performance_data;
+            assert(h07.valid());
+            assert(h07.key() == key::from_key_id(key_id::performance_data));
+            assert(h07.rights() == access_rights::unknown);
+            assert(h07.native_handle() == static_cast<key_handle::native_handle_type>(key_id::performance_data));
+
+            key_handle h08 = key_id::performance_nlstext;
+            assert(h08.valid());
+            assert(h08.key() == key::from_key_id(key_id::performance_nlstext));
+            assert(h08.rights() == access_rights::unknown);
+            assert(h08.native_handle() == static_cast<key_handle::native_handle_type>(key_id::performance_nlstext));
+
+            key_handle h09 = key_id::performance_text;
+            assert(h09.valid());
+            assert(h09.key() == key::from_key_id(key_id::performance_text));
+            assert(h09.rights() == access_rights::unknown);
+            assert(h09.native_handle() == static_cast<key_handle::native_handle_type>(key_id::performance_text));
+
+            key_handle h10 = key_id::unknown;
+            assert(!h10.valid());
+            assert(h10.key() == key());
+            assert(h10.rights() == access_rights::unknown);
+            assert(h10.native_handle() == key_handle::native_handle_type{});
+        }
+
+        // key_handle::key_handle(native_handle_type, const registry::key&, access_rights)
+        {
+            key_handle h1(static_cast<key_handle::native_handle_type>(key_id::classes_root),
+                          key::from_key_id(key_id::current_config), access_rights::create_link);
+            assert(h1.valid());
+            assert(h1.key() == key::from_key_id(key_id::current_config));
+            assert(h1.rights() == access_rights::create_link);
+            assert(h1.native_handle() == static_cast<key_handle::native_handle_type>(key_id::classes_root));
+
+            key_handle h2(key_handle::native_handle_type{},
+                          key::from_key_id(key_id::current_config), access_rights::create_link);
+            assert(!h2.valid());
+        }
+    }
+};
 
 /*
 struct TEST_VALUE_ENTRY
@@ -1559,6 +1658,7 @@ int main()
         TEST_REGISTRY_ERROR()();
         TEST_KEY()();
         TEST_VALUE()();
+        TEST_KEY_HANDLE()();
         //TEST_VALUE_ENTRY()();
         //TEST_KEY_ITERATOR()();
         //TEST_RECURSIVE_KEY_ITERATOR()();
