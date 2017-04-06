@@ -4,6 +4,7 @@
 #include <exception>
 #include <memory>
 #include <system_error>
+#include <type_traits>
 
 #include <registry/key.h>
 #include <registry/types.h>
@@ -49,7 +50,7 @@ namespace registry
         std::shared_ptr<state> m_state;
 
     public:
-        using native_handle_type = uintptr_t;
+        using native_handle_type = std::underlying_type_t<key_id>;
 
     public:
         //! Default constructor.
@@ -89,6 +90,15 @@ namespace registry
         key_handle(key_id id);
 
         // TODO: ...
+        /*!
+        Unless `handle == native_handle_type{}` the postconditions are the following:
+        - `valid()`.
+        - `this->key() == key`.
+        - `this->rights() == rights`.
+        - `this->native_handle() == handle`.
+
+        Otherwise: `!valid()`.
+        */
         key_handle(native_handle_type handle, const registry::key& key, access_rights rights);
 
         /*! \brief
