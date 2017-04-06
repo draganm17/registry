@@ -78,12 +78,15 @@ namespace registry
 
         // Constructs a handle to an prdefined registry key.
         /*!
-        @post `valid()`.
-        @post `key() == registry::key::from_key_id(id)`.
-        @post `rights() == access_rights::unknown`.
-        @post `native_handle() == static_cast<native_handle_type>(id)`.
+        Unless `id == key_id::unknown` the postconditions are the following:
+        - `valid()`.
+        - `key() == registry::key::from_key_id(id)`.
+        - `rights() == access_rights::unknown`.
+        - `native_handle() == static_cast<native_handle_type>(id)`.
+
+        Otherwise: `!valid()`.
         */
-        key_handle(key_id id) noexcept;
+        key_handle(key_id id);
 
         // TODO: ...
         key_handle(native_handle_type handle, const registry::key& key, access_rights rights);
