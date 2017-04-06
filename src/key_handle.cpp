@@ -57,7 +57,7 @@ public:
 
 struct key_handle_state
 {
-    unique_hkey    handle = key_id::none;
+    unique_hkey    handle = key_id::unknown;
     access_rights  rights = access_rights::unknown;
     registry::key  key =    key::from_key_id(handle);
 };

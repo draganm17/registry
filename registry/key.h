@@ -35,10 +35,9 @@ namespace registry
         static const view default_view;
 
     public:
-        //! Constructs an key object from a given predefined key identifier.
+        //! Constructs a object key that corresponds to an predefined registry key.
         /*!
-        The name of the returned key is equal to the string representation of the predefined key identifier, the key 
-        view is equal to `default_view`. The returned key is an absolute key.
+        Returns key() if `id == key_id::unknown`. The view of the returned key is always equal to `default_view`.
         */
         static key from_key_id(key_id id);
 
@@ -107,6 +106,12 @@ namespace registry
         */
         key root_key() const;
 
+        //! Returns the identifier of the root key.
+        /*!
+        Returns key_id::unknown if `!has_root_key()` or if the root key is not one of the predefined keys.
+        */
+        key_id root_key_id() const;
+
         //! Returns the leaf component of the key.
         /*!
         Equivalent to `has_leaf_key() ? key(*--end(), view()) : key(string_type(), view())`.
@@ -141,12 +146,9 @@ namespace registry
 
         //! Checks whether the key is absolute.
         /*!
-        An absolute key is a key that unambiguously identifies the location of a registry key. The name of such key
-        should begin with a predefined key identifier. \n
-        For example:
-        - "Software\Microsoft" is an relative key.
-        - "\HKEY_LOCAL_MACHINE\Software\Microsoft" is an relative key (note the slash at the begining);
-        - "HKEY_LOCAL_MACHINE\Software\Microsoft" is an absolute key;
+        An absolute key is a key that unambiguously identifies the location of a registry key. The name of such key 
+        should begin with a predefined key identifier. The key is absolute if `root_key_id() != key_id::unknown` and 
+        the key name does not begin with a key separator.
         */
         bool is_absolute() const noexcept;
 

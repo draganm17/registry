@@ -59,7 +59,7 @@ namespace details {
         auto it = std::lower_bound(key_map.begin(), key_map.end(), str,
                                    [](auto&& lhs, auto&& rhs) { return ilexicographical_compare(lhs.first, rhs); });
 
-        return (it != key_map.end() && (*it).first == str) ? (*it).second : key_id::none;
+        return (it != key_map.end() && (*it).first == str) ? (*it).second : key_id::unknown;
     }
 
 }} // namespace registry::details
