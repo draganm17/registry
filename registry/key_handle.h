@@ -54,7 +54,7 @@ namespace registry
     public:
         //! Default constructor.
         /*!
-        @post `valid() == false`.
+        @post `!valid()`.
         */
         constexpr key_handle() noexcept = default;
 
@@ -65,26 +65,25 @@ namespace registry
 
         //! Constructs the handle with the contents of `other` using move semantics.
         /*!
-        @post `other.valid() == false`.
+        @post `!other.valid()`.
         @post `*this` has the original value of `other`.
         */
         key_handle(key_handle&& other) noexcept = default;
 
         //! Constructs a key_handle which shares ownership of the handle managed by `handle`.
         /*!
-        @throw registry::bad_weak_key_handle if `handle.expired() == true`.
+        @throw registry::bad_weak_key_handle if `handle.expired()`.
         */
         key_handle(const weak_key_handle& handle);
 
-        // TODO: ...
+        // Constructs a handle to an prdefined registry key.
         /*!
-        @post `valid() == true`.
+        @post `valid()`.
         @post `key() == registry::key::from_key_id(id)`.
-        @post `this->rights() == rights`.
+        @post `rights() == access_rights::unknown`.
         @post `native_handle() == static_cast<native_handle_type>(id)`.
         */
-        // TODO: optimization for handlers that represent a predefined key
-        key_handle(key_id id, access_rights rights = access_rights::unknown);
+        key_handle(key_id id) noexcept;
 
         // TODO: ...
         key_handle(native_handle_type handle, const registry::key& key, access_rights rights);
@@ -99,7 +98,7 @@ namespace registry
 
         //! Replaces the contents of `*this` with those of `other` using move semantics.
         /*!
-        @post `other.valid() == false`.
+        @post `!other.valid()`.
         @post `*this` has the original value of `other`.
         @return `*this`.
         */
@@ -108,19 +107,19 @@ namespace registry
     public:
         //! Returns the key this handle was initialized with.
         /*!
-        @return An value of type registry::key. If `valid() == false` returns `registry::key()`.
+        @return An value of type registry::key. If `!valid()` returns `registry::key()`.
         */
         registry::key key() const;
 
         //! Returns the access rights this handle was initialized with.
         /*!
-        @return An value of type registry::access_rights. If `valid() == false` returns `access_rights::unknown`.
+        @return An value of type registry::access_rights. If `!valid()` returns `access_rights::unknown`.
         */
         access_rights rights() const noexcept;
 
         //! Returns the underlying implementation-defined native handle object suitable for use with WinAPI.
         /*!
-        @return An value of type native_handle_type. If `valid() == false` returns `native_handle_type{}`.
+        @return An value of type native_handle_type. If `!valid()` returns `native_handle_type{}`.
         */
         native_handle_type native_handle() const noexcept;
 
@@ -327,7 +326,7 @@ namespace registry
     public:
         //! Default constructor. Constructs an invalid weak_key_handle.
         /*!
-        @post `expired() == true`.
+        @post `expired()`.
         */
         constexpr weak_key_handle() noexcept = default;
 
@@ -338,7 +337,7 @@ namespace registry
 
         //! Constructs the handle with the contents of `other` using move semantics.
         /*!
-        @post `other.expired() == true`.
+        @post `other.expired()`.
         @post `*this` has the original value of `other`.
         */
         weak_key_handle(weak_key_handle&& other) noexcept = default;
@@ -356,7 +355,7 @@ namespace registry
 
         //! Replaces the contents of `*this` with those of `other` using move semantics.
         /*!
-        @post `other.expired() == true`.
+        @post `other.expired()`.
         @post `*this` has the original value of `other`.
         @return `*this`.
         */
