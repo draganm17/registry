@@ -45,44 +45,52 @@ namespace registry
 #endif
     using key_time_type = std::chrono::time_point<std::chrono::system_clock>;
 
-    /*! The system defines a set of predefined registry keys. Predefined keys help an application navigate in the
-    registry and make it possible to develop tools that allow a system administrator to manipulate categories of data.
-    For more information see: https://msdn.microsoft.com/en-us/library/windows/desktop/ms724836 */
+    /*! Windows defines a set of predefined registry keys. These keys are entry points to the registry hierarchy.
+    Each such key is also associated with an key handle, which is always open. For more information see: 
+    https://msdn.microsoft.com/en-us/library/windows/desktop/ms724836 */
     enum class key_id : uintptr_t 
     {
         // TODO: ...
         none =                         0x00000000,
 
-        /*! Registry entries subordinate to this key define types (or classes) of documents and the properties 
+        /*! Identifies the registry key HKEY_CLASSES_ROOT. \n
+        Registry entries subordinate to this key define types (or classes) of documents and the properties 
         associated with those types. */
         classes_root =                 0x80000000,
 
-        /*! Registry entries subordinate to this key define the preferences of the current user. */
+        /*! Identifies the registry key HKEY_CURRENT_USER. \n
+        Registry entries subordinate to this key define the preferences of the current user. */
         current_user =                 0x80000001,
 
-        /*! Registry entries subordinate to this key define the physical state of the computer, including data about 
+        /*! Identifies the registry key HKEY_LOCAL_MACHINE. \n
+        Registry entries subordinate to this key define the physical state of the computer, including data about
         the bus type, system memory, and installed hardware and software. */
         local_machine =                0x80000002,
 
-        /*! Registry entries subordinate to this key define the default user configuration for new users on the local 
+        /*! Identifies the registry key HKEY_USERS. \n
+        Registry entries subordinate to this key define the default user configuration for new users on the local
         computer and the user configuration for the current user. */
         users =                        0x80000003,
 
-        /*! Registry entries subordinate to this key allow you to access performance data. */
+        /*! Identifies the registry key HKEY_PERFORMANCE_DATA. \n
+        Registry entries subordinate to this key allow you to access performance data. */
         performance_data =             0x80000004,
 
-        /*! Registry entries subordinate to this key reference the text strings that describe counters in 
-        US English. */
+        /*! Identifies the registry key HKEY_PERFORMANCE_TEXT. \n
+        Registry entries subordinate to this key reference the text strings that describe counters in US English. */
         performance_text =             0x80000050,
 
-        /*! Registry entries subordinate to this key reference the text strings that describe counters in the local 
+        /*! Identifies the registry key HKEY_PERFORMANCE_NLSTEXT. \n
+        Registry entries subordinate to this key reference the text strings that describe counters in the local
         language of the area in which the computer system is running. */
         performance_nlstext =          0x80000060,
 
-        /*! Contains information about the current hardware profile of the local computer system. */
+        /*! Identifies the registry key HKEY_CURRENT_CONFIG. \n
+        Contains information about the current hardware profile of the local computer system. */
         current_config =               0x80000005,
 
-        /*! Registry entries subordinate to this key define preferences of the current user that are local to the 
+        /*! Identifies the registry key HKEY_CURRENT_USER_LOCAL_SETTINGS. \n
+        Registry entries subordinate to this key define preferences of the current user that are local to the
         machine. */
         current_user_local_settings =  0x80000007
     };
