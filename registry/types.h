@@ -175,7 +175,7 @@ namespace registry
         write =                0x00020006,
 
         /*! TODO: ... */
-        unknown =              0x0
+        unknown =              0x00000000
     };
 
     /*! This type represents available options that control the behavior of the recursive_key_iterator. \n
@@ -185,10 +185,10 @@ namespace registry
     enum class key_options : uint16_t
     {
         /*! (Default) Permission denied is error. */
-        none =                    0x0,
+        none =                    0x0000,
 
         /*! Skip keys that would otherwise result in permission denied errors. */
-        skip_permission_denied =  0x1
+        skip_permission_denied =  0x0001
     };
 
     /*! The Windows security model enables you to control access to registry keys. For more information see:

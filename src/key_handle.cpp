@@ -48,8 +48,8 @@ public:
     : m_handle((void*)hkey, deleter{})
     { }
 
-    operator key_id() const noexcept { throw 0; /* TODO: ... */ }
-    //{ return reinterpret_cast<key_id>(m_handle.get()); }
+    operator key_id() const noexcept
+    { return (key_id)((uintptr_t)m_handle.get()); }
 
     operator key_handle::native_handle_type() const noexcept 
     { return reinterpret_cast<key_handle::native_handle_type>(m_handle.get()); }
@@ -99,7 +99,7 @@ struct key_handle_state
     registry::key  key =    key::from_key_id(handle);
 };
 
-struct key_handle_states_pool
+struct key_handle_state_pool
 {
     key_handle_state classes_root                { key_id::classes_root };
     key_handle_state current_user                { key_id::current_user };
@@ -112,11 +112,11 @@ struct key_handle_states_pool
     key_handle_state current_user_local_settings { key_id::current_user_local_settings };
 };
 
-const auto key_handle_states_pool_ptr = std::make_shared<key_handle_states_pool>();
+const auto key_handle_state_pool_ptr = std::make_shared<key_handle_state_pool>();
 
 std::shared_ptr<key_handle_state> make_state(key_id id) noexcept
 {
-    auto& pool = key_handle_states_pool_ptr;
+    auto& pool = key_handle_state_pool_ptr;
     using R = std::shared_ptr<key_handle_state>;
 
     switch (id) {
