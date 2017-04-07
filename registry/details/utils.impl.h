@@ -55,11 +55,12 @@ namespace details {
             key_map_value_type{ TEXT("HKEY_USERS"),                       key_id::users                       }
         };
 
+        using boost::iequals;
         using boost::ilexicographical_compare;
         auto it = std::lower_bound(key_map.begin(), key_map.end(), str,
                                    [](auto&& lhs, auto&& rhs) { return ilexicographical_compare(lhs.first, rhs); });
 
-        return (it != key_map.end() && (*it).first == str) ? (*it).second : key_id::unknown;
+        return (it != key_map.end() && iequals((*it).first, str)) ? (*it).second : key_id::unknown;
     }
 
 }} // namespace registry::details
