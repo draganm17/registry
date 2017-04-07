@@ -75,7 +75,7 @@ namespace registry
         template <typename Source, 
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
         >
-        key(const Source& name, view view = default_view) : key(string_view_type(name), view) { }
+        key(const Source& name) : key(string_view_type(name)) { }
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
