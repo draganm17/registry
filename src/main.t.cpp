@@ -14,11 +14,8 @@ using namespace registry;
 
 void clear_stage() noexcept
 {
-    using namespace registry;
-    const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry");
-
-    remove_all(k);
-    assert(exists(k) == false);
+    const LRESULT rc = RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry"));
+    assert(rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND);
 }
 
 void prepare_stage() noexcept
