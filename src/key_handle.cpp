@@ -280,8 +280,8 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
     );
 
     if (rc == ERROR_SUCCESS) {
-        if (read_last_write_time) info.last_write_time = 
-                                      key_time_type::clock::from_time_t(details::file_time_to_time_t(time));
+        if (read_last_write_time) 
+            info.last_write_time = key_time_type::clock::from_time_t(details::file_time_to_time_t(time));
         RETURN_RESULT(ec, info);
     }
 
