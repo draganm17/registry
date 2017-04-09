@@ -411,15 +411,14 @@ namespace registry
     /*!
     @param[in] key - an absolute key specifying the registry key that this function opens.
     @param[in] rights - the access rights for the key to be opened.
-    @return a valid key_handle object.
-    @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`. 
-           std::bad_alloc may be thrown if memory allocation fails.
-    */
-    //key_handle open(const key& key, access_rights rights);
-
-    //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-    /*!
-    Returns `key_handle()` on error.
+    @param[out] ec - out-parameter for error reporting.`
+    @return a valid key_handle object. The overload  that takes `std::error_code&` parameter returns an 
+            default-constructed (not valid) handle on error.
+    @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+           API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n
+           `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+           `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+           `ec.clear()` if no errors occur.
     */
     key_handle open(const key& key, access_rights rights, std::error_code& ec = throws());
 
