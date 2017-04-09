@@ -226,9 +226,10 @@ std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, 
                                 REG_OPTION_NON_VOLATILE, sam_desired, nullptr, reinterpret_cast<HKEY*>(&hkey), &disp);
     
     if (rc == ERROR_SUCCESS) {
+        unique_hkey uhkey(hkey);
         // NOTE: the new key will have the same view as the subkey.
         auto new_key = registry::key(key().name(), subkey.view()).append(subkey.name());
-        return std::make_pair(key_handle(hkey, std::move(new_key), rights), disp == REG_CREATED_NEW_KEY);
+        return std::make_pair(key_handle(std::move(uhkey), std::move(new_key), rights), disp == REG_CREATED_NEW_KEY);
     }
     return (ec = std::error_code(rc, std::system_category()), std::make_pair(key_handle(), false));
 }
