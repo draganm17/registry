@@ -2,8 +2,16 @@
 #include <Windows.h>
 
 #include <registry/exception.h>
+#include <registry/details/utils.impl.h>
 #include <registry/key_handle.h>
 #include <registry/operations.h>
+
+
+#define RETURN_RESULT(ec, result)          \
+    {                                      \
+        if (&ec != &throws()) ec.clear();  \
+        return result;                     \
+    }
 
 
 namespace registry {
@@ -12,115 +20,80 @@ namespace registry {
 //                             NON-MEMBER FUNCTIONS                                   //
 //------------------------------------------------------------------------------------//
 
-bool create_key(const key& key)
-{
-    std::error_code ec;
-    decltype(auto) res = create_key(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    return res;
-}
-
 bool create_key(const key& key, std::error_code& ec)
 {
-    ec.clear();
+    std::error_code ec2;
+    bool result = false;
     registry::key base_key = key, subkey;
-    key_handle handle = open(base_key, access_rights::create_sub_key, ec);
+    auto handle = open(base_key, access_rights::create_sub_key, ec2);
 
-    while ((!ec || ec.value() == ERROR_FILE_NOT_FOUND) && base_key.has_parent_key()) {
+    while ((!ec2 || ec2.value() == ERROR_FILE_NOT_FOUND) && base_key.has_parent_key()) {
         subkey = base_key.leaf_key().append(subkey.name());
-        handle = open(base_key.remove_leaf(), access_rights::create_sub_key, ec);
+        handle = open(base_key.remove_leaf(), access_rights::create_sub_key, ec2);
     }
-    return !ec ? handle.create_key(subkey, access_rights::query_value, ec).second : false;
-}
 
-bool equivalent(const key& key1, const key& key2)
-{
-    std::error_code ec;
-    decltype(auto) res = equivalent(key1, key2, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key1, key2);
-    return res;
+    if (!ec2 && (result = handle.create_key(subkey, access_rights::query_value, ec).second, !ec2)) {
+        RETURN_RESULT(ec, result);
+    }
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), result;
 }
 
 bool equivalent(const key& key1, const key& key2, std::error_code& ec)
 {
-    ec.clear();
-    auto handle1 = open(key1, access_rights::query_value, ec);
-    auto handle2 = !ec ? open(key2, access_rights::query_value, ec) : key_handle();
-
-    return !ec ? handle1.equivalent(handle2, ec) : false;
-}
-
-bool exists(const key& key)
-{
-   std::error_code ec;
-   decltype(auto) res = exists(key, ec);
-   if (ec) throw registry_error(ec, __FUNCTION__, key);
-   return res;
+    std::error_code ec2;
+    bool result = false;
+    key_handle handle1, handle2;
+    if ((handle1 = open(key1, access_rights::query_value, ec2), !ec2) &&
+        (handle2 = open(key2, access_rights::query_value, ec2), !ec2) &&
+        (result = handle1.equivalent(handle2, ec2), !ec2))
+    {
+        RETURN_RESULT(ec, result);
+    }
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key1, key2), result;
 }
 
 bool exists(const key& key, std::error_code& ec)
 {
-    ec.clear();
-    open(key, access_rights::query_value, ec);
-    return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), false)
-                                                : (!ec ? true : false);
-}
+    std::error_code ec2;
+    open(key, access_rights::query_value, ec2);
 
-bool exists(const key& key, string_view_type value_name)
-{
-    std::error_code ec;
-    decltype(auto) res = exists(key, value_name, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key, {}, value_name);
-    return res;
+    if (!ec2) RETURN_RESULT(ec, true);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), false;
 }
 
 bool exists(const key& key, string_view_type value_name, std::error_code& ec)
 {
-    ec.clear();
-    auto handle = open(key, access_rights::query_value, ec);
-    return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), false)
-                                                : (!ec ? handle.exists(value_name, ec) : false);
-}
+    std::error_code ec2;
+    bool result = false;
+    const auto handle = open(key, access_rights::query_value, ec2);
 
-key_info info(const key& key, key_info_mask mask)
-{
-    std::error_code ec;
-    decltype(auto) res = info(key, mask, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    return res;
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, result);
+    if (!ec2 && (result = handle.exists(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key, registry::key(), value_name), false;
 }
 
 key_info info(const key& key, key_info_mask mask, std::error_code& ec)
 {
-    ec.clear();
     constexpr key_info invalid_info{ uint32_t(-1), uint32_t(-1), uint32_t(-1), 
                                      uint32_t(-1), uint32_t(-1), key_time_type::min() };
 
-    auto handle = open(key, access_rights::query_value, ec);
-    return !ec ? handle.info(mask, ec) : invalid_info;
-}
+    key_info info;
+    std::error_code ec2;
+    const auto handle = open(key, access_rights::query_value, ec2);
 
-value read_value(const key& key, string_view_type value_name)
-{
-    std::error_code ec;
-    decltype(auto) res = read_value(key, value_name, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key, {}, value_name);
-    return res;
+    if (!ec2 && (info = handle.info(mask, ec2), !ec2)) RETURN_RESULT(ec, info);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), invalid_info;
 }
 
 value read_value(const key& key, string_view_type value_name, std::error_code& ec)
 {
-    ec.clear();
-    auto handle = open(key, access_rights::query_value, ec);
-    return !ec ? handle.read_value(value_name, ec) : value();
-}
+    value result;
+    std::error_code ec2;
+    const auto handle = open(key, access_rights::query_value, ec2);
 
-bool remove(const key& key)
-{
-    std::error_code ec;
-    decltype(auto) res = remove(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    return res;
+    if (!ec2 && (result = handle.read_value(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key, registry::key(), value_name), result;
 }
 
 bool remove(const key& key, std::error_code& ec)
@@ -128,45 +101,32 @@ bool remove(const key& key, std::error_code& ec)
     // TODO: key open rights does not affect the delete operation - 
     //       so, maybe I should 'open' just the root key and not the parent key ???
 
-    ec.clear();
-    auto handle = open(key.parent_key(), access_rights::query_value /* TODO: ??? */, ec);
+    std::error_code ec2;
+    bool result = false;
+    const auto handle = open(key.parent_key(), access_rights::query_value /* TODO: ??? */, ec2);
 
-    return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), false)
-                                                : (!ec ? handle.remove(key.leaf_key(), ec) : false);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, result);
+    if (!ec2 && (result = handle.remove(key.leaf_key(), ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), result;
 
     // TODO: check if the key has a parent ???
 }
 
-bool remove(const key& key, string_view_type value_name)
-{
-    std::error_code ec;
-    decltype(auto) res = remove(key, value_name, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key, {}, value_name);
-    return res;
-}
-
 bool remove(const key& key, string_view_type value_name, std::error_code& ec)
 {
-    ec.clear();
-    auto handle = open(key, access_rights::set_value, ec);
-    return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), false)
-                                                : (!ec ? handle.remove(value_name, ec) : false);
-}
+    std::error_code ec2;
+    bool result = false;
+    const auto handle = open(key, access_rights::set_value, ec2);
 
-std::uintmax_t remove_all(const key& key)
-{
-    std::error_code ec;
-    decltype(auto) res = remove_all(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    return res;
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, result);
+    if (!ec2 && (result = handle.remove(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key, registry::key(), value_name), result;
 }
 
 std::uintmax_t remove_all(const key& key, std::error_code& ec)
 {
     // TODO: ...
     return 0;
-
-    ec.clear();
 
     //auto keys_deleted = remove_all_inside(key, ec);
     //if (!ec) {
@@ -175,38 +135,26 @@ std::uintmax_t remove_all(const key& key, std::error_code& ec)
     //return ec ? static_cast<std::uintmax_t>(-1) : keys_deleted;
 }
 
-space_info space()
-{
-    std::error_code ec;
-    decltype(auto) res = space(ec);
-    if (ec) throw registry_error(ec, __FUNCTION__);
-    return res;
-}
-
 space_info space(std::error_code& ec)
 {
-    ec.clear();
     space_info info;
     constexpr space_info invalid_info{ uint32_t(-1), uint32_t(-1) };
 
-    BOOL success = GetSystemRegistryQuota(reinterpret_cast<DWORD*>(&info.capacity), 
-                                          reinterpret_cast<DWORD*>(&info.size));
+    const BOOL success = GetSystemRegistryQuota(reinterpret_cast<DWORD*>(&info.capacity), 
+                                                reinterpret_cast<DWORD*>(&info.size));
 
-    return success ? info : (ec = std::error_code(GetLastError(), std::system_category()), invalid_info);
-}
-
-void write_value(const key& key, string_view_type value_name, const value& value)
-{
-    std::error_code ec;
-    write_value(key, value_name, value, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key, {}, value_name);
+    if (success) RETURN_RESULT(ec, info);
+    const std::error_code ec2(GetLastError(), std::system_category());
+    return details::set_or_throw(&ec, ec2, __FUNCTION__), invalid_info;
 }
 
 void write_value(const key& key, string_view_type value_name, const value& value, std::error_code& ec)
 {
-    ec.clear();
-    auto handle = open(key, access_rights::set_value, ec);
-    if (!ec) handle.write_value(value_name, value, ec);
+    std::error_code ec2;
+    const auto handle = open(key, access_rights::set_value, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, void());
+    details::set_or_throw(&ec, ec2, __FUNCTION__, key, registry::key(), value_name);
 }
 
 }  // namespace registry

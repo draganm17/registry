@@ -7,11 +7,21 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <registry/exception.h>
 #include <registry/types.h>
 
 
 namespace registry {
 namespace details {
+
+    template <class ...Args>
+    inline void set_or_throw(std::error_code* ec_dst, const std::error_code& ec_src, const char* msg, Args&&... ex_args)
+    {
+        if (ec_dst) {
+            *ec_dst = ec_src;
+        }
+        throw registry_error(ec_src, msg, std::forward<Args>(ex_args)...);
+    }
 
     inline time_t file_time_to_time_t(const FILETIME& time) noexcept
     {
