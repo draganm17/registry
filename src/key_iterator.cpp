@@ -74,13 +74,13 @@ key_iterator::key_iterator(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
     const auto handle = open(key, access_rights::enumerate_sub_keys, ec2);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
 
-    if (ec2.value() == ERROR_FILE_NOT_FOUND) {
-        if (&ec != &throws()) ec.clear();
-        return;
+    key_iterator tmp;
+    if (!ec2 && (tmp = key_iterator(handle, ec2), !ec2)) {
+        swap(tmp);
+        RETURN_RESULT(ec, VOID);
     }
-
-    if (!ec2) swap(key_iterator(handle, ec)); else
     details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
@@ -93,10 +93,7 @@ key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
     if (!ec2) {
         m_state->buffer.resize(++info.max_subkey_size, TEXT('_'));
         m_state->entry.m_key.append({ m_state->buffer.data(), m_state->buffer.size() });
-        if (increment(ec2), !ec2) {
-            if (&ec != &throws()) ec.clear();
-            return;
-        }
+        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
     m_state.reset();
     details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());
@@ -169,9 +166,8 @@ recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& 
     m_stack.emplace_back(key, ec2);
 
     if (!ec2) {
-        if (&ec != &throws()) ec.clear;
         if (m_stack.back() == key_iterator()) m_stack.clear();
-        return;
+        RETURN_RESULT(ec, VOID);
     }
     m_stack.clear();
     if (!ec2) details::set_or_throw(&ec, ec2, __FUNCTION__, key);
@@ -181,13 +177,10 @@ recursive_key_iterator::recursive_key_iterator(const key_handle& handle, std::er
 {
     std::error_code ec2;
     m_stack.emplace_back(handle, ec2);
+    if (!ec2) RETURN_RESULT(ec, VOID);
 
-    if (!ec2) {
-        if (&ec != &throws()) ec.clear;
-        return;
-    }
     m_stack.clear();
-    if (!ec2) details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());
+    details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());
 }
 
 bool recursive_key_iterator::operator==(const recursive_key_iterator& rhs) const noexcept

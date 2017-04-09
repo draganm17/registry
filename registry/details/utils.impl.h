@@ -11,6 +11,15 @@
 #include <registry/types.h>
 
 
+#define VOID 
+
+#define RETURN_RESULT(ec, result)          \
+    {                                      \
+        if (&ec != &throws()) ec.clear();  \
+        return result;                     \
+    }
+
+
 namespace registry {
 namespace details {
 

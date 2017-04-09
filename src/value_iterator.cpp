@@ -86,13 +86,13 @@ value_iterator::value_iterator(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
     const auto handle = open(key, access_rights::query_value, ec2);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
 
-    if (ec2.value() == ERROR_FILE_NOT_FOUND) {
-        if (&ec != &throws()) ec.clear();
-        return;
+    value_iterator tmp;
+    if (!ec2 && (tmp = value_iterator(handle, ec2), !ec2)) {
+        swap(tmp);
+        RETURN_RESULT(ec, VOID);
     }
-
-    if (!ec2) swap(value_iterator(handle, ec)); else
     details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
@@ -105,10 +105,7 @@ value_iterator::value_iterator(const key_handle& handle, std::error_code& ec)
     if (!ec2) {
         m_state->buffer.resize(++info.max_value_name_size);
         m_state->entry.m_value_name.reserve(info.max_value_name_size);
-        if (increment(ec2), !ec2) {
-            if (&ec != &throws()) ec.clear();
-            return;
-        }
+        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
     m_state.reset();
     details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());

@@ -7,13 +7,6 @@
 #include <registry/operations.h>
 
 
-#define RETURN_RESULT(ec, result)          \
-    {                                      \
-        if (&ec != &throws()) ec.clear();  \
-        return result;                     \
-    }
-
-
 namespace registry {
 
 //------------------------------------------------------------------------------------//
@@ -153,7 +146,7 @@ void write_value(const key& key, string_view_type value_name, const value& value
     std::error_code ec2;
     const auto handle = open(key, access_rights::set_value, ec2);
 
-    if (!ec2) RETURN_RESULT(ec, void());
+    if (!ec2) RETURN_RESULT(ec, VOID);
     details::set_or_throw(&ec, ec2, __FUNCTION__, key, registry::key(), value_name);
 }
 
