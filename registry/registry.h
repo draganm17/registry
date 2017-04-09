@@ -13,6 +13,7 @@ library and tries to mimic its design whenever possible.
 
 #pragma once
 
+#include <registry/exception.h>
 #include <registry/key.h>
 #include <registry/key_handle.h>
 #include <registry/key_iterator.h>
@@ -20,3 +21,7 @@ library and tries to mimic its design whenever possible.
 #include <registry/types.h>
 #include <registry/value.h>
 #include <registry/value_iterator.h>
+
+
+//! Registry library namespace
+namespace registry { }

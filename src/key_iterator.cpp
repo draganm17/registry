@@ -3,6 +3,7 @@
 
 #include <boost/scope_exit.hpp>
 
+#include <registry/exception.h>
 #include <registry/key_iterator.h>
 #include <registry/operations.h>
 

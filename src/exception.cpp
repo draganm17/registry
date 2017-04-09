@@ -1,5 +1,5 @@
+#include <registry/exception.h>
 #include <registry/key.h>
-#include <registry/types.h>
 
 
 namespace registry {
