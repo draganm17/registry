@@ -67,14 +67,7 @@ namespace registry
         const key& key() const noexcept;
 
         // TODO: ...
-        key_info info(key_info_mask mask = key_info_mask::all) const;
-
-        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        /*!
-        Sets all but `last_write_time` members of the returned value to `static_cast<uint32_t>(-1)` on error.
-        `last_write_time` member is set to `key_time_type::min()`.
-        */
-        key_info info(key_info_mask mask, std::error_code& ec) const;
+        key_info info(key_info_mask mask = key_info_mask::all, std::error_code& ec = throws()) const;
 
     public:
         // TODO: ...

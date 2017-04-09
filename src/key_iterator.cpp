@@ -26,19 +26,14 @@ key_entry::key_entry(const key_handle& handle)
 
 const registry::key& key_entry::key() const noexcept { return m_key; }
 
-key_info key_entry::info(key_info_mask mask) const
-{
-    std::error_code ec;
-    decltype(auto) res = info(mask, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, m_key);
-    return res;
-}
-
 key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 {
-    ec.clear();
-    auto handle = m_key_handle.lock();
-    return handle.valid() ? handle.info(mask, ec) : registry::info(m_key, mask, ec);
+    std::error_code ec2;
+    const auto handle = m_key_handle.lock();
+    auto result = handle.valid() ? handle.info(mask, ec2) : registry::info(m_key, mask, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, result);
+    details::set_or_throw(&ec, ec2, __FUNCTION__, m_key);
 }
 
 key_entry& key_entry::assign(const registry::key& key)

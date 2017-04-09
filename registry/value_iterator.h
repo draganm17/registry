@@ -70,13 +70,7 @@ namespace registry
         const string_type& value_name() const noexcept;
 
         // TODO: ...
-        registry::value value() const;
-
-        /*!
-        Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        Returns a default-constructed value on error.
-        */
-        registry::value value(std::error_code& ec) const;
+        registry::value value(std::error_code& ec = throws()) const;
 
     public:
         // TODO: ...
