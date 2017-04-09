@@ -3,6 +3,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <registry/exception.h>
 #include <registry/operations.h>
 
 using namespace registry;
