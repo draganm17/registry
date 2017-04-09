@@ -3,6 +3,7 @@
 
 #include <boost/scope_exit.hpp>
 
+#include <registry/exception.h>
 #include <registry/operations.h>
 #include <registry/value_iterator.h>
 

@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <registry/key.h>
-#include <registry/types.h>
+#include <registry/exception.h>
 
 using namespace registry;
 
