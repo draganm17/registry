@@ -22,7 +22,7 @@ namespace registry
     @param[in] key - an absolute key specifying the registry key that this function creates.
     @param[out] ec - out-parameter for error reporting.
     @return `true` if key creation is successful, `false` otherwise. The overload that takes `std::error_code&` 
-            parameter returns `false` on occurs.
+            parameter returns `false` on error.
     @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
            API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n
            `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
