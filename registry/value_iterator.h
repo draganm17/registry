@@ -145,7 +145,7 @@ namespace registry
                argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-               `ec.clear()` if no errors occur. 
+               `ec.clear()` if no errors occur.
         */
         explicit value_iterator(const key& key, std::error_code& ec = throws());
 
@@ -159,7 +159,7 @@ namespace registry
                argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-               `ec.clear()` if no errors occur. 
+               `ec.clear()` if no errors occur.
         */
         explicit value_iterator(const key_handle& handle, std::error_code& ec = throws());
 

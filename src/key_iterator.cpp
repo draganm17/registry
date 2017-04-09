@@ -3,6 +3,7 @@
 
 #include <boost/scope_exit.hpp>
 
+#include <registry/details/utils.impl.h>
 #include <registry/exception.h>
 #include <registry/key_iterator.h>
 #include <registry/operations.h>
@@ -69,43 +70,36 @@ struct key_iterator::state
     std::vector<string_type::value_type>  buffer;
 };
 
-key_iterator::key_iterator(const key& key)
-{
-    std::error_code ec;
-    auto tmp = key_iterator(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    swap(tmp);
-}
-
 key_iterator::key_iterator(const key& key, std::error_code& ec)
 {
-    ec.clear();
-    auto handle = open(key, access_rights::enumerate_sub_keys, ec);
+    std::error_code ec2;
+    const auto handle = open(key, access_rights::enumerate_sub_keys, ec2);
 
-    if (!ec) swap(key_iterator(handle, ec)); else
-    if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear();
-}
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) {
+        if (&ec != &throws()) ec.clear();
+        return;
+    }
 
-key_iterator::key_iterator(const key_handle& handle)
-{
-    std::error_code ec;
-    auto tmp = key_iterator(handle, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, handle.key());
-    swap(tmp);
+    if (!ec2) swap(key_iterator(handle, ec)); else
+    details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
 key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
     : m_state(std::make_shared<state>(state{ uint32_t(-1), handle, key_entry(handle) }))
 {
-    ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) { if (ec) m_state.reset(); };
-    key_info info = handle.info(key_info_mask::read_max_subkey_size, ec);
+    std::error_code ec2;
+    key_info info = handle.info(key_info_mask::read_max_subkey_size, ec2);
 
-    if (!ec) {
+    if (!ec2) {
         m_state->buffer.resize(++info.max_subkey_size, TEXT('_'));
         m_state->entry.m_key.append({ m_state->buffer.data(), m_state->buffer.size() });
-        increment(ec);
+        if (increment(ec2), !ec2) {
+            if (&ec != &throws()) ec.clear();
+            return;
+        }
     }
+    m_state.reset();
+    details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());
 }
 
 bool key_iterator::operator==(const key_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
@@ -169,34 +163,31 @@ void key_iterator::swap(key_iterator& other) noexcept { m_state.swap(other.m_sta
 //                         class recursive_key_iterator                               //
 //------------------------------------------------------------------------------------//
 
-recursive_key_iterator::recursive_key_iterator(const key& key)
-{
-    std::error_code ec;
-    auto tmp = recursive_key_iterator(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    swap(tmp);
-}
-
 recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& ec)
 {
-    ec.clear();
-    m_stack.emplace_back(key, ec);
-    if (ec || m_stack.back() == key_iterator()) m_stack.clear();
-}
+    std::error_code ec2;
+    m_stack.emplace_back(key, ec2);
 
-recursive_key_iterator::recursive_key_iterator(const key_handle& handle)
-{
-    std::error_code ec;
-    auto tmp = recursive_key_iterator(handle, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, handle.key());
-    swap(tmp);
+    if (!ec2) {
+        if (&ec != &throws()) ec.clear;
+        if (m_stack.back() == key_iterator()) m_stack.clear();
+        return;
+    }
+    m_stack.clear();
+    if (!ec2) details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
 recursive_key_iterator::recursive_key_iterator(const key_handle& handle, std::error_code& ec)
 {
-    ec.clear();
-    m_stack.emplace_back(handle, ec);
-    if (ec) m_stack.clear();
+    std::error_code ec2;
+    m_stack.emplace_back(handle, ec2);
+
+    if (!ec2) {
+        if (&ec != &throws()) ec.clear;
+        return;
+    }
+    m_stack.clear();
+    if (!ec2) details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());
 }
 
 bool recursive_key_iterator::operator==(const recursive_key_iterator& rhs) const noexcept
