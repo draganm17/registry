@@ -96,10 +96,10 @@ namespace registry
     /*!
     value_iterator is an InputIterator that iterates over the values of a registry key. The iteration order is 
     unspecified, except that each entry is visited only once. The default value is not iterated through. If the 
-    value_iterator is advanced past the last entry, it becomes equal to the default-constructed iterator, also known 
-    as the end iterator. Two end iterators are always equal, dereferencing or incrementing the end iterator is undefined 
-    behavior. If an entry is deleted or added to the key tree after the value iterator has been created, it is unspecified
-    whether the change would be observed through the iterator. 
+    value_iterator is advanced past the last entry, it becomes equal to the default-constructed iterator, also 
+    known as the end iterator. Two end iterators are always equal, dereferencing or incrementing the end iterator is 
+    undefined behavior. If an entry is deleted or added to the key tree after the value iterator has been created, it
+    is unspecified whether the change would be observed through the iterator. 
     */
     class value_iterator
     {

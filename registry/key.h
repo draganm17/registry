@@ -16,12 +16,18 @@ namespace registry
 
     //! Represents a registry key.
     /*!
-    Objects of type registry::key represent keys on the Windows registry. Only syntactic aspects of keys are handled: 
-    the key name may represent a non-existing key or even one that is not allowed to exist on Windows.\n
-    A key is composed of two parts: registry::view and the key::name(). The latter has the following syntax:
-    1. root key (optional): the string representation of one of the predefined keys identifies (registry::key_id).
-    2. subkey (optional): ...
-    TODO: ...
+    Objects of type `registry::key` represent paths on the Windows registry. Only syntactic aspects of keys are
+    handled: the key may represent a non-existing registry key or even one that is not allowed to exist on Windows. \n
+    A key is composed of two parts: `registry::view` and the key name. The latter has the following syntax:
+    1. Predefined key identifier (optional): a root registry key (such as `HKEY_LOCAL_MACHINE`).
+    2. Zero or more of the following:
+        - subkey name:    sequence of characters that aren't key separators.
+        - key-separators: the backslash character `\`. If this character is repeated, it is treated as a single key 
+                          separator: `HKEY_LOCAL_MACHINE\Software` is the same as `HKEY_LOCAL_MACHINE\\\\Software`.
+
+    The key name can be traversed element-wise via iterators returned by the `begin()` and `end()` functions, which 
+    iterates over all subkeys (key separators are skipped). Calling any non-const member function of a key invalidates
+    all iterators referring to elements of that object.
     */
     class key 
     {

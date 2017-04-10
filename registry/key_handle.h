@@ -221,8 +221,8 @@ namespace registry
         //! Retrieves information about the registry key specified by this handle.
         /*!
         The key must have been opened with the access_rights::query_value access right.
-        @param[in] mask - a mask specifying which members of key_id are filled out and which aren't. The members which 
-                          aren't filled out will be set to `static_cast<uint32_t>(-1)`, except for `last_write_time`, 
+        @param[in] mask - a mask specifying which members of key_id are filled out and which aren't. The members which
+                          aren't filled out will be set to `static_cast<uint32_t>(-1)`, except for `last_write_time`,
                           which default value is `key_time_type::min()`.
         @param[out] ec - out-parameter for error reporting.
         @return an instance of key_info. The overload that takes `std::error_code&` parameter sets all members but 
