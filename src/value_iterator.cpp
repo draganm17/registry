@@ -3,6 +3,7 @@
 
 #include <boost/scope_exit.hpp>
 
+#include <registry/details/utils.impl.h>
 #include <registry/exception.h>
 #include <registry/operations.h>
 #include <registry/value_iterator.h>
@@ -29,19 +30,14 @@ const key& value_entry::key() const noexcept { return m_key; }
 
 const string_type& value_entry::value_name() const noexcept { return m_value_name; }
 
-value value_entry::value() const
-{
-    std::error_code ec;
-    decltype(auto) res = value(ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, m_key, {}, m_value_name);
-    return res;
-}
-
 value value_entry::value(std::error_code& ec) const
 {
-    ec.clear();
-    auto handle = m_key_handle.lock();
-    return handle.valid() ? handle.read_value(m_value_name, ec) : registry::read_value(m_key, m_value_name, ec);
+    std::error_code ec2;
+    const auto handle = m_key_handle.lock();
+    auto result = handle.valid() ? handle.read_value(m_value_name, ec2) : read_value(m_key, m_value_name, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, result);
+    details::set_or_throw(&ec, ec2, __FUNCTION__, m_key, registry::key(), m_value_name);
 }
 
 value_entry& value_entry::assign(const registry::key& key, string_view_type value_name)
@@ -81,43 +77,33 @@ struct value_iterator::state
 
 };
 
-value_iterator::value_iterator(const key& key)
-{
-    std::error_code ec;
-    auto tmp = value_iterator(key, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, key);
-    swap(tmp);
-}
-
 value_iterator::value_iterator(const key& key, std::error_code& ec)
 {
-    ec.clear();
-    auto handle = open(key, access_rights::query_value, ec);
+    std::error_code ec2;
+    const auto handle = open(key, access_rights::query_value, ec2);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
 
-    if (!ec) swap(value_iterator(handle, ec)); else
-    if (ec.value() == ERROR_FILE_NOT_FOUND) ec.clear();
-}
-
-value_iterator::value_iterator(const key_handle& handle)
-{
-    std::error_code ec;
-    auto tmp = value_iterator(handle, ec);
-    if (ec) throw registry_error(ec, __FUNCTION__, handle.key());
-    swap(tmp);
+    value_iterator tmp;
+    if (!ec2 && (tmp = value_iterator(handle, ec2), !ec2)) {
+        swap(tmp);
+        RETURN_RESULT(ec, VOID);
+    }
+    details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
 value_iterator::value_iterator(const key_handle& handle, std::error_code& ec)
     : m_state(std::make_shared<state>(state{ uint32_t(-1), handle, value_entry(handle, string_type()) }))
 {
-    ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) { if (ec) m_state.reset(); };
-    key_info info = handle.info(key_info_mask::read_max_value_name_size, ec);
+    std::error_code ec2;
+    key_info info = handle.info(key_info_mask::read_max_value_name_size, ec2);
 
-    if (!ec) {
+    if (!ec2) {
         m_state->buffer.resize(++info.max_value_name_size);
         m_state->entry.m_value_name.reserve(info.max_value_name_size);
-        increment(ec);
+        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
+    m_state.reset();
+    details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());
 }
 
 bool value_iterator::operator==(const value_iterator& rhs) const noexcept { return m_state == rhs.m_state; }

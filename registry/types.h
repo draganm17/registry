@@ -264,6 +264,11 @@ namespace registry
         uint32_t  size;
     };
 
+    namespace detail { inline constexpr std::error_code* throws() noexcept { return nullptr; } }
+
+    // TODO: rename types.h to common.h ???
+    inline constexpr std::error_code& throws() noexcept { return *detail::throws(); }
+
     //------------------------------------------------------------------------------------//
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//

@@ -70,13 +70,7 @@ namespace registry
         const string_type& value_name() const noexcept;
 
         // TODO: ...
-        registry::value value() const;
-
-        /*!
-        Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        Returns a default-constructed value on error.
-        */
-        registry::value value(std::error_code& ec) const;
+        registry::value value(std::error_code& ec = throws()) const;
 
     public:
         // TODO: ...
@@ -136,30 +130,32 @@ namespace registry
 
         //! Constructs a iterator that refers to the first value of a key specified by `key`.
         /*!
-        If `key` refers to an non-existing registry key, returns the end iterator.
-        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to `key`. 
-               std::bad_alloc may be thrown if memory allocation fails.
+        If `key` refers to an non-existing registry key, returns the end iterator. The overload that takes 
+        `std::error_code&` parameter constructs an end iterator on error.
+        @param[in] key - TODO: ...
+        @param[out] ec - out-parameter for error reporting.
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key set to `key` and the OS error code as the error code
+               argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur.
         */
-        explicit value_iterator(const key& key);
-
-        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        /*!
-        Constructs an end iterator on error.
-        */
-        value_iterator(const key& key, std::error_code& ec);
+        explicit value_iterator(const key& key, std::error_code& ec = throws());
 
         //! Constructs a iterator that refers to the first value of a key specified by `handle`.
         /*!
-        @throw registry::registry_error on underlying OS API errors, constructed with the first key set to
-        `handle.key()`. std::bad_alloc may be thrown if memory allocation fails.
+        The overload that takes `std::error_code&` parameter constructs an end iterator on error.
+        @param[in] handle - TODO: ...
+        @param[out] ec - out-parameter for error reporting.
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key set to `handle.key()` and the OS error code as the error code
+               argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur.
         */
-        explicit value_iterator(const key_handle& handle);
-
-        //! Same as the previous overload, except underlying OS API errors are reported through the `ec` argument.
-        /*!
-        Constructs an end iterator on error.
-        */
-        value_iterator(const key_handle& handle, std::error_code& ec);
+        explicit value_iterator(const key_handle& handle, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
