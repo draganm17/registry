@@ -1,4 +1,5 @@
 #include <set>
+#include <vector>
 #include <Windows.h>
 
 #include <gmock/gmock.h>
@@ -123,23 +124,26 @@ TEST(RecursiveKeyIterator, Iterate)
     std::error_code ec;
     const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
-    std::set<key> expected_keys;
-    expected_keys.emplace(key(k).append(TEXT("key_1_deep_0")));
-    expected_keys.emplace(key(k).append(TEXT("key_1_deep_0\\key_1_deep_1")));
-    expected_keys.emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1")));
-    expected_keys.emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_1_deep_2")));
-    expected_keys.emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_2_deep_2")));
-    expected_keys.emplace(key(k).append(TEXT("key_2_deep_0")));
-    expected_keys.emplace(key(k).append(TEXT("key_3_deep_0")));
-    expected_keys.emplace(key(k).append(TEXT("key_3_deep_0\\key_1_deep_1")));
-    expected_keys.emplace(key(k).append(TEXT("key_3_deep_0\\key_2_deep_1")));
+    // NOTE: vector element index represent the depth
+    std::vector<std::set<key>> expected_keys(3);
+    expected_keys[0].emplace(key(k).append(TEXT("key_1_deep_0")));
+    expected_keys[1].emplace(key(k).append(TEXT("key_1_deep_0\\key_1_deep_1")));
+    expected_keys[1].emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1")));
+    expected_keys[2].emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_1_deep_2")));
+    expected_keys[2].emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_2_deep_2")));
+    expected_keys[0].emplace(key(k).append(TEXT("key_2_deep_0")));
+    expected_keys[0].emplace(key(k).append(TEXT("key_3_deep_0")));
+    expected_keys[1].emplace(key(k).append(TEXT("key_3_deep_0\\key_1_deep_1")));
+    expected_keys[1].emplace(key(k).append(TEXT("key_3_deep_0\\key_2_deep_1")));
 
     // using range-based for loop
     int elements = 0;
     for (const auto& entry : recursive_key_iterator(k))
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.find(entry.key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.at(0).find(entry.key()) != expected_keys.at(0).end() ||
+                    expected_keys.at(1).find(entry.key()) != expected_keys.at(1).end() ||
+                    expected_keys.at(2).find(entry.key()) != expected_keys.at(2).end());
     }
     EXPECT_TRUE(elements == 9);
 
@@ -148,7 +152,7 @@ TEST(RecursiveKeyIterator, Iterate)
     for (auto it = recursive_key_iterator(k); it != recursive_key_iterator(); ++it)
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.find(it->key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->key()) != expected_keys.at(it.depth()).end());
     }
     EXPECT_TRUE(elements == 9);
 
@@ -157,7 +161,7 @@ TEST(RecursiveKeyIterator, Iterate)
     for (auto it = recursive_key_iterator(k); it != recursive_key_iterator(); it++)
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.find(it->key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->key()) != expected_keys.at(it.depth()).end());
     }
     EXPECT_TRUE(elements == 9);
 
@@ -167,7 +171,7 @@ TEST(RecursiveKeyIterator, Iterate)
     {
         ++elements;
         EXPECT_TRUE(!ec);
-        EXPECT_TRUE(expected_keys.find(it->key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->key()) != expected_keys.at(it.depth()).end());
     }
     EXPECT_TRUE(elements == 9);
 }
