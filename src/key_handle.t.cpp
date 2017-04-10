@@ -198,29 +198,57 @@ TEST(KeyHandle, OperationsOnRegistry)
         const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), access_rights::query_value);
 
         // create new keys (without subkeys)
-        const auto k1 = key(h.key().name(), sk1.view()).append(sk1.name());
-        const auto k2 = key(h.key().name(), sk2.view()).append(sk2.name());
-        EXPECT_TRUE(!exists(k1) && !exists(k2));
-        auto ret1 = h.create_key(sk1, access_rights::all_access);
-        EXPECT_TRUE(ret1.first.valid() && ret1.second == true && exists(k1));
-        auto ret2 = h.create_key(sk2, access_rights::all_access, ec);
-        EXPECT_TRUE(ret2.first.valid() && ret2.second == true && !ec && exists(k2));
+        const key new_key1 = h.key().append(sk1);
+        const key new_key2 = h.key().append(sk2);
+        EXPECT_TRUE(!exists(new_key1) && !exists(new_key2));           // check that the keys does not exist
+        auto ret1 = h.create_key(sk1, access_rights::all_access);      // create the first key
+        EXPECT_TRUE(ret1.second == true && exists(new_key1));          // the key was created
+        EXPECT_TRUE(ret1.first.valid()           && 
+                    ret1.first.key() == new_key1 && 
+                    ret1.first.rights() == access_rights::all_access); // and we have a valid result
+        //
+        auto ret2 = h.create_key(sk2, access_rights::all_access, ec);  // create the second key
+        EXPECT_TRUE(!ec && ret2.second == true && exists(new_key2));   // the key was created
+        EXPECT_TRUE(ret2.first.valid()           && 
+                    ret2.first.key() == new_key2 && 
+                    ret2.first.rights() == access_rights::all_access); // and we have a valid result
 
         // create new keys (with subkeys)
-        const auto k3 = key(h.key().name(), sk3.view()).append(sk3.name());
-        const auto k4 = key(h.key().name(), sk4.view()).append(sk4.name());
-        EXPECT_TRUE(!exists(k3) && !exists(k4));
-        auto ret3 = h.create_key(sk3, access_rights::all_access);
-        EXPECT_TRUE(ret3.first.valid() && ret3.second == true && exists(k3));
+        const key new_key3 = h.key().append(sk3);
+        const key new_key4 = h.key().append(sk4);
+        EXPECT_TRUE(!exists(new_key3) && !exists(new_key4));           // check that the keys does not exist
+        auto ret3 = h.create_key(sk3, access_rights::all_access);      // create the first key
+        EXPECT_TRUE(ret3.second == true && exists(new_key3));          // the key was created
+        EXPECT_TRUE(ret3.first.valid()           && 
+                    ret3.first.key() == new_key3 && 
+                    ret3.first.rights() == access_rights::all_access); // and we have a valid result
         auto ret4 = h.create_key(sk4, access_rights::all_access, ec);
-        EXPECT_TRUE(ret4.first.valid() && ret4.second == true && !ec && exists(k4));
+        EXPECT_TRUE(!ec && ret4.second == true && exists(new_key4));   // the key was created
+        EXPECT_TRUE(ret4.first.valid()           && 
+                    ret4.first.key() == new_key4 && 
+                    ret4.first.rights() == access_rights::all_access); // and we have a valid result
 
-        // TODO: ...
+        // obtain a new handle to to the same key
+        auto ret5 = h.create_key(key(), access_rights::all_access);
+        EXPECT_TRUE(ret5.second == false);                   // the key was not created
+        EXPECT_TRUE(ret5.first.valid() && ret5.first != h);  // we have a valid new handle ...
+        EXPECT_TRUE(ret5.first.key() == h.key() && ret5.first.rights() == access_rights::all_access); // to the same key
+        //
+        auto ret6 = h.create_key(key(), access_rights::all_access, ec);
+        EXPECT_TRUE(!ec && ret6.second == false);            // the key was not created
+        EXPECT_TRUE(ret6.first.valid() && ret6.first != h);  // we have a valid new handle ...
+        EXPECT_TRUE(ret6.first.key() == h.key() && ret6.first.rights() == access_rights::all_access); // to the same key
+
         // try create already existing keys
-        //EXPECT_TRUE(create_key(k1) == false);
-        //EXPECT_TRUE(create_key(k2, ec) == false && !ec);
-        //EXPECT_TRUE(create_key(key::from_key_id(key_id::current_user)) == false);
-        //EXPECT_TRUE(create_key(key::from_key_id(key_id::current_user), ec) == false && !ec);
+        auto ret7 = h.create_key(sk1, access_rights::all_access);
+        EXPECT_TRUE(ret7.second == false);                   // the key was not created
+        EXPECT_TRUE(ret7.first.valid() && ret7.first != h);  // we have a valid new handle ...
+        EXPECT_TRUE(ret7.first.key() == h.key() && ret7.first.rights() == access_rights::all_access); // to the same key
+        //
+        auto ret8 = h.create_key(sk1, access_rights::all_access, ec);
+        EXPECT_TRUE(!ec && ret8.second == false);            // the key was not created
+        EXPECT_TRUE(ret8.first.valid() && ret8.first != h);  // we have a valid new handle ...
+        EXPECT_TRUE(ret8.first.key() == h.key() && ret8.first.rights() == access_rights::all_access); // to the same key
     }
 
     // key_handle::write_value(string_view_type, const value&)
