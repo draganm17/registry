@@ -211,16 +211,14 @@ std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, 
 {
     DWORD disp;
     key_handle::native_handle_type hkey;
+    // NOTE: the new key will have the same view as the subkey.
+    auto new_key = registry::key(key().name(), subkey.view()).append(subkey.name());
     const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(subkey.view());
     LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), subkey.name().data(), 0, nullptr,
                                 REG_OPTION_NON_VOLATILE, sam_desired, nullptr, reinterpret_cast<HKEY*>(&hkey), &disp);
     
     if (rc == ERROR_SUCCESS) {
-        unique_hkey uhkey(hkey);
-        const bool was_created = disp == REG_CREATED_NEW_KEY;
-        // NOTE: the new key will have the same view as the subkey.
-        auto new_key = registry::key(key().name(), subkey.view()).append(subkey.name());
-        RETURN_RESULT(ec, std::make_pair(key_handle(std::move(uhkey), std::move(new_key), rights), was_created));
+        RETURN_RESULT(ec, std::make_pair(key_handle(hkey, std::move(new_key), rights), disp == REG_CREATED_NEW_KEY));
     }
     const std::error_code ec2(rc, std::system_category());
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), subkey), std::make_pair(key_handle(), false);
