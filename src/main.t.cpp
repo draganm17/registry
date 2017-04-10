@@ -25,34 +25,35 @@ void prepare_stage() noexcept
     //create keys
     //
     HKEY hkey;
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read"), 
            &hkey) == ERROR_SUCCESS);               RegCloseKey(hkey);
     //
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_1_deep_0"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_1_deep_0"), 
                         &hkey) == ERROR_SUCCESS);  RegCloseKey(hkey);
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_1_deep_0\\key_1_deep_1"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_1_deep_0\\key_1_deep_1"), 
                         &hkey) == ERROR_SUCCESS);  RegCloseKey(hkey);
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_1_deep_0\\key_2_deep_1"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_1_deep_0\\key_2_deep_1"), 
                         &hkey) == ERROR_SUCCESS);  RegCloseKey(hkey);
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_1_deep_0\\key_2_deep_1\\key_1_deep_2"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_1_deep_0\\key_2_deep_1\\key_1_deep_2"), 
                         &hkey) == ERROR_SUCCESS);  RegCloseKey(hkey);
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_1_deep_0\\key_2_deep_1\\key_2_deep_2"), 
-                        &hkey) == ERROR_SUCCESS);  RegCloseKey(hkey);
-    //
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_2_deep_0"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_1_deep_0\\key_2_deep_1\\key_2_deep_2"), 
                         &hkey) == ERROR_SUCCESS);  RegCloseKey(hkey);
     //
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_3_deep_0"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_2_deep_0"), 
+                        &hkey) == ERROR_SUCCESS);  RegCloseKey(hkey);
+    //
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_3_deep_0"), 
            &hkey) == ERROR_SUCCESS);               RegCloseKey(hkey);
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_3_deep_0\\key_1_deep_1"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_3_deep_0\\key_1_deep_1"), 
                         &hkey) == ERROR_SUCCESS);  RegCloseKey(hkey);
-    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\key_3_deep_0\\key_2_deep_1"), 
+    assert(RegCreateKey(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read\\key_3_deep_0\\key_2_deep_1"), 
            &hkey) == ERROR_SUCCESS);               RegCloseKey(hkey);
 
 
     //create values
     //
-    assert(RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry"), 0, KEY_SET_VALUE, &hkey) == ERROR_SUCCESS);
+    assert(RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\read"), 
+                        0, KEY_SET_VALUE, &hkey) == ERROR_SUCCESS);
     {
         assert(RegSetValueEx(hkey, TEXT("val_01"), 0, REG_NONE, nullptr, 0) == ERROR_SUCCESS);
     }

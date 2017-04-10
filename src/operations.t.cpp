@@ -43,11 +43,11 @@ TEST(Operations, All)
     // exists(const key&, string_view_type, std::error_code&)
     {
         std::error_code ec;
-        EXPECT_TRUE(exists(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), TEXT("val_01")) == true);
-        EXPECT_TRUE(exists(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), TEXT("val_01"), ec) == true && !ec);
+        EXPECT_TRUE(exists(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), TEXT("val_01")) == true);
+        EXPECT_TRUE(exists(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), TEXT("val_01"), ec) == true && !ec);
 
-        EXPECT_TRUE(exists(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), TEXT("non_existent")) == false);
-        EXPECT_TRUE(exists(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), TEXT("non_existent"), ec) == false && !ec);
+        EXPECT_TRUE(exists(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), TEXT("non_existent")) == false);
+        EXPECT_TRUE(exists(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), TEXT("non_existent"), ec) == false && !ec);
     }
 
     // info(const key&)
@@ -60,7 +60,7 @@ TEST(Operations, All)
     // read_value(const key&, string_view_type, std::error_code&)
     {
         std::error_code ec;
-        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry");
+        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
             
         auto v01  = read_value(k, TEXT("val_01"));
         auto v01a = read_value(k, TEXT("val_01"), ec);
@@ -127,10 +127,14 @@ TEST(Operations, All)
     // create_key(const key& key, std::error_code&)
     {
         std::error_code ec;
-        const key k1 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_1");
-        const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_2");
-        const key k3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_3\\Inner1\\Inner2");
-        const key k4 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_4\\Inner1\\Inner2");
+        const key k0 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
+        const key k1 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_1");
+        const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_2");
+        const key k3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_3\\Inner1\\Inner2");
+        const key k4 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_4\\Inner1\\Inner2");
+
+        // create the parent key
+        EXPECT_TRUE(!exists(k0) && create_key(k0) && exists(k0));
 
         // create new keys (without subkeys)
         EXPECT_TRUE(!exists(k1) && !exists(k2));
@@ -154,7 +158,7 @@ TEST(Operations, All)
     {
         std::error_code ec;
         const uint8_t bytes[] = { 4, 2};
-        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_1");
+        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
         
         const value v01(none_value_tag{});
         write_value(k, TEXT("val_01"), v01);
@@ -206,7 +210,7 @@ TEST(Operations, All)
     // remove(const key&, string_view_type, std::error_code&)
     {
         std::error_code ec;
-        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_1");
+        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
 
         EXPECT_TRUE(!exists(k, TEXT("non_existing")));
         EXPECT_TRUE(exists(k, TEXT("val_01")) && exists(k, TEXT("val_02")));
@@ -224,10 +228,10 @@ TEST(Operations, All)
     // remove(const key&, std::error_code&)
     {
         std::error_code ec;
-        const key k0 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existing");
-        const key k1 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_1");
-        const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_2");
-        const key k3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_3");
+        const key k0 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\non_existing");
+        const key k1 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_1");
+        const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_2");
+        const key k3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_3");
 
         EXPECT_TRUE(!exists(k0) && exists(k1) && exists(k2));
         EXPECT_TRUE(exists(key(k3).append(TEXT("Inner1\\Inner2"))));
@@ -255,6 +259,9 @@ TEST(Operations, All)
     // remove_all(const key&)
     // remove_all(const key&, std::error_code&)
     {
+        const LRESULT rc = RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\write"));
+        assert(rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND);
+
         // TODO: ...
 
         //std::error_code ec;

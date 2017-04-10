@@ -105,7 +105,7 @@ TEST(KeyHandle, OperationsOnRegistry)
     // key_handle::exists(string_view_type, std::error_code&)
     {
         std::error_code ec;
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), access_rights::query_value);
+        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
 
         EXPECT_TRUE(h.exists(TEXT("val_01")) == true);
         EXPECT_TRUE(h.exists(TEXT("val_01"), ec) == true && !ec);
@@ -124,7 +124,7 @@ TEST(KeyHandle, OperationsOnRegistry)
     // key_handle::read_value(string_view_type, std::error_code&)
     {
         std::error_code ec;
-        auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), access_rights::query_value);
+        auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
             
         auto v01  = h.read_value(TEXT("val_01"));
         auto v01a = h.read_value(TEXT("val_01"), ec);
@@ -190,12 +190,16 @@ TEST(KeyHandle, OperationsOnRegistry)
     // key_handle::create_key(const key& key, access_rights)
     // key_handle::create_key(const key& key, access_rights, std::error_code&)
     {
+        // create the parent key
+        const key pk = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
+        EXPECT_TRUE(!exists(pk) && create_key(pk) && exists(pk));
+
         std::error_code ec;
         const key sk1 = TEXT("new_key_1");
         const key sk2 = TEXT("new_key_2");
         const key sk3 = TEXT("new_key_3\\Inner1\\Inner2");
         const key sk4 = TEXT("new_key_4\\Inner1\\Inner2");
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), access_rights::query_value);
+        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::create_sub_key);
 
         // create new keys (without subkeys)
         const key new_key1 = h.key().append(sk1);
@@ -243,12 +247,12 @@ TEST(KeyHandle, OperationsOnRegistry)
         auto ret7 = h.create_key(sk1, access_rights::all_access);
         EXPECT_TRUE(ret7.second == false);                   // the key was not created
         EXPECT_TRUE(ret7.first.valid() && ret7.first != h);  // we have a valid new handle ...
-        EXPECT_TRUE(ret7.first.key() == h.key() && ret7.first.rights() == access_rights::all_access); // to the same key
+        EXPECT_TRUE(ret7.first.key() == new_key1 && ret7.first.rights() == access_rights::all_access); // to the same key
         //
         auto ret8 = h.create_key(sk1, access_rights::all_access, ec);
         EXPECT_TRUE(!ec && ret8.second == false);            // the key was not created
         EXPECT_TRUE(ret8.first.valid() && ret8.first != h);  // we have a valid new handle ...
-        EXPECT_TRUE(ret8.first.key() == h.key() && ret8.first.rights() == access_rights::all_access); // to the same key
+        EXPECT_TRUE(ret8.first.key() == new_key1 && ret8.first.rights() == access_rights::all_access); // to the same key
     }
 
     // key_handle::write_value(string_view_type, const value&)
@@ -256,7 +260,8 @@ TEST(KeyHandle, OperationsOnRegistry)
     {
         std::error_code ec;
         const uint8_t bytes[] = { 4, 2};
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_1"), access_rights::set_value);
+        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), 
+                            access_rights::set_value | access_rights::query_value);
         
         const value v01(none_value_tag{});
         h.write_value(TEXT("val_01"), v01);
@@ -322,5 +327,14 @@ TEST(KeyHandle, OperationsOnRegistry)
         // remove an existing value
         //EXPECT_TRUE(h.remove(TEXT("val_01")) == true && !h.exists(TEXT("val_01")));
         //EXPECT_TRUE(h.remove(TEXT("val_02"), ec) == true && !ec && !h.exists(TEXT("val_02")));
+    }
+
+    // key_handle::remove_all(string_view_type)
+    // key_handle::remove_all(string_view_type, std::error_code&)
+    {
+        // TODO: ...
+
+        const LRESULT rc = RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\write"));
+        assert(rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND);
     }
 }
