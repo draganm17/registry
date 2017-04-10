@@ -25,8 +25,9 @@ bool create_key(const key& key, std::error_code& ec)
     ec.clear();
     registry::key base_key = key, subkey;
     key_handle handle = open(base_key, access_rights::create_sub_key, ec);
-
-    while ((!ec || ec.value() == ERROR_FILE_NOT_FOUND) && base_key.has_parent_key()) {
+    
+    if (!ec) return false;
+    while (ec.value() == ERROR_FILE_NOT_FOUND && base_key.has_parent_key()) {
         subkey = base_key.leaf_key().append(subkey.name());
         handle = open(base_key.remove_leaf(), access_rights::create_sub_key, ec);
     }
