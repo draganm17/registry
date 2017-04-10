@@ -180,8 +180,7 @@ recursive_key_iterator::recursive_key_iterator(const key_handle& handle, std::er
 
 bool recursive_key_iterator::operator==(const recursive_key_iterator& rhs) const noexcept
 {
-    return 0;
-    // TODO: ...
+    return m_stack == rhs.m_stack; // TODO: is that right ???
 }
 
 bool recursive_key_iterator::operator!=(const recursive_key_iterator& rhs) const noexcept { return !(*this == rhs); }
