@@ -68,7 +68,7 @@ struct key_iterator::state
 key_iterator::key_iterator(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
-    const auto handle = open(key, access_rights::enumerate_sub_keys, ec2);
+    const auto handle = open(key, access_rights::enumerate_sub_keys | access_rights::query_value, ec2);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
 
     key_iterator tmp;
