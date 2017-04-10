@@ -68,6 +68,16 @@ const view key::default_view =
     view::view_32bit;
 #endif
 
+key& key::append_impl(string_view_type subkey)
+{
+    const bool add_slash = !(begin() == end() || m_name.back() == TEXT('\\') ||
+                             subkey.empty() || subkey.front() == TEXT('\\'));
+
+    m_name.reserve(m_name.size() + subkey.size() + static_cast<int>(add_slash));
+    m_name.append(add_slash ? TEXT("\\") : TEXT("")).append(subkey.data(), subkey.size());
+    return *this;
+}
+
 key key::from_key_id(key_id id) { return key_pool::instance().get(id); }
 
 key::key(string_view_type name, registry::view view)
@@ -153,13 +163,10 @@ key& key::assign(string_view_type name, registry::view view)
     return *this;
 }
 
-key& key::append(string_view_type subkey)
+key& key::append(const key& subkey)
 {
-    const bool add_slash = !(begin() == end() || m_name.back() == TEXT('\\') ||
-                             subkey.empty() || subkey.front() == TEXT('\\'));
-
-    m_name.reserve(m_name.size() + subkey.size() + static_cast<int>(add_slash));
-    m_name.append(add_slash ? TEXT("\\") : TEXT("")).append(subkey.data(), subkey.size());
+    m_view = subkey.view();
+    for (auto it = subkey.begin(); it != subkey.end(); ++it) append(*it);
     return *this;
 }
 

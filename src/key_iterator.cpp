@@ -87,7 +87,7 @@ key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
 
     if (!ec2) {
         m_state->buffer.resize(++info.max_subkey_size, TEXT('_'));
-        m_state->entry.m_key.append({ m_state->buffer.data(), m_state->buffer.size() });
+        m_state->entry.m_key.append(string_view_type(m_state->buffer.data(), m_state->buffer.size()));
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
     m_state.reset();

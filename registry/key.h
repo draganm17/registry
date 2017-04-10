@@ -29,6 +29,9 @@ namespace registry
         class iterator;
         using const_iterator = iterator;
 
+    private:
+        key& append_impl(string_view_type subkey);
+
     public:
         /*! \brief
         The value of type registry::view which is passed to registry::key constructor by default. Is equal to
@@ -76,7 +79,7 @@ namespace registry
         template <typename Source, 
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
         >
-        key(const Source& name) : key(string_view_type(name)) { }
+        key(const Source& name);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -201,10 +204,20 @@ namespace registry
         - `subkey` begins with a key separator.
 
         Then, appends `subkey` to the key name.
+        @param[in] subkey - a string, such as Source should be explicitly convertible to registry::string_view_type.
         @return `*this`.
         */
-        // TODO: provide an 'const key&' overload  ???
-        key& append(string_view_type subkey);
+        template <typename Source, 
+                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+        >
+        key& append(const Source& subkey);
+
+        //! Appends elements to the key name.
+        /*!
+        First, appends each component of `subkey` name to the key name. Then, assigns the key view to `subkey.view()`.
+        @return `*this`.
+        */
+        key& append(const key& subkey);
 
         //! Concatenates the key name with `subkey` without introducing a key separator.
         /*!
@@ -347,6 +360,16 @@ namespace registry
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
+
+    template <typename Source, 
+              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+    >
+    key::key(const Source& name) : key(string_view_type(name)) { }
+
+    template <typename Source, 
+              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+    >
+    inline key& key::append(const Source& subkey) { return append_impl(subkey); }
 
     inline bool operator==(const key& lhs, const key& rhs) noexcept { return lhs.compare(rhs) == 0; }
 

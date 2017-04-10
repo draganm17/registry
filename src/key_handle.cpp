@@ -212,8 +212,7 @@ std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey,
 {
     DWORD disp;
     key_handle::native_handle_type hkey;
-    // NOTE: the new key will have the same view as the subkey.
-    auto new_key = registry::key(key().name(), subkey.view()).append(subkey.name());
+    auto new_key = key().append(subkey);
     const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(subkey.view());
     LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), subkey.name().data(), 0, nullptr,
                                 REG_OPTION_NON_VOLATILE, sam_desired, nullptr, reinterpret_cast<HKEY*>(&hkey), &disp);
