@@ -28,6 +28,7 @@ namespace details {
     {
         if (ec_dst) {
             *ec_dst = ec_src;
+            return;
         }
         throw registry_error(ec_src, msg, std::forward<Args>(ex_args)...);
     }

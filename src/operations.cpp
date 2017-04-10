@@ -20,12 +20,12 @@ bool create_key(const key& key, std::error_code& ec)
     registry::key base_key = key, subkey;
     auto handle = open(base_key, access_rights::create_sub_key, ec2);
 
-    while ((!ec2 || ec2.value() == ERROR_FILE_NOT_FOUND) && base_key.has_parent_key()) {
+    while (ec2.value() == ERROR_FILE_NOT_FOUND && base_key.has_parent_key()) {
         subkey = base_key.leaf_key().append(subkey.name());
         handle = open(base_key.remove_leaf(), access_rights::create_sub_key, ec2);
     }
 
-    if (!ec2 && (result = handle.create_key(subkey, access_rights::query_value, ec).second, !ec2)) {
+    if (!ec2 && (result = handle.create_key(subkey, access_rights::query_value, ec2).second, !ec2)) {
         RETURN_RESULT(ec, result);
     }
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key), result;
