@@ -36,7 +36,13 @@ TEST(ValueIterator, Construct)
     // value_iterator::value_iterator(const key_handle&)
     // value_iterator::value_iterator(const key_handle&, std::error_code&)
     {
-        // TODO: ...
+        std::error_code ec;
+        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
+
+        value_iterator it3(h);
+        value_iterator it4(h, ec);
+        EXPECT_TRUE(it3 != value_iterator());
+        EXPECT_TRUE(it4 != value_iterator() && !ec);
     }
 }
 
