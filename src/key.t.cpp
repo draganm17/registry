@@ -253,7 +253,7 @@ TEST(Key, Decomposition)
 
 TEST(Key, Modifiers)
 {
-    // key::append(string_view_type)
+    // key::append(const Source&)
     {
         // redundant separator case 1
         key k1 = TEXT("HKEY_CURRENT_USER\\");
@@ -276,6 +276,15 @@ TEST(Key, Modifiers)
         // adds a separator
         key k6 = TEXT("HKEY_CURRENT_USER");
         ASSERT_TRUE(k6.append(TEXT("Test")).name() == TEXT("HKEY_CURRENT_USER\\Test"));
+    }
+
+    // key::append(const key&)
+    {
+        key k1(TEXT("HKEY_CURRENT_USER"), view::view_32bit);
+        key k2(TEXT("Test1\\Test2\\\\"), view::view_64bit);
+
+        k1.append(k2);
+        ASSERT_TRUE(k1.name() == TEXT("HKEY_CURRENT_USER\\Test1\\Test2") && k1.view() == view::view_64bit);
     }
 
     // key::concat(string_view_type)
