@@ -53,7 +53,42 @@ TEST(Operations, All)
     // info(const key&)
     // info(const key&, std::error_code&)
     {
-        // TODO: ...
+        static const auto test_mask = [](const key& k, key_info_mask mask)
+        {
+            std::error_code ec;
+            const key_info i1 = info(k, mask), i2 = info(k, mask, ec);
+            EXPECT_TRUE(!ec);
+            EXPECT_TRUE(
+                i1.subkeys             == i2.subkeys             && i1.values              == i2.values              &&
+                i1.max_subkey_size     == i2.max_subkey_size     && i1.max_value_name_size == i2.max_value_name_size &&
+                i1.max_value_data_size == i2.max_value_data_size && i1.last_write_time     == i2.last_write_time);
+
+            const bool r_subkeys =             (mask & key_info_mask::read_subkeys)             != key_info_mask::none;
+            const bool r_values =              (mask & key_info_mask::read_values)              != key_info_mask::none;
+            const bool r_max_subkey_size =     (mask & key_info_mask::read_max_subkey_size)     != key_info_mask::none;
+            const bool r_max_value_name_size = (mask & key_info_mask::read_max_value_name_size) != key_info_mask::none;
+            const bool r_max_value_data_size = (mask & key_info_mask::read_max_value_data_size) != key_info_mask::none;
+            const bool r_last_write_time =     (mask & key_info_mask::read_last_write_time)     != key_info_mask::none;
+
+            EXPECT_TRUE((r_subkeys             && i1.subkeys             == uint32_t(-1)) || true);
+            EXPECT_TRUE((r_values              && i1.values              == uint32_t(-1)) || true);
+            EXPECT_TRUE((r_max_subkey_size     && i1.max_subkey_size     == uint32_t(-1)) || true);
+            EXPECT_TRUE((r_max_value_name_size && i1.max_value_name_size == uint32_t(-1)) || true);
+            EXPECT_TRUE((r_max_value_data_size && i1.max_value_data_size == uint32_t(-1)) || true);
+            EXPECT_TRUE((r_last_write_time     && i1.last_write_time     == key_time_type::min()) || true);
+        };
+
+        std::error_code ec;
+        const key k(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"));
+
+        test_mask(k, key_info_mask::none);
+        test_mask(k, key_info_mask::read_subkeys);
+        test_mask(k, key_info_mask::read_values);
+        test_mask(k, key_info_mask::read_max_subkey_size);
+        test_mask(k, key_info_mask::read_max_value_name_size);
+        test_mask(k, key_info_mask::read_max_value_data_size);
+        test_mask(k, key_info_mask::read_last_write_time);
+        test_mask(k, key_info_mask::all);
     }
 
     // read_value(const key&, string_view_type)
