@@ -11,9 +11,16 @@ using namespace registry;
 
 TEST(Value, Construct)
 {
-    // value::value(none_value_tag = {})
+    // default constructor
     {
         value v;
+        EXPECT_TRUE(v.type() == value_type::none);
+        EXPECT_TRUE(v.data().empty());
+    }
+
+    // value::value(none_value_tag)
+    {
+        value v(none_value_tag{});
         EXPECT_TRUE(v.type() == value_type::none);
         EXPECT_TRUE(v.data().empty());
     }

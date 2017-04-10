@@ -54,9 +54,10 @@ namespace registry
     //\cond HIDDEN_SYMBOLS
     namespace details
     {
+        // TODO: get rid of value_state ???
         struct value_state
         {
-            value_type       m_type;
+            value_type       m_type = value_type::none;
             byte_array_type  m_data;
         };
     } //\endcond
@@ -67,12 +68,22 @@ namespace registry
 
     //! Represents a registry value.
     /*!
-    TODO: detailed description ...
+    Objects of type `registry::value` represent a typed piece of data that can be written to or readed from the
+    Windows registry by using the registry library API. Values are raw-data storages that does not handle syntactic
+    or semantic aspects of the data. However, `registry::value` provides convenient constructors to help users create
+    values that are suitable to correctly represent a registry value of a given type.
     */
     class value 
         : private details::value_state
     {
     public:
+        //! Default constructor.
+        /*!
+        @post `type() == value_type::none`.
+        @post `data().empty()`.
+        */
+        value() noexcept = default;
+
         //! Constructs the value with the copy of the contents of `other`.
         /*!
         @post `*this == other`.
@@ -93,7 +104,7 @@ namespace registry
         @post `data().empty()`.
         @param[in] tag - value type tag.
         */
-        explicit value(none_value_tag tag = {}) noexcept;
+        explicit value(none_value_tag tag) noexcept;
 
         //! Constructs a value of type value_type::sz.
         /*!
@@ -200,11 +211,11 @@ namespace registry
 
         //! Constructs the value from a value type identifier and binary data.
         /*!
-        Any byte sequence is legal, the format of the data is not checked over the value type. However, if the stored 
-        byte sequence is not sutable for representing the value of a given type, then calling a conversion function 
-        applicable to that type may produce a valid but undefined result. If the value type is one of value_type::sz, 
-        value_type::expand_sz, value_type::link or value_type::multi_sz, providing the null terminator character is 
-        desirable but not necessary.
+        Any byte sequence is legal, the format of the data is not checked over the value type. However, if the stored
+        byte sequence is not sutable to representing a value of a given type, then calling a conversion function may
+        produce a valid but undefined result. \n
+        If the value type is one of value_type::sz, value_type::expand_sz, value_type::link or value_type::multi_sz, 
+        providing the null terminator character is desirable but not necessary.
         @post `this->type() == type`.
         @post `this->data() == data`.
         @param[in] type - a value type identifier.
