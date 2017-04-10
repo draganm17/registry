@@ -203,6 +203,7 @@ namespace registry
         Then, appends `subkey` to the key name.
         @return `*this`.
         */
+        // TODO: provide an 'const key&' overload  ???
         key& append(string_view_type subkey);
 
         //! Concatenates the key name with `subkey` without introducing a key separator.

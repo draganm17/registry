@@ -5,6 +5,7 @@
 
 #include <registry/exception.h>
 #include <registry/key_handle.h>
+#include <registry/operations.h>
 
 using namespace registry;
 
@@ -189,7 +190,37 @@ TEST(KeyHandle, OperationsOnRegistry)
     // key_handle::create_key(const key& key, access_rights)
     // key_handle::create_key(const key& key, access_rights, std::error_code&)
     {
+        std::error_code ec;
+        const key sk1 = TEXT("new_key_1");
+        const key sk2 = TEXT("new_key_2");
+        const key sk3 = TEXT("new_key_3\\Inner1\\Inner2");
+        const key sk4 = TEXT("new_key_4\\Inner1\\Inner2");
+        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry"), access_rights::query_value);
+
+        // create new keys (without subkeys)
+        const auto k1 = key(h.key().name(), sk1.view()).append(sk1.name());
+        const auto k2 = key(h.key().name(), sk2.view()).append(sk2.name());
+        EXPECT_TRUE(!exists(k1) && !exists(k2));
+        auto ret1 = h.create_key(sk1, access_rights::all_access);
+        EXPECT_TRUE(ret1.first.valid() && ret1.second == true && exists(k1));
+        auto ret2 = h.create_key(sk2, access_rights::all_access, ec);
+        EXPECT_TRUE(ret2.first.valid() && ret2.second == true && !ec && exists(k2));
+
+        // create new keys (with subkeys)
+        const auto k3 = key(h.key().name(), sk3.view()).append(sk3.name());
+        const auto k4 = key(h.key().name(), sk4.view()).append(sk4.name());
+        EXPECT_TRUE(!exists(k3) && !exists(k4));
+        auto ret3 = h.create_key(sk3, access_rights::all_access);
+        EXPECT_TRUE(ret3.first.valid() && ret3.second == true && exists(k3));
+        auto ret4 = h.create_key(sk4, access_rights::all_access, ec);
+        EXPECT_TRUE(ret4.first.valid() && ret4.second == true && !ec && exists(k4));
+
         // TODO: ...
+        // try create already existing keys
+        //EXPECT_TRUE(create_key(k1) == false);
+        //EXPECT_TRUE(create_key(k2, ec) == false && !ec);
+        //EXPECT_TRUE(create_key(key::from_key_id(key_id::current_user)) == false);
+        //EXPECT_TRUE(create_key(key::from_key_id(key_id::current_user), ec) == false && !ec);
     }
 
     // key_handle::write_value(string_view_type, const value&)
