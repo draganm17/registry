@@ -14,7 +14,7 @@ TEST(ValueIterator, Construct)
     // default constructor
     {
         value_iterator it;
-        assert(it == value_iterator());
+        EXPECT_TRUE(it == value_iterator());
     }
 
     // value_iterator::value_iterator(const key&)
