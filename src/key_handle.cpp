@@ -207,7 +207,8 @@ key_handle::native_handle_type key_handle::native_handle() const noexcept
 
 bool key_handle::valid() const noexcept { return static_cast<bool>(m_state); }
 
-std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, access_rights rights, std::error_code& ec) const
+std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, 
+                                                   access_rights rights, std::error_code& ec) const
 {
     DWORD disp;
     key_handle::native_handle_type hkey;

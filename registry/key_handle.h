@@ -161,7 +161,9 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        std::pair<key_handle, bool> create_key(const registry::key& subkey, access_rights rights, std::error_code& ec = throws()) const;
+        // TODO: rights should have default value of 'access_rights::all_access'  ???
+        std::pair<key_handle, bool> create_key(const registry::key& subkey, 
+                                               access_rights rights, std::error_code& ec = throws()) const;
 
         /*! \brief 
         Checks whether the registry key specified by this handle and the registry key specified by 
