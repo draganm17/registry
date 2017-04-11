@@ -17,12 +17,17 @@ namespace registry
     //                              class value_entry                                     //
     //------------------------------------------------------------------------------------//
 
+    // TODO: ...
     class value_entry
     {
         friend class value_iterator;
 
     public:
-        // TODO: ...
+        //! Default constructor.
+        /*!
+        @post `key() == registry::key()`.
+        @post `value_name().empty()`.
+        */
         value_entry() noexcept = default;
 
         //! Constructs the value with the copy of the contents of `other`.
@@ -39,10 +44,18 @@ namespace registry
         */
         value_entry(value_entry&& other) noexcept = default;
 
-        // TODO: ...
+        //! TODO: ...
+        /*!
+        @post `this->key() == key`.
+        @post `this->value_name() == value_name`.
+        */
         value_entry(const key& key, string_view_type value_name);
 
-        // TODO: ...
+        //! TODO: ...
+        /*!
+        @post `this->key() == handle.key()`.
+        @post `this->value_name() == value_name`.
+        */
         value_entry(const key_handle& handle, string_view_type value_name);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
@@ -62,20 +75,26 @@ namespace registry
         value_entry& operator=(value_entry&& other) noexcept = default;
 
     public:
-        //! Returns the key that was stored in the value entry object.
+        //! Returns the key this object was initializes with.
         const key& key() const noexcept;
 
-        //! Returns the value name that was stored in the value entry object.
+        //! Returns the value name this object was initializes with.
         const string_type& value_name() const noexcept;
 
         // TODO: ...
         registry::value value(std::error_code& ec = throws()) const;
 
     public:
-        // TODO: ...
+        //! Replaces the contents of the entry.
+        /*!
+        @post `*this == key_entry(key, value_name)`.
+        */
         value_entry& assign(const registry::key& key, string_view_type value_name);
 
-        // TODO: ...
+        //! Replaces the contents of the entry.
+        /*!
+        @post `*this == key_entry(handle, value_name)`.
+        */
         value_entry& assign(const registry::key_handle& handle, string_view_type value_name);
 
         //! Swaps the contents of `*this` and `other`.

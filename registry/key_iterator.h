@@ -17,13 +17,17 @@ namespace registry
     //                               class key_entry                                      //
     //------------------------------------------------------------------------------------//
 
+    // TODO: ...
     class key_entry 
     {
         friend class key_iterator;
         friend class recursive_key_iterator;
 
     public:
-        // TODO: ...
+        //! Default constructor.
+        /*!
+        @post `key() == registry::key()`.
+        */
         key_entry() noexcept = default;
 
         //! Constructs the value with the copy of the contents of `other`.
@@ -40,10 +44,16 @@ namespace registry
         */
         key_entry(key_entry&& other) noexcept = default;
 
-        // TODO: ...
+        //! TODO: ...
+        /*!
+        @post `this->key() == key`.
+        */
         explicit key_entry(const key& key);
 
-        // TODO: ...
+        //! TODO: ...
+        /*!
+        @post `this->key() == handle.key()`.
+        */
         explicit key_entry(const key_handle& handle);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
@@ -63,17 +73,23 @@ namespace registry
         key_entry& operator=(key_entry&& other) noexcept = default;
 
     public:
-        //! Returns the key that was stored in the key entry object.
+        //! Returns the key this object was initializes with.
         const key& key() const noexcept;
 
         // TODO: ...
         key_info info(key_info_mask mask = key_info_mask::all, std::error_code& ec = throws()) const;
 
     public:
-        // TODO: ...
+        //! Replaces the contents of the entry.
+        /*!
+        @post `*this == key_entry(key)`.
+        */
         key_entry& assign(const registry::key& key);
 
-        // TODO: ...
+        //! Replaces the contents of the entry.
+        /*!
+        @post `*this == key_entry(handle)`.
+        */
         key_entry& assign(const registry::key_handle& handle);
 
         //! Swaps the contents of `*this` and `other`.
@@ -236,7 +252,6 @@ namespace registry
     or incrementing the end iterator is undefined behavior. If an entry is deleted or added to the key tree after the 
     recursive key iterator has been created, it is unspecified whether the change would be observed through the iterator.
     */
-    // TODO: key_options ...
     class recursive_key_iterator
     {
     public:
