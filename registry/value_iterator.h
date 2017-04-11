@@ -150,7 +150,7 @@ namespace registry
         /*!
         If `key` refers to an non-existing registry key, returns the end iterator. The overload that takes 
         `std::error_code&` parameter constructs an end iterator on error.
-        @param[in] key - TODO: ...
+        @param[in] key - an absolute key specifying the registry key that this iterator iterates on.
         @param[out] ec - out-parameter for error reporting.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
                API errors, constructed with the first key set to `key` and the OS error code as the error code
