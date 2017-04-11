@@ -259,9 +259,11 @@ namespace registry
         uint32_t  size;
     };
 
+    //\cond HIDDEN_SYMBOLS
     namespace detail { inline constexpr std::error_code* throws() noexcept { return nullptr; } }
+    //\endcond
 
-    // TODO: rename types.h to common.h ???
+    // TODO: description ...
     inline constexpr std::error_code& throws() noexcept { return *detail::throws(); }
 
     //------------------------------------------------------------------------------------//

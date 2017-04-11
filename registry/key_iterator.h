@@ -395,9 +395,15 @@ namespace registry
         /*!
         If the parent key is outside key hierarchy that is iterated on (i.e. `depth() == 0`), sets `*this` to an end 
         iterator. 
+        @param[out] ec - out-parameter for error reporting.
         @pre `*this != recursive_key_iterator()`.
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, the OS error code as the error code argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur.
         */
-        void pop(); // TODO: should take 'std::error_code&'
+        void pop(std::error_code& ec = throws());
 
         //! Swaps the contents of `*this` and `other`.
         void swap(recursive_key_iterator& other) noexcept;

@@ -248,7 +248,7 @@ recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
     return *this;
 }
 
-void recursive_key_iterator::pop()
+void recursive_key_iterator::pop(std::error_code& ec)
 {
     assert(*this != recursive_key_iterator());
     m_stack.pop_back();
@@ -258,8 +258,9 @@ void recursive_key_iterator::pop()
 
 void recursive_key_iterator::swap(recursive_key_iterator& other) noexcept
 {
-    m_stack.swap(other.m_stack);
-    std::swap(m_options, other.m_options);
+    using std::swap;
+    swap(m_stack, other.m_stack);
+    swap(m_options, other.m_options);
 }
 
 }  // namespace registry
