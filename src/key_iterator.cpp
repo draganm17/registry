@@ -122,30 +122,30 @@ key_iterator key_iterator::operator++(int) { auto tmp = *this; ++*this; return t
 
 key_iterator& key_iterator::increment(std::error_code& ec)
 {
+    LSTATUS rc;
     assert(*this != key_iterator());
-
-    ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) {
-        if (ec) m_state.reset();
-        if (ec.value() == ERROR_NO_MORE_ITEMS) ec.clear();
-    };
 
     // NOTE: Subkeys which names size exceed the size of the pre-allocated buffer are ignored.
     //       Such values may only appear in the enumerated sequence if they were added to the registry key after the
     //       iterator was constructed. Therefore this behaviour is consistent with what the class documentation states.
-
+    
     do {
         DWORD buffer_size = m_state->buffer.size();
-        HKEY hkey = reinterpret_cast<HKEY>(m_state->hkey.native_handle());
-        LSTATUS rc = RegEnumKeyEx(hkey, ++m_state->idx, m_state->buffer.data(), 
-                                  &buffer_size, nullptr, nullptr, nullptr, nullptr);
+        rc = RegEnumKeyEx(reinterpret_cast<HKEY>(m_state->hkey.native_handle()), ++m_state->idx,
+                          m_state->buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
-        if (!(ec = std::error_code(rc, std::system_category()))) {
+        if (rc == ERROR_SUCCESS) {
             m_state->entry.m_key.replace_leaf({ m_state->buffer.data(), buffer_size });
+        } else if (rc == ERROR_NO_MORE_ITEMS) {
+            m_state.reset(); // becomes the end iterator
+        } else if (rc != ERROR_MORE_DATA) {
+            m_state.reset(); // becomes the end iterator
+            const std::error_code ec2(rc, std::system_category());
+            return details::set_or_throw(&ec, ec2, __FUNCTION__), *this;
         }
-    } while (ec.value() == ERROR_MORE_DATA);
+    } while (rc == ERROR_MORE_DATA);
 
-    return *this;
+    RETURN_RESULT(ec, *this);
 }
 
 void key_iterator::swap(key_iterator& other) noexcept { m_state.swap(other.m_state); }
