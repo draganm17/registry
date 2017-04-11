@@ -338,6 +338,12 @@ std::uintmax_t key_handle::remove_all(const registry::key& subkey, std::error_co
 {
     // TODO: ...
     return 0;
+
+    //auto keys_deleted = remove_all_inside(key, ec);
+    //if (!ec) {
+    //    keys_deleted += remove(key, ec) ? 1 : 0;
+    //}
+    //return ec ? static_cast<std::uintmax_t>(-1) : keys_deleted;
 }
 
 void key_handle::write_value(string_view_type value_name, const value& value, std::error_code& ec) const

@@ -115,14 +115,14 @@ bool remove(const key& key, string_view_type value_name, std::error_code& ec)
 
 uintmax_t remove_all(const key& key, std::error_code& ec)
 {
-    // TODO: ...
-    return 0;
+    std::error_code ec2;
+    // NOTE: key open rights does not affect the delete operation.
+    const auto handle = open(key.parent_key(), access_rights::query_value, ec2);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, static_cast<uintmax_t>(0));
 
-    //auto keys_deleted = remove_all_inside(key, ec);
-    //if (!ec) {
-    //    keys_deleted += remove(key, ec) ? 1 : 0;
-    //}
-    //return ec ? static_cast<std::uintmax_t>(-1) : keys_deleted;
+    uintmax_t result;
+    if (!ec2 && (result = handle.remove_all(key.leaf_key(), ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), static_cast<uintmax_t>(-1);
 }
 
 space_info space(std::error_code& ec)

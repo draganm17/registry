@@ -145,10 +145,11 @@ namespace registry
     */
     bool remove(const key& key, string_view_type value_name, std::error_code& ec = throws());
 
-    //! Deletes the contents of `key` and the contents of all its subkeys, recursively, then deletes `key` itself as if 
-    //! by repeatedly applying remove.
+    /*! \brief
+    Deletes the contents of `key` and the contents of all its subkeys, recursively, then deletes `key` itself as if 
+    by repeatedly applying `registry::remove`. */
     /*!
-    @param[in] key - the key to remove.
+    @param[in] key - an absolute key specifying the registry key that this function deletes.
     @param[out] ec - out-parameter for error reporting.
     @return the number of keys that were deleted (which may be zero if `key` did not exist to begin with). The 
             overload that takes `std::error_code&` parameter returns `static_cast<uintmax_t>(-1)` on error.

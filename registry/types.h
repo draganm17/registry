@@ -187,7 +187,7 @@ namespace registry
         unknown =              0x00000000
     };
 
-    /*! This type represents available options that control the behavior of the recursive_key_iterator. \n
+    /*! This type represents available options that control the behavior of the `recursive_key_iterator`. \n
     key_options satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
     `operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
     // TODO: integrate this to the recursive_key_iterator
