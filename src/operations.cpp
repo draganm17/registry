@@ -17,7 +17,7 @@ bool create_key(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
     registry::key base_key = key, subkey;
-    const auto handle = open(base_key, access_rights::create_sub_key, ec2);
+    auto handle = open(base_key, access_rights::create_sub_key, ec2);
 
     if (!ec2) RETURN_RESULT(ec, false);
     while (ec2.value() == ERROR_FILE_NOT_FOUND && base_key.has_parent_key()) {
