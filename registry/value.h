@@ -71,7 +71,7 @@ namespace registry
     Objects of type `registry::value` represent a typed piece of data that can be written to or readed from the
     Windows registry by using the registry library API. Values are raw-data storages that does not handle syntactic
     or semantic aspects of the data. However, `registry::value` provides convenient constructors to help users create
-    values that are suitable to correctly represent a registry value of a given type.
+    values that are suitable for correctly represent a registry value of a given type.
     */
     class value 
         : private details::value_state
@@ -212,7 +212,7 @@ namespace registry
         //! Constructs the value from a value type identifier and binary data.
         /*!
         Any byte sequence is legal, the format of the data is not checked over the value type. However, if the stored
-        byte sequence is not sutable to representing a value of a given type, then calling a conversion function may
+        byte sequence is not suitable for representing a value of a given type, then calling a conversion function may
         produce a valid but undefined result. \n
         If the value type is one of value_type::sz, value_type::expand_sz, value_type::link or value_type::multi_sz, 
         providing the null terminator character is desirable but not necessary.
