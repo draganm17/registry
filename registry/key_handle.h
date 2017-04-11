@@ -127,7 +127,7 @@ namespace registry
 
         //! Returns the access rights this handle was initialized with.
         /*!
-        @return An value of type registry::access_rights. If `!valid()` returns `access_rights::unknown`.
+        @return An value of type `registry::access_rights`. If `!valid()` returns `access_rights::unknown`.
         */
         access_rights rights() const noexcept;
 
@@ -144,7 +144,7 @@ namespace registry
         //! Creates a subkey inside the registry key specified by this handle.
         /*!
         If the key already exists, the function opens it. The function creates all missing keys in the specified path. \n
-        The calling process must have access_rights::create_sub_key access to the key specified by this handle. The 
+        The calling process must have `access_rights::create_sub_key` access to the key specified by this handle. The 
         access rights the key was opened with does not affect the operation.
         @param[in] subkey - an relative key specifying the subkey that this function opens or creates. If the subkey
                             name is an empty string the function will return a new handle to the key specified by this
@@ -169,7 +169,7 @@ namespace registry
         Checks whether the registry key specified by this handle and the registry key specified by 
         `key` refer to the same registry key. */
         /*!
-        The key must have been opened with the access_rights::query_value access right.
+        The key must have been opened with the `access_rights::query_value` access right.
         @param[in] key - an absolute registry key.
         @param[out] ec - out-parameter for error reporting.
         @return `true` if `*this` and `key` resolve to the same registry key, `false` otherwise. The overload that 
@@ -187,7 +187,7 @@ namespace registry
         Checks whether the registry key specified by this handle and the registry key specified by 
         `handle` refer to the same registry key. */
         /*!
-        Both keys must have been opened with the access_rights::query_value access right.
+        Both keys must have been opened with the `access_rights::query_value` access right.
         @param[in] handle - a handle to an opened registry key.
         @param[out] ec - out-parameter for error reporting.
         @return `true` if `*this` and `handle` resolve to the same registry key, `false` otherwise. The overload that 
@@ -203,7 +203,7 @@ namespace registry
 
         //! Check whether the registry key specified by this handle contains the given value.
         /*!
-        The key must have been opened with the access_rights::query_value access right.
+        The key must have been opened with the `access_rights::query_value` access right.
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                                 default value.
         @param[out] ec - out-parameter for error reporting.
@@ -220,7 +220,7 @@ namespace registry
 
         //! Retrieves information about the registry key specified by this handle.
         /*!
-        The key must have been opened with the access_rights::query_value access right.
+        The key must have been opened with the `access_rights::query_value` access right.
         @param[in] mask - a mask specifying which members of key_id are filled out and which aren't. The members which
                           aren't filled out will be set to `static_cast<uint32_t>(-1)`, except for `last_write_time`,
                           which default value is `key_time_type::min()`.
@@ -239,7 +239,7 @@ namespace registry
 
         //! Reads the content of an registry value contained inside the registry key specified by this handle.
         /*!
-        The key must have been opened with the access_rights::query_value access right.
+        The key must have been opened with the `access_rights::query_value` access right.
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the 
                                 default value.
         @param[out] ec - out-parameter for error reporting.
@@ -293,7 +293,7 @@ namespace registry
 
         //! Writes an value to the registry key specified by this handle.
         /*!
-        The key must have been opened with the access_rights::set_value access right.
+        The key must have been opened with the `access_rights::set_value` access right.
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                                 default value.
         @param[in] value - the content of the value.

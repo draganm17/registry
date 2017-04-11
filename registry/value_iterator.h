@@ -146,7 +146,8 @@ namespace registry
         //! Constructs a iterator that refers to the first value of a key specified by `handle`.
         /*!
         The overload that takes `std::error_code&` parameter constructs an end iterator on error.
-        @param[in] handle - TODO: ...
+        @param[in] handle - a handle to an opened key. The key must have been opened with the 
+                             `access_rights::query_value` access right.
         @param[out] ec - out-parameter for error reporting.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
                API errors, constructed with the first key set to `handle.key()` and the OS error code as the error code
