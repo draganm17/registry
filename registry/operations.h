@@ -116,6 +116,7 @@ namespace registry
     //! Deletes an registry key.
     /*!
     The key to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_all` function. \n
+    Note that a deleted key is not removed until the last handle to it is closed.
     @param[in] key - an absolute key specifying the registry key that this function deletes.
     @param[out] ec - out-parameter for error reporting.
     @return `true` if the key was deleted, `false` if it did not exist. The overload that takes `std::error_code&` 

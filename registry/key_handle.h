@@ -257,7 +257,8 @@ namespace registry
         //! Deletes an subkey from the registry key specified by this handle.
         /*!
         The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_all` function. \n
-        The access rights of this key do not affect the delete operation.
+        The access rights of this key do not affect the delete operation. \n
+        Note that a deleted key is not removed until the last handle to it is closed.
         @param[in] subkey - an relative key specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
         @return `true` if the subkey was deleted, `false` if it did not exist. The overload  that takes 
