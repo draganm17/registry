@@ -150,14 +150,14 @@ namespace registry
     @param[in] key - the key to remove.
     @param[out] ec - out-parameter for error reporting.
     @return the number of keys that were deleted (which may be zero if `key` did not exist to begin with). The 
-            overload that takes `std::error_code&` parameter returns `static_cast<std::uintmax_t>(-1)` on error.
+            overload that takes `std::error_code&` parameter returns `static_cast<uintmax_t>(-1)` on error.
     @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
            API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n
            `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
-    std::uintmax_t remove_all(const key& key, std::error_code& ec = throws());
+    uintmax_t remove_all(const key& key, std::error_code& ec = throws());
 
     //! Retrieves the information about the size of the registry on the system.
     /*!

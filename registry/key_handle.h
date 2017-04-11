@@ -288,7 +288,7 @@ namespace registry
         bool remove(string_view_type value_name, std::error_code& ec = throws()) const;
 
         // TODO: ...
-        std::uintmax_t remove_all(const registry::key& subkey, std::error_code& ec = throws()) const;
+        uintmax_t remove_all(const registry::key& subkey, std::error_code& ec = throws()) const;
 
         //! Writes an value to the registry key specified by this handle.
         /*!

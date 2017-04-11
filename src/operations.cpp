@@ -117,7 +117,7 @@ bool remove(const key& key, string_view_type value_name, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key, registry::key(), value_name), result;
 }
 
-std::uintmax_t remove_all(const key& key, std::error_code& ec)
+uintmax_t remove_all(const key& key, std::error_code& ec)
 {
     // TODO: ...
     return 0;

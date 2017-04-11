@@ -125,7 +125,7 @@ const auto RegDeleteKeyEx_ = []() noexcept
 #endif
 }();
 
-std::uintmax_t remove_all_inside(const key& key, std::error_code& ec)
+uintmax_t remove_all_inside(const key& key, std::error_code& ec)
 {
     /*
     //if (key.empty()) {
