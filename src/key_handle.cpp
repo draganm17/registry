@@ -2,10 +2,6 @@
 #include <cassert>
 #include <Windows.h>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/endian/arithmetic.hpp>
-#include <boost/scope_exit.hpp>
-
 #include <registry/exception.h>
 #include <registry/details/utils.impl.h>
 #include <registry/key_handle.h>
