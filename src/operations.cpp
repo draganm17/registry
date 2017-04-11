@@ -3,6 +3,7 @@
 
 #include <registry/exception.h>
 #include <registry/details/utils.impl.h>
+#include <registry/key.h>
 #include <registry/key_handle.h>
 #include <registry/operations.h>
 

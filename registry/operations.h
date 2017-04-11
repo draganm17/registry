@@ -4,13 +4,14 @@
 #include <cstdint>
 #include <system_error>
 
-#include <registry/key.h>
 #include <registry/types.h>
 #include <registry/value.h>
 
 
 namespace registry
 {
+    class key;
+
     //------------------------------------------------------------------------------------//
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
