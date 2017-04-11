@@ -1,7 +1,6 @@
 /** @file */
 #pragma once
 
-#include <cstdint>
 #include <iterator>
 #include <memory>
 #include <system_error>

@@ -3,8 +3,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <exception>
-#include <memory>
 #include <string>
 #if _HAS_CXX17
 #include <string_view>
@@ -19,8 +17,6 @@
 
 namespace registry
 {
-    class key;
-
 #if defined(_UNICODE)
     using string_type =      std::wstring;
 #if _HAS_CXX17

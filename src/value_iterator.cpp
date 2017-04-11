@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdint>
 #include <Windows.h>
 
 #include <registry/details/utils.impl.h>

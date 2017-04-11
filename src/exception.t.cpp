@@ -3,8 +3,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <registry/key.h>
 #include <registry/exception.h>
+#include <registry/key.h>
 
 using namespace registry;
 
