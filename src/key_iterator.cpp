@@ -155,20 +155,26 @@ void key_iterator::swap(key_iterator& other) noexcept { m_state.swap(other.m_sta
 //                         class recursive_key_iterator                               //
 //------------------------------------------------------------------------------------//
 
-recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& ec)
+recursive_key_iterator::recursive_key_iterator(const key& key, key_options options, std::error_code& ec)
+    : m_options(options)
 {
     std::error_code ec2;
-    m_stack.emplace_back(key, ec2);
-
-    if (!ec2) {
-        if (m_stack.back() == key_iterator()) m_stack.clear();
+    const auto handle = open(key, access_rights::enumerate_sub_keys | access_rights::query_value, ec2);
+    const bool skip_permission_denied = (options & key_options::skip_permission_denied) != key_options::none;
+    if (ec2.value() == ERROR_FILE_NOT_FOUND || (ec2.value() == ERROR_ACCESS_DENIED && skip_permission_denied)) {
         RETURN_RESULT(ec, VOID);
     }
-    m_stack.clear();
-    if (!ec2) details::set_or_throw(&ec, ec2, __FUNCTION__, key);
+
+    recursive_key_iterator tmp;
+    if (!ec2 && (tmp = recursive_key_iterator(handle, options, ec2), !ec2)) {
+        swap(tmp);
+        RETURN_RESULT(ec, VOID);
+    }
+    details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
-recursive_key_iterator::recursive_key_iterator(const key_handle& handle, std::error_code& ec)
+recursive_key_iterator::recursive_key_iterator(const key_handle& handle, key_options options, std::error_code& ec)
+    : m_options(options)
 {
     std::error_code ec2;
     m_stack.emplace_back(handle, ec2);
@@ -203,6 +209,12 @@ int recursive_key_iterator::depth() const
     return static_cast<int>(m_stack.size() - 1);
 }
 
+key_options recursive_key_iterator::options() const
+{
+    assert(*this != recursive_key_iterator());
+    return m_options;
+}
+
 recursive_key_iterator& recursive_key_iterator::operator++()
 {
     std::error_code ec;
@@ -215,6 +227,8 @@ recursive_key_iterator recursive_key_iterator::operator++(int) { auto tmp = *thi
 
 recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
 {
+    // TODO: process key_options !
+
     assert(*this != recursive_key_iterator());
     
     ec.clear();
@@ -237,8 +251,14 @@ void recursive_key_iterator::pop()
 {
     assert(*this != recursive_key_iterator());
     m_stack.pop_back();
+
+    // TODO: advance the iterator ...
 }
 
-void recursive_key_iterator::swap(recursive_key_iterator& other) noexcept { m_stack.swap(other.m_stack); }
+void recursive_key_iterator::swap(recursive_key_iterator& other) noexcept
+{
+    m_stack.swap(other.m_stack);
+    std::swap(m_options, other.m_options);
+}
 
 }  // namespace registry
