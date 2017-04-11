@@ -19,7 +19,7 @@ bool create_key(const key& key, std::error_code& ec)
     registry::key base_key = key, subkey;
     auto handle = open(base_key, access_rights::create_sub_key, ec2);
 
-    if (!ec2) return false;
+    if (!ec2) RETURN_RESULT(ec, false);
     while (ec2.value() == ERROR_FILE_NOT_FOUND && base_key.has_parent_key()) {
         subkey = base_key.leaf_key().append(subkey.name());
         handle = open(base_key.remove_leaf(), access_rights::create_sub_key, ec2);
@@ -72,10 +72,10 @@ key_info info(const key& key, key_info_mask mask, std::error_code& ec)
     constexpr key_info invalid_info{ uint32_t(-1), uint32_t(-1), uint32_t(-1), 
                                      uint32_t(-1), uint32_t(-1), key_time_type::min() };
 
-    key_info info;
     std::error_code ec2;
     const auto handle = open(key, access_rights::query_value, ec2);
 
+    key_info info;
     if (!ec2 && (info = handle.info(mask, ec2), !ec2)) RETURN_RESULT(ec, info);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key), invalid_info;
 }
