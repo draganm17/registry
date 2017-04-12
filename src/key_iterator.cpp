@@ -136,9 +136,9 @@ key_iterator& key_iterator::increment(std::error_code& ec)
         if (rc == ERROR_SUCCESS) {
             m_state->entry.m_key.replace_leaf({ m_state->buffer.data(), buffer_size });
         } else if (rc == ERROR_NO_MORE_ITEMS) {
-            m_state.reset(); // becomes the end iterator
+            m_state.reset(); // *this becomes the end iterator
         } else if (rc != ERROR_MORE_DATA) {
-            m_state.reset(); // becomes the end iterator
+            m_state.reset(); // *this becomes the end iterator
             const std::error_code ec2(rc, std::system_category());
             return details::set_or_throw(&ec, ec2, __FUNCTION__), *this;
         }
@@ -236,9 +236,7 @@ recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
     while (!ec && !m_stack.empty() && m_stack.back() == key_iterator())
     {
         m_stack.pop_back();
-        if (m_stack.size()) {
-            m_stack.back().increment(ec);
-        }
+        if (m_stack.size()) m_stack.back().increment(ec);
     }
     return ec ? (m_stack.clear(), *this) : *this;
 }
@@ -246,9 +244,15 @@ recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
 void recursive_key_iterator::pop(std::error_code& ec)
 {
     assert(*this != recursive_key_iterator());
-    m_stack.pop_back();
 
-    // TODO: advance the iterator ...
+    std::error_code ec2;
+    do {
+        m_stack.pop_back();
+        if (m_stack.size()) m_stack.back().increment(ec2);
+    } while (!ec2 && !m_stack.empty() && m_stack.back() == key_iterator());
+    
+    if (!ec2) RETURN_RESULT(ec, VOID);
+    details::set_or_throw(&ec, ec2, __FUNCTION__);
 }
 
 void recursive_key_iterator::swap(recursive_key_iterator& other) noexcept

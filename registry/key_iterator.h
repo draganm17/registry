@@ -408,8 +408,8 @@ namespace registry
 
         //! Moves the iterator one level up in the key hierarchy. 
         /*!
-        If the parent key is outside key hierarchy that is iterated on (i.e. `depth() == 0`), sets `*this` to an end 
-        iterator. 
+        If `depth() == 0`, set `*this` to `recursive_key_iterator()`. Otherwise, cease iteration of the key currently
+        being iterated over, and continue iteration over the parent key.
         @param[out] ec - out-parameter for error reporting.
         @pre `*this != recursive_key_iterator()`.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
