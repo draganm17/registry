@@ -114,7 +114,7 @@ namespace registry
     /*!
     value_iterator is an InputIterator that iterates over the values of a registry key. The iteration order is 
     unspecified, except that each entry is visited only once. The default value is not iterated through. If the 
-    value_iterator is advanced past the last entry, it becomes equal to the default-constructed iterator, also 
+    `value_iterator` is advanced past the last entry, it becomes equal to the default-constructed iterator, also 
     known as the end iterator. Two end iterators are always equal, dereferencing or incrementing the end iterator is 
     undefined behavior. If an entry is deleted or added to the key tree after the value iterator has been created, it
     is unspecified whether the change would be observed through the iterator. 
@@ -214,7 +214,7 @@ namespace registry
         pointer operator->() const;
 
     public:
-        //! Calls increment(), then returns `*this`.
+        //! Calls `increment()`, then returns `*this`.
         /*!
         @pre `*this != value_iterator()`.
         @throw registry::registry_error on underlying OS API errors. std::bad_alloc may be thrown if memory allocation 
@@ -222,17 +222,17 @@ namespace registry
         */
         value_iterator& operator++();
 
-        //! Makes a copy of `*this`, calls increment(), then returns the copy.
+        //! Makes a copy of `*this`, calls `increment()`, then returns the copy.
         /*!
         @pre `*this != value_iterator()`.
-        @throw registry::registry_error on underlying OS API errors. std::bad_alloc may be thrown if memory allocation 
-               fails.
+        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
+               allocation fails.
         */
         value_iterator operator++(int);
 
         //! Advances the iterator to the next entry.
         /*!
-        If an error occurs *this is becoming equal to the end iterator.
+        If an error occurs `*this` is becoming equal to the end iterator.
         @pre `*this != value_iterator()`.
         */
         value_iterator& increment(std::error_code& ec);

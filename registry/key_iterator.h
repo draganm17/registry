@@ -107,7 +107,7 @@ namespace registry
     //! An iterator to the contents of the registry key.
     /*!
     key_iterator is an InputIterator that iterates over the key elements of a registry key (but does not visit the 
-    subkeys). The iteration order is unspecified, except that each entry is visited only once. If the key_iterator is 
+    subkeys). The iteration order is unspecified, except that each entry is visited only once. If the `key_iterator` is
     advanced past the last entry, it becomes equal to the default-constructed iterator, also known as the end iterator.
     Two end iterators are always equal, dereferencing or incrementing the end iterator is undefined behavior. If an 
     entry is deleted or added to the key tree after the key iterator has been created, it is unspecified whether the 
@@ -208,19 +208,19 @@ namespace registry
         pointer operator->() const;
 
     public:
-        //! Calls increment(), then returns `*this`.
+        //! Calls `increment()`, then returns `*this`.
         /*!
         @pre `*this != key_iterator()`.
-        @throw registry::registry_error on underlying OS API errors. std::bad_alloc may be thrown if memory allocation 
-               fails.
+        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
+               allocation fails.
         */
         key_iterator& operator++();
 
-        //! Makes a copy of `*this`, calls increment(), then returns the copy.
+        //! Makes a copy of `*this`, calls `increment()`, then returns the copy.
         /*!
         @pre `*this != key_iterator()`.
-        @throw registry::registry_error on underlying OS API errors. std::bad_alloc may be thrown if memory allocation 
-               fails.
+        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
+               allocation fails.
         */
         key_iterator operator++(int);
 
@@ -247,11 +247,12 @@ namespace registry
     /*!
     recursive_key_iterator is an InputIterator that iterates over the key elements of a registry key, and, recursively,
     over the entries of all subkeys. The iteration order is unspecified, except that each entry is visited only once.
-    If the recursive_key_iterator is advanced past the last entry of the top-level registry key, it becomes equal to 
+    If the `recursive_key_iterator` is advanced past the last entry of the top-level registry key, it becomes equal to 
     the default-constructed iterator, also known as the end iterator. Two end iterators are always equal, dereferencing
     or incrementing the end iterator is undefined behavior. If an entry is deleted or added to the key tree after the 
     recursive key iterator has been created, it is unspecified whether the change would be observed through the iterator.
     */
+    // TODO: recursion_pending
     class recursive_key_iterator
     {
     public:
@@ -373,25 +374,25 @@ namespace registry
         //! Returns the options that affect the iteration.
         /*!
         The options can only be supplied when constructing the key iterator. If the options argument was not 
-        supplied, returns key_options::none.
+        supplied, returns `key_options::none`.
         @pre `*this != recursive_key_iterator()`.
         */
         key_options options() const;
 
     public:
-        //! Calls increment(), then returns `*this`.
+        //! Calls `increment()`, then returns `*this`.
         /*!
         @pre `*this != recursive_key_iterator()`.
-        @throw registry::registry_error on underlying OS API errors. std::bad_alloc may be thrown if memory allocation 
-               fails.
+        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
+               allocation fails.
         */
         recursive_key_iterator& operator++();
 
-        //! Makes a copy of `*this`, calls increment(), then returns the copy.
+        //! Makes a copy of `*this`, calls `increment()`, then returns the copy.
         /*!
         @pre `*this != recursive_key_iterator()`.
-        @throw registry::registry_error on underlying OS API errors. std::bad_alloc may be thrown if memory allocation 
-               fails.
+        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
+               allocation fails.
         */
         recursive_key_iterator operator++(int);
 

@@ -12,38 +12,38 @@
 
 namespace registry
 {
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct none_value_tag             { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct sz_value_tag               { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct expand_sz_value_tag        { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct binary_value_tag           { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct dword_value_tag            { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct dword_big_endian_value_tag { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct link_value_tag             { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct multi_sz_value_tag         { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or assign function.
+    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct qword_value_tag            { };
 
     //------------------------------------------------------------------------------------//
     //                             class bad_value_cast                                   //
     //------------------------------------------------------------------------------------//
 
-    //! Defines a type of object to be thrown by registry::value conversion functions on failure.
+    //! Defines a type of object to be thrown by `registry::value` conversion functions on failure.
     class bad_value_cast
         : public std::bad_cast
     {
@@ -98,7 +98,7 @@ namespace registry
         */
         value(value&& other) noexcept = default;
 
-        //! Constructs a value of type value_type::none.
+        //! Constructs a value of type `value_type::none`.
         /*!
         @post `type() == value_type::none`.
         @post `data().empty()`.
@@ -106,7 +106,7 @@ namespace registry
         */
         explicit value(none_value_tag tag) noexcept;
 
-        //! Constructs a value of type value_type::sz.
+        //! Constructs a value of type `value_type::sz`.
         /*!
         @post `type() == value_type::sz`.
         @post `to_string() == value`.
@@ -115,7 +115,7 @@ namespace registry
         */
         value(sz_value_tag tag, string_view_type value);
 
-        //! Constructs a value of type value_type::expand_sz.
+        //! Constructs a value of type `value_type::expand_sz`.
         /*!
         @post `type() == value_type::expand_sz`.
         @post `to_string() == value`.
@@ -124,7 +124,7 @@ namespace registry
         */
         value(expand_sz_value_tag tag, string_view_type value);
 
-        //! Constructs a value of type value_type::binary.
+        //! Constructs a value of type `value_type::binary`.
         /*!
         @post `type() == value_type::binary`.
         @post `to_byte_array() == value`.
@@ -133,7 +133,7 @@ namespace registry
         */
         value(binary_value_tag tag, byte_array_view_type value);
 
-        //! Constructs a value of type value_type::dword.
+        //! Constructs a value of type `value_type::dword`.
         /*!
         @post `type() == value_type::dword`.
         @post `to_uint32() == value && to_uint64() == value`.
@@ -142,7 +142,7 @@ namespace registry
         */
         value(dword_value_tag tag, uint32_t value);
 
-        //! Constructs a value of type value_type::dword_big_endian.
+        //! Constructs a value of type `value_type::dword_big_endian`.
         /*!
         @post `type() == value_type::dword_big_endian`.
         @post `to_uint32() == value && to_uint64() == value`.
@@ -151,7 +151,7 @@ namespace registry
         */
         value(dword_big_endian_value_tag tag, uint32_t value);
 
-        //! Constructs a value of type value_type::link.
+        //! Constructs a value of type `value_type::link`.
         /*!
         @post `type() == value_type::link`.
         @post `to_string() == value`.
@@ -160,26 +160,26 @@ namespace registry
         */
         value(link_value_tag tag, string_view_type value);
 
-        //! Constructs a value of type value_type::multi_sz.
+        //! Constructs a value of type `value_type::multi_sz`.
         /*!
         @post `type() == value_type::multi_sz`.
         @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), BEGIN(value), END(value))`.
         @param[in] tag - value type tag.
-        @param[in] value - a container, such as Sequence::value_type should be explicitly convertible to 
-                           registry::string_view_type.
+        @param[in] value - a container, such as `Sequence::value_type` should be explicitly convertible to 
+                           `registry::string_view_type`.
         */
         template <typename Sequence,
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Sequence::value_type>::value>
         >
         value(multi_sz_value_tag tag, const Sequence& value);
 
-        //! Constructs a value of type value_type::multi_sz.
+        //! Constructs a value of type `value_type::multi_sz`.
         /*!
         @post `type() == value_type::multi_sz`.
         @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), first, last)`.
         @param[in] tag - value type tag.
-        @param[in] first, last - input iterators, such as std::iterator_traits<InputIt>::value_type should be 
-                                 explicitly convertible to registry::string_view_type.
+        @param[in] first, last - input iterators, such as `std::iterator_traits<InputIt>::value_type` should be 
+                                 explicitly convertible to `registry::string_view_type`.
         */
         template <typename InputIt,
                   typename = std::enable_if_t<std::is_constructible<string_view_type, 
@@ -187,20 +187,20 @@ namespace registry
         >
         value(multi_sz_value_tag tag, InputIt first, InputIt last);
 
-        //! Constructs a value of type value_type::multi_sz.
+        //! Constructs a value of type `value_type::multi_sz`.
         /*!
         @post `type() == value_type::multi_sz`.
         @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), init.begin(), init.end())`.
         @param[in] tag - value type tag.
-        @param[in] init - an object of type std::initializer_list<T>, such as T should be explicitly convertible to 
-                          registry::string_view_type.
+        @param[in] init - an object of type `std::initializer_list<T>`, such as `T` should be explicitly convertible
+                          to `registry::string_view_type`.
         */
         template <typename T,
                   typename = std::enable_if_t<std::is_constructible<string_view_type, T>::value>
         >
         value(multi_sz_value_tag tag, std::initializer_list<T> init);
 
-        //! Constructs a value of type value_type::qword.
+        //! Constructs a value of type `value_type::qword`.
         /*!
         @post `type() == value_type::qword`.
         @post `to_uint64() == value`.
@@ -248,34 +248,34 @@ namespace registry
 
         //! Converts the value to an unsigned 32-bit integer.
         /*!
-        @throw registry::bad_value_cast if the value type is not one of value_type::dword or 
-               value_type::dword_big_endian.
+        @throw `registry::bad_value_cast` if the value type is not one of `value_type::dword` or 
+               `value_type::dword_big_endian`.
         */
         uint32_t to_uint32() const;
 
         //! Converts the value to an unsigned 64-bit integer.
         /*!
-        @throw registry::bad_value_cast if the value type is not one of value_type::dword, 
-               value_type::dword_big_endian or value_type::qword.
+        @throw `registry::bad_value_cast` if the value type is not one of `value_type::dword`, 
+               `value_type::dword_big_endian` or `value_type::qword`.
         */
         uint64_t to_uint64() const;
 
         //! Converts the value to a string.
         /*!
-        @throw registry::bad_value_cast if the value type is not one of value_type::sz, value_type::expand_sz or 
-               value_type::link.
+        @throw `registry::bad_value_cast` if the value type is not one of `value_type::sz`, `value_type::expand_sz`
+               or `value_type::link`.
         */
         string_type to_string() const;
 
         //! Converts the value to an array of strings.
         /*!
-        @throw registry::bad_value_cast if the value type is not value_type::multi_sz.
+        @throw `registry::bad_value_cast` if the value type is not `value_type::multi_sz`.
         */
         std::vector<string_type> to_strings() const;
 
         //! Converts the value to a binary data array.
         /*!
-        @throw registry::bad_value_cast if the value type is not value_type::binary.
+        @throw `registry::bad_value_cast` if the value type is not `value_type::binary`.
         */
         byte_array_type to_byte_array() const;
 
@@ -346,8 +346,8 @@ namespace registry
         /*!
         @post `*this == value(tag, value)`.
         @param[in] tag - value type tag.
-        @param[in] value - a container, such as Sequence::value_type should be explicitly convertible to 
-                           registry::string_view_type.
+        @param[in] value - a container, such as `Sequence::value_type` should be explicitly convertible to 
+                           `registry::string_view_type`.
         @return `*this`.
         */
         template <typename Sequence,
@@ -359,8 +359,8 @@ namespace registry
         /*!
         @post `*this == value(tag, first, last)`.
         @param[in] tag - value type tag.
-        @param[in] first, last - input iterators, such as std::iterator_traits<InputIt>::value_type should be 
-                                 explicitly convertible to registry::string_view_type.
+        @param[in] first, last - input iterators, such as `std::iterator_traits<InputIt>::value_type` should be 
+                                 explicitly convertible to `registry::string_view_type`.
         @return `*this`.
         */
         template <typename InputIt,
@@ -373,8 +373,8 @@ namespace registry
         /*!
         @post `*this == value(tag, init)`.
         @param[in] tag - value type tag.
-        @param[in] init - an object of type std::initializer_list<T>, such as T should be explicitly convertible to 
-                          registry::string_view_type.
+        @param[in] init - an object of type `std::initializer_list<T>`, such as `T` should be explicitly convertible
+                          to `registry::string_view_type`.
         @return `*this`.
         */
         template <typename T,

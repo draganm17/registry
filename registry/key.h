@@ -39,21 +39,22 @@ namespace registry
 
     public:
         /*! \brief
-        The value of type registry::view which is passed to registry::key constructor by default. Is equal to
-        registry::view::view_32bit for 32-bit applications and registry::view::view_64bit for 64-bit applications. */
+        The value of type `registry::view` which is passed to `registry::key` constructor by default. Is equal to
+        `registry::view::view_32bit` for 32-bit applications and `registry::view::view_64bit` for 64-bit applications. */
         static const view default_view;
 
     public:
-        //! Constructs a object key that corresponds to an predefined registry key.
+        //! Constructs a key that corresponds to an predefined registry key.
         /*!
-        Returns key() if `id == key_id::unknown`. The view of the returned key is always equal to `default_view`.
+        Returns `key()` if `id == key_id::unknown`. The view of the returned key is always equal to `default_view`.
         */
         static key from_key_id(key_id id);
 
     public:
         //! Default constructor.
         /*!
-        Equivalent to `key(string_type())`.
+        @post `name().empty()`.
+        @post `view() == default_view`.
         */
         key() noexcept = default;
 
@@ -117,7 +118,7 @@ namespace registry
 
         //! Returns the identifier of the root key.
         /*!
-        Returns key_id::unknown if `!has_root_key()` or if the root key is not one of the predefined keys.
+        Returns `key_id::unknown` if `!has_root_key()` or if the root key is not one of the predefined keys.
         */
         key_id root_key_id() const;
 
@@ -131,7 +132,7 @@ namespace registry
         /*!
         Returns `key(string_type(), view())` if `!has_parent_key()` or there's only a single element in the key 
         name (`begin() == --end()`). The resulting key is constructed by appending all elements in a range 
-        [`begin()`, `--end()`) to an key constructed as `key(string_type(), view())`.
+        `[begin(), --end())` to an key constructed as `key(string_type(), view())`.
         */
         key parent_key() const;
 
@@ -182,7 +183,7 @@ namespace registry
 
         /*! \brief
         Returns an iterator to the first component of the key name. If the key name has no components, the returned
-        iterator is equal to end(). */
+        iterator is equal to `end()`. */
         iterator begin() const noexcept;
 
         /*! \brief
@@ -209,7 +210,7 @@ namespace registry
         - `subkey` begins with a key separator.
 
         Then, appends `subkey` to the key name.
-        @param[in] subkey - a string, such as Source should be explicitly convertible to registry::string_view_type.
+        @param[in] subkey - a string, such as `Source` should be explicitly convertible to `registry::string_view_type`.
         @return `*this`.
         */
         template <typename Source, 

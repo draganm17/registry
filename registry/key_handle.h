@@ -19,8 +19,8 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     /*! \brief
-    Defines a type of the object thrown by the constructors of registry::key_handle that take
-    registry::weak_key_handle as the argument, when the registry::weak_key_handle is already expired. */
+    Defines a type of the object thrown by the constructors of `registry::key_handle` that take
+    `registry::weak_key_handle` as the argument, when the `registry::weak_key_handle` is already expired. */
     class bad_weak_key_handle
         : public std::exception
     {
@@ -34,13 +34,13 @@ namespace registry
 
     //! Represents a handle to an registry key.
     /*!
-    registry::key_handle is a wrapper around a native key handle that retains shared ownership of that handle. Several 
-    key_handle objects may own the same key handle. The object is destroyed and its handle is closed when either of the
-    following happens:
-    - the last remaining key_handle owning the key handle is destroyed;
-    - the last remaining key_handle owning the key handle is assigned another handle via operator=.
+    `registry::key_handle` is a wrapper around a native key handle that retains shared ownership of that handle. 
+    Several `key_handle` objects may own the same key handle. The object is destroyed and its handle is closed 
+    when either of the following happens:
+    - the last remaining `key_handle` owning the key handle is destroyed;
+    - the last remaining `key_handle` owning the key handle is assigned another handle via `operator=`.
 
-    A key_handle may also own no handle, in which case it is called `invalid`.
+    A `key_handle` may also own no handle, in which case it is called `invalid`.
     */
     // TODO: describe the internal implementation ???
     class key_handle
@@ -61,7 +61,7 @@ namespace registry
         constexpr key_handle() noexcept = default;
 
         /*! \brief
-        Constructs a key_handle which shares ownership of the handle managed by `other`. If `other` manages no
+        Constructs a `key_handle` which shares ownership of the handle managed by `other`. If `other` manages no
         handle, `*this` manages no handle too. */
         key_handle(const key_handle& other) noexcept = default;
 
@@ -72,9 +72,9 @@ namespace registry
         */
         key_handle(key_handle&& other) noexcept = default;
 
-        //! Constructs a key_handle which shares ownership of the handle managed by `handle`.
+        //! Constructs a `key_handle` which shares ownership of the handle managed by `handle`.
         /*!
-        @throw registry::bad_weak_key_handle if `handle.expired()`.
+        @throw `registry::bad_weak_key_handle` if `handle.expired()`.
         */
         key_handle(const weak_key_handle& handle);
 
@@ -121,7 +121,7 @@ namespace registry
     public:
         //! Returns the key this handle was initialized with.
         /*!
-        @return An value of type registry::key. If `!valid()` returns `registry::key()`.
+        @return An value of type `registry::key`. If `!valid()` returns `registry::key()`.
         */
         registry::key key() const;
 
@@ -133,7 +133,7 @@ namespace registry
 
         //! Returns the underlying implementation-defined native handle object suitable for use with WinAPI.
         /*!
-        @return An value of type native_handle_type. If `!valid()` returns `native_handle_type{}`.
+        @return An value of type `native_handle_type`. If `!valid()` returns `native_handle_type{}`.
         */
         native_handle_type native_handle() const noexcept;
 
@@ -316,10 +316,10 @@ namespace registry
     //                            class weak_key_handle                                   //
     //------------------------------------------------------------------------------------//
 
-    //! Represents a weak reference to a registry key handle managed by registry::key_handle.
+    //! Represents a weak reference to a registry key handle managed by `registry::key_handle`.
     /*!
-    registry::weak_key_handle is a wrapper around a native key handle that holds a non-owning ("weak") reference to
-    a key handle that is managed by registry::key_handle. It must be converted to registry::key_handle in order to 
+    `registry::weak_key_handle` is a wrapper around a native key handle that holds a non-owning ("weak") reference to
+    a key handle that is managed by `registry::key_handle`. It must be converted to `registry::key_handle` in order to
     access the referenced handle.
     */
     // TODO: describe the internal umplementation ???
@@ -330,14 +330,14 @@ namespace registry
         std::weak_ptr<key_handle::state> m_state;
 
     public:
-        //! Default constructor. Constructs an invalid weak_key_handle.
+        //! Default constructor. Constructs an invalid `weak_key_handle`.
         /*!
         @post `expired()`.
         */
         constexpr weak_key_handle() noexcept = default;
 
         /*! \brief
-        Constructs a weak_key_handle which shares ownership of the handle managed by `other`. If `other` manages no 
+        Constructs a `weak_key_handle` which shares ownership of the handle managed by `other`. If `other` manages no
         handle, `*this` manages no handle too. */
         weak_key_handle(const weak_key_handle& other) noexcept = default;
 
@@ -374,7 +374,7 @@ namespace registry
         //! Checks whether the referenced handle was already closed.
         bool expired() const noexcept;
 
-        //! Creates a key_handle that manages the referenced handle. 
+        //! Creates a `key_handle` that manages the referenced handle. 
         /*!
         If there is no managed handle, i.e. `*this` is invalid, then the returned key_handle also is invalid.
         */
@@ -415,7 +415,7 @@ namespace registry
     @param[in] key - an absolute key specifying the registry key that this function opens.
     @param[in] rights - the access rights for the key to be opened.
     @param[out] ec - out-parameter for error reporting.`
-    @return a valid key_handle object. The overload  that takes `std::error_code&` parameter returns an 
+    @return a valid `key_handle` object. The overload  that takes `std::error_code&` parameter returns an 
             default-constructed (not valid) handle on error.
     @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
            API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n

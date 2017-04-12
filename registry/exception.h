@@ -37,18 +37,18 @@ namespace registry
         
         /*! \brief
         Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
-        the first key is set to `key1`, the second key is set to `key2`, the value name is set to `value_name`.*/
+        the first key is set to `key1`, the second key is set to `key2`, the value name is set to `value_name`. */
         registry_error(std::error_code ec, const std::string& msg,
                        const key& key1, const key& key2, string_view_type value_name);
 
     public:
-        //! Returns the first key that was stored in the exception object.
+        //! Returns the first key this object was initialized with.
         const key& key1() const noexcept;
 
-        //! Returns the second key that was stored in the exception object.
+        //! Returns the second key this object was initialized with.
         const key& key2() const noexcept;
 
-        //! Returns the value name that was stored in the exception object.
+        //! Returns the value name this object was initialized with.
         const string_type& value_name() const noexcept;
 
     private:
