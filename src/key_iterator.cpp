@@ -2,8 +2,6 @@
 #include <cstdint>
 #include <Windows.h>
 
-#include <boost/scope_exit.hpp>
-
 #include <registry/details/utils.impl.h>
 #include <registry/exception.h>
 #include <registry/key_iterator.h>
@@ -228,24 +226,21 @@ recursive_key_iterator recursive_key_iterator::operator++(int) { auto tmp = *thi
 
 recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
 {
-    // TODO: process key_options !
-
     assert(*this != recursive_key_iterator());
-    
-    ec.clear();
-    BOOST_SCOPE_EXIT_ALL(&) { if (ec) m_stack.clear(); };
 
+    ec.clear();
     m_stack.emplace_back(m_stack.back()->key(), ec);
-    if (m_stack.back() == key_iterator()) 
+    const bool skip_pd = (m_options & key_options::skip_permission_denied) != key_options::none;
+    
+    if (ec.value() == ERROR_ACCESS_DENIED && skip_pd) ec.clear();
+    while (!ec && !m_stack.empty() && m_stack.back() == key_iterator())
     {
-        do {
-            m_stack.pop_back();
-            if (m_stack.size()) {
-                m_stack.back().increment(ec);
-            }
-        } while (!ec && !m_stack.empty() && m_stack.back() == key_iterator());
+        m_stack.pop_back();
+        if (m_stack.size()) {
+            m_stack.back().increment(ec);
+        }
     }
-    return *this;
+    return ec ? (m_stack.clear(), *this) : *this;
 }
 
 void recursive_key_iterator::pop(std::error_code& ec)
