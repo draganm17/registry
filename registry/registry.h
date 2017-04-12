@@ -13,6 +13,7 @@ library and tries to mimic its design whenever possible.
 
 #pragma once
 
+#include <registry/config.h>
 #include <registry/exception.h>
 #include <registry/key.h>
 #include <registry/key_handle.h>

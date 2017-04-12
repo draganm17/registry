@@ -2,6 +2,7 @@
 #include <cassert>
 #include <Windows.h>
 
+#include <registry/config.h>
 #include <registry/exception.h>
 #include <registry/details/utils.impl.h>
 #include <registry/key_handle.h>
@@ -110,6 +111,7 @@ const auto NtQueryKey_ = []() noexcept
     return (F)GetProcAddress(LoadLibrary(TEXT("ntdll.dll")), "NtQueryKey");
 }();
 
+#if REGISTRY_USE_WINAPI_VERSION < REGISTRY_WINAPI_VERSION_VISTA
 const auto RegDeleteKeyEx_ = []() noexcept
 {
     using F = LONG(WINAPI*)(HKEY, LPCTSTR, REGSAM, DWORD);
@@ -120,6 +122,7 @@ const auto RegDeleteKeyEx_ = []() noexcept
     return osv > 5 ? (F)GetProcAddress(LoadLibrary(TEXT("Advapi32.dll")), "RegDeleteKeyExA") : nullptr;
 #endif
 }();
+#endif
 
 uintmax_t remove_all_inside(const key& key, std::error_code& ec)
 {
@@ -305,12 +308,17 @@ value key_handle::read_value(string_view_type value_name, std::error_code& ec) c
 bool key_handle::remove(const registry::key& subkey, std::error_code& ec) const
 {
     LSTATUS rc;
+#if REGISTRY_USE_WINAPI_VERSION < REGISTRY_WINAPI_VERSION_VISTA
     if (!RegDeleteKeyEx_) {
         rc = RegDeleteKey(reinterpret_cast<HKEY>(native_handle()), subkey.name().data());
     } else {
         rc = RegDeleteKeyEx_(reinterpret_cast<HKEY>(native_handle()),
                              subkey.name().data(), static_cast<DWORD>(subkey.view()), 0);
     }
+#else
+    rc = RegDeleteKeyEx(reinterpret_cast<HKEY>(native_handle()),
+                        subkey.name().data(), static_cast<DWORD>(subkey.view()), 0);
+#endif
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
