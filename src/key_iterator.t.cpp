@@ -182,3 +182,38 @@ TEST(RecursiveKeyIterator, Iterate)
     }
     EXPECT_TRUE(elements == 9);
 }
+
+TEST(RecursiveKeyIterator, Pop)
+{
+    const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+
+    std::set<key> expected_keys;
+    expected_keys.emplace(key(k).append(TEXT("key_1_deep_0")));
+    expected_keys.emplace(key(k).append(TEXT("key_2_deep_0")));
+    expected_keys.emplace(key(k).append(TEXT("key_3_deep_0")));
+
+    int elements = 0;
+    for (auto it = recursive_key_iterator(k); ; ++it)
+    {
+        if (it.depth()) it.pop();
+        if (it == recursive_key_iterator()) break;
+
+        ++elements;
+        EXPECT_TRUE(expected_keys.find(it->key()) != expected_keys.end());
+        
+    }
+    EXPECT_TRUE(elements == 3);
+
+    elements = 0;
+    std::error_code ec;
+    for (auto it = recursive_key_iterator(k); ; ++it)
+    {
+        if (it.depth()) it.pop(ec);
+        if (it == recursive_key_iterator()) break;
+
+        ++elements;
+        EXPECT_TRUE(!ec && expected_keys.find(it->key()) != expected_keys.end());
+        
+    }
+    EXPECT_TRUE(elements == 3);
+}
