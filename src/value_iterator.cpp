@@ -26,6 +26,8 @@ value_entry::value_entry(const registry::key_handle& handle, string_view_type va
 
 const key& value_entry::key() const noexcept { return m_key; }
 
+key_handle value_entry::key_handle() const noexcept { return m_key_handle; }
+
 const string_type& value_entry::value_name() const noexcept { return m_value_name; }
 
 value value_entry::value(std::error_code& ec) const
@@ -46,7 +48,7 @@ value_entry& value_entry::assign(const registry::key& key, string_view_type valu
     return *this;
 }
 
-value_entry& value_entry::assign(const key_handle& handle, string_view_type value_name)
+value_entry& value_entry::assign(const registry::key_handle& handle, string_view_type value_name)
 {
     m_key.swap(registry::key());
     m_value_name.assign(value_name.data(), value_name.size());

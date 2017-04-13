@@ -18,12 +18,14 @@ key_entry::key_entry(const registry::key& key)
     : m_key(key)
 { }
 
-key_entry::key_entry(const key_handle& handle)
+key_entry::key_entry(const registry::key_handle& handle)
     : m_key(handle.key())
     , m_key_handle(handle)
 { }
 
 const registry::key& key_entry::key() const noexcept { return m_key; }
+
+registry::key_handle key_entry::key_handle() const noexcept { return m_key_handle; }
 
 key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 {
@@ -42,7 +44,7 @@ key_entry& key_entry::assign(const registry::key& key)
     return *this;
 }
 
-key_entry& key_entry::assign(const key_handle& handle)
+key_entry& key_entry::assign(const registry::key_handle& handle)
 {
     m_key.swap(registry::key());
     m_key_handle = handle;
