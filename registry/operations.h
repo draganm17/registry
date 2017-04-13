@@ -95,7 +95,7 @@ namespace registry
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
-    key_info info(const key& key, key_info_mask mask, std::error_code& ec = throws());
+    key_info info(const key& key, key_info_mask mask = key_info_mask::all, std::error_code& ec = throws());
 
     //! Reads the content of an existing registry value.
     /*!
