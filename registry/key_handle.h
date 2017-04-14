@@ -306,7 +306,22 @@ namespace registry
         */
         bool remove(string_view_type value_name, std::error_code& ec = throws()) const;
 
-        // TODO: ...
+        //! Deletes an subkey and all its subkeys, recursively, from the registry key specified by this handle.
+        /*!
+        The key must have been opened with the `access_rights::enumerate_sub_keys` and `access_rights::query_value` 
+        access right. \n
+        Note that a deleted key is not removed until the last handle to it is closed.
+        @param[in] subkey - an relative key specifying the subkey that this function deletes.
+        @param[out] ec - out-parameter for error reporting.
+        @return the number of keys that were deleted (which may be zero if `subkey` did not exist to begin with). 
+                The overload that takes `std::error_code&` parameter returns `static_cast<uintmax_t>(-1)` on error.
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key set to `this->key()`, the second key set `subkey` and the OS 
+               error code as the error code argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur.
+        */
         uintmax_t remove_all(const registry::key& subkey, std::error_code& ec = throws()) const;
 
         //! Writes an value to the registry key specified by this handle.

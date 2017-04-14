@@ -146,9 +146,7 @@ namespace registry
     */
     bool remove(const key& key, string_view_type value_name, std::error_code& ec = throws());
 
-    /*! \brief
-    Deletes the contents of `key` and the contents of all its subkeys, recursively, then deletes `key` itself as if 
-    by repeatedly applying `registry::remove`. */
+    //! Deletes an registry key and all its subkeys, recursively.
     /*!
     @param[in] key - an absolute key specifying the registry key that this function deletes.
     @param[out] ec - out-parameter for error reporting.
