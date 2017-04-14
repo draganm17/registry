@@ -21,8 +21,7 @@ namespace registry
     /*! \brief
     Defines a type of the object thrown by the constructors of `registry::key_handle` that take
     `registry::weak_key_handle` as the argument, when the `registry::weak_key_handle` is already expired. */
-    class bad_weak_key_handle
-        : public std::exception
+    class bad_weak_key_handle : public std::exception
     {
     public:
         const char* what() const noexcept override { return "registry::bad_weak_key_handle"; }

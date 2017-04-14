@@ -44,8 +44,7 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     //! Defines a type of object to be thrown by `registry::value` conversion functions on failure.
-    class bad_value_cast
-        : public std::bad_cast
+    class bad_value_cast : public std::bad_cast
     {
     public:
         const char* what() const noexcept override { return "registry::bad_value_cast"; }
@@ -131,6 +130,7 @@ namespace registry
         @param[in] tag - value type tag.
         @param[in] value - binary data to be stored in this value.
         */
+        // TODO: replace 'byte_array_view_type' by 'const uint8_t*' and 'size_t' ???
         value(binary_value_tag tag, byte_array_view_type value);
 
         //! Constructs a value of type `value_type::dword`.

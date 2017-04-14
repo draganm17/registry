@@ -16,22 +16,23 @@ namespace registry
     /*! \brief 
     Defines an exception object that is thrown on failure by the overloads of registry library functions
     not having an argument of type std::error_code&. */
-    class registry_error 
-        : public std::system_error
+    class registry_error : public std::system_error
     {
     public:
-        //! Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`.
+        /*! \brief
+        Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
+        the first key, the second key and the value name are default-constructed. */
         registry_error(std::error_code ec, const std::string& msg);
 
         /*! \brief
         Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
-        the first key is set to `key1`.*/
+        the first key is set to `key1`, the second key and the value name are default-constructed. */
         registry_error(std::error_code ec, const std::string& msg, 
                        const key& key1);
 
         /*! \brief
         Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
-        the first key is set to `key1`, the second key is set to `key2`.*/
+        the first key is set to `key1`, the second key is set to `key2`, the value name is default-constructed. */
         registry_error(std::error_code ec, const std::string& msg, 
                        const key& key1, const key& key2);
         
