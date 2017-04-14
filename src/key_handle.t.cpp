@@ -367,9 +367,25 @@ TEST(KeyHandle, OperationsOnRegistry)
     // key_handle::remove_all(string_view_type)
     // key_handle::remove_all(string_view_type, std::error_code&)
     {
-        // TODO: ...
+        std::error_code ec;
+        const key sk0 = TEXT("non_existing");
+        const key sk1 = TEXT("new_key_3");
+        const key sk2 = TEXT("new_key_4");
+        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::query_value);
 
-        const LRESULT rc = RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\write"));
-        assert(rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND);
+        EXPECT_TRUE(!exists(h.key().append(sk0)));
+        EXPECT_TRUE(exists(h.key().append(sk1)) && info(h.key().append(sk1)).subkeys > 0);
+        EXPECT_TRUE(exists(h.key().append(sk2)) && info(h.key().append(sk2)).subkeys > 0);
+
+        // remove an non-existing key
+        EXPECT_TRUE(h.remove_all(sk0) == 0);
+        EXPECT_TRUE(h.remove_all(sk0, ec) == 0 && !ec);
+
+        // remove an non-empty key (which have subkeys)
+        EXPECT_TRUE(h.remove_all(sk1) == 3 && !exists(h.key().append(sk1)));
+        EXPECT_TRUE(h.remove_all(sk2, ec) == 3 && !ec && !exists(h.key().append(sk2)));
+
+        // some clean-up
+        remove_all(h.key());
     }
 }

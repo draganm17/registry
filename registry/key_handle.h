@@ -235,7 +235,25 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        key_info info(key_info_mask mask, std::error_code& ec = throws()) const;
+        key_info info(key_info_mask mask = key_info_mask::all, std::error_code& ec = throws()) const;
+
+        //! Opens a subkey of a registry key specified by this handle
+        /*!
+        @param[in] key - an relative key specifying the subkey that this function opens.
+        @param[in] rights - the access rights for the key to be opened.
+        @param[out] ec - out-parameter for error reporting.
+        @return a valid `key_handle` object, which `key()` method will return `this->key().append(subkey)` and 
+                `rights()` method will return `rights`. The overload  that takes `std::error_code&` parameter returns 
+                an  default-constructed (not valid) handle on error.
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key set to `key()`, the second key set to `subkey` and the OS 
+               error code as the error code argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur.
+        */
+        // TODO: describe what happens if subkey name is empty ...
+        key_handle open(const registry::key& subkey, access_rights rights, std::error_code& ec = throws()) const;
 
         //! Reads the content of an registry value contained inside the registry key specified by this handle.
         /*!

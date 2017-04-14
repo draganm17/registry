@@ -78,9 +78,6 @@ namespace registry
         //! Returns the key this object was initializes with.
         const key& key() const noexcept;
 
-        // TODO: ...
-        key_handle key_handle() const noexcept;
-
         //! Returns the value name this object was initializes with.
         const string_type& value_name() const noexcept;
 

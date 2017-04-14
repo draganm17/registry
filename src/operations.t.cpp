@@ -295,27 +295,25 @@ TEST(Operations, All)
     // remove_all(const key&)
     // remove_all(const key&, std::error_code&)
     {
-        const LRESULT rc = RegDeleteTree(HKEY_CURRENT_USER, TEXT("SOFTWARE\\libregistry\\write"));
-        assert(rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND);
+        std::error_code ec;
+        const key k0 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existing");
+        const key k1 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_3");
+        const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_4");
 
-        // TODO: ...
-
-        //std::error_code ec;
-        //const key k0 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existing");
-        //const key k1 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_3");
-        //const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_4");
-
-        //EXPECT_TRUE(!exists(k0));
-        //EXPECT_TRUE(exists(key(k1).append(TEXT("Inner1\\Inner2"))));
-        //EXPECT_TRUE(exists(key(k2).append(TEXT("Inner1\\Inner2"))));
+        EXPECT_TRUE(!exists(k0));
+        EXPECT_TRUE(exists(k1) && info(k1).subkeys > 0);
+        EXPECT_TRUE(exists(k2) && info(k2).subkeys > 0);
 
         // remove an non-existing key
-        //EXPECT_TRUE(remove_all(k0) == 0);
-        //EXPECT_TRUE(remove_all(k0, ec) == 0 && !ec);
+        EXPECT_TRUE(remove_all(k0) == 0);
+        EXPECT_TRUE(remove_all(k0, ec) == 0 && !ec);
 
         // remove an non-empty key (which have subkeys)
-        //EXPECT_TRUE(remove_all(k1) == 3 && !exists(k1));
-        //EXPECT_TRUE(remove_all(k2, ec) == 3 && !ec && !exists(k2));
+        EXPECT_TRUE(remove_all(k1) == 3 && !exists(k1));
+        EXPECT_TRUE(remove_all(k2, ec) == 3 && !ec && !exists(k2));
+
+        // some clean-up
+        remove_all(key(k1).remove_leaf());
     }
 
 
