@@ -128,7 +128,10 @@ TEST(Value, Assign)
 
     // assign(binary_value_tag, byte_array_view_type)
     {
-        // TODO: ...
+        std::array<uint8_t, 2> bytes{ 4, 2 };
+        value v1(binary_value_tag{}, { bytes.data(), bytes.size() });
+        value v2;
+        EXPECT_TRUE(v1 == v2.assign(binary_value_tag{}, { bytes.data(), bytes.size() }));
     }
 
     // assign(dword_value_tag, uint32_t)
@@ -217,6 +220,8 @@ TEST(Value, Compare)
     EXPECT_TRUE(!(v3 == v4));
     EXPECT_TRUE(  v1 != v2 );  // testing operator !=
     EXPECT_TRUE(  v3 != v4 );
+
+    // TODO: test other comparison operators
 }
 
 TEST(Value, Cast)
