@@ -306,8 +306,6 @@ namespace registry
         */
         bool remove(string_view_type value_name, std::error_code& ec = throws()) const;
 
-        uintmax_t remove_all_inside(const registry::key& subkey, std::error_code& ec) const;
-
         // TODO: ...
         uintmax_t remove_all(const registry::key& subkey, std::error_code& ec = throws()) const;
 

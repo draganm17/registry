@@ -125,31 +125,32 @@ const auto RegDeleteKeyEx_ = []() noexcept
 }();
 #endif
 
-uintmax_t remove_all_inside(const key& key, std::error_code& ec)
+uintmax_t remove_all_inside(const key_handle& handle, const registry::key& subkey, std::error_code& ec)
 {
-    /*
-    //if (key.empty()) {
-    //    return 0;
-    //}
+    ec.clear();
+    constexpr auto perms = access_rights::query_value |
+                           access_rights::enumerate_sub_keys;
+    const auto subkey_handle = handle.open(subkey, perms, ec);
+    
+    if (ec) {
+        return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), 0)
+                                                    : static_cast<uintmax_t>(-1);
+    }
 
-    std::uintmax_t keys_deleted = 0;
+    uintmax_t keys_deleted = 0;
     std::vector<registry::key> rm_list;
-    for (auto it = key_iterator(key, ec); !ec && it != key_iterator(); it.increment(ec)) {
-        rm_list.push_back(*it);
-        keys_deleted += remove_all_inside(*it, ec);
+    for (auto it = key_iterator(subkey_handle, ec); !ec && it != key_iterator(); it.increment(ec))
+    {
+        if (ec) break;
+        rm_list.push_back(it->key().leaf_key());
+        keys_deleted += remove_all_inside(subkey_handle, rm_list.back(), ec);
     }
+
     for (auto it = rm_list.begin(); !ec && it != rm_list.end(); ++it) {
-        keys_deleted += remove(*it, ec) ? 1 : 0;
+        keys_deleted += subkey_handle.remove(*it, ec);
     }
-    keys_deleted += 
-        remove(registry::key(key).append(TEXT("Wow6432Node")).replace_view(view::view_64bit), ec) ? 1 : 0;
 
-    return ec ? static_cast<std::uintmax_t>(-1) : keys_deleted;
-
-    */
-
-    // TODO: ...
-    throw 0;
+    return !ec ? keys_deleted : static_cast<uintmax_t>(-1);
 }
 
 std::wstring nt_name(key_handle::native_handle_type handle)
@@ -353,37 +354,11 @@ bool key_handle::remove(string_view_type value_name, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), registry::key(), value_name), false;
 }
 
-uintmax_t key_handle::remove_all_inside(const registry::key& subkey, std::error_code& ec) const
-{
-    ec.clear();
-    const auto subkey_handle = open(subkey, access_rights::enumerate_sub_keys | access_rights::query_value, ec);
-    
-    if (ec) {
-        return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), 0)
-                                                    : static_cast<uintmax_t>(-1);
-    }
-
-    uintmax_t keys_deleted = 0;
-    std::vector<registry::key> rm_list;
-    for (auto it = key_iterator(subkey_handle, ec); !ec && it != key_iterator(); it.increment(ec))
-    {
-        if (ec) break;
-        rm_list.push_back(it->key().leaf_key());
-        keys_deleted += subkey_handle.remove_all_inside(rm_list.back(), ec);
-    }
-
-    for (auto it = rm_list.begin(); !ec && it != rm_list.end(); ++it) {
-        keys_deleted += subkey_handle.remove(*it, ec);
-    }
-
-    return !ec ? keys_deleted : static_cast<uintmax_t>(-1);
-}
-
 uintmax_t key_handle::remove_all(const registry::key& subkey, std::error_code& ec) const
 {
     std::error_code ec2;
     uintmax_t keys_deleted = 0;
-    if ((keys_deleted += remove_all_inside(subkey, ec2), !ec2) &&
+    if ((keys_deleted += remove_all_inside(*this, subkey, ec2), !ec2) &&
         (keys_deleted += static_cast<uintmax_t>(remove(subkey, ec2)), !ec2))
     {
         RETURN_RESULT(ec, keys_deleted);

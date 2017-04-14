@@ -301,8 +301,8 @@ TEST(Operations, All)
         const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\new_key_4");
 
         EXPECT_TRUE(!exists(k0));
-        EXPECT_TRUE(exists(k1) && info(k1).subkeys == 2);
-        EXPECT_TRUE(exists(k2) && info(k2).subkeys == 2);
+        EXPECT_TRUE(exists(k1) && info(k1).subkeys > 0);
+        EXPECT_TRUE(exists(k2) && info(k2).subkeys > 0);
 
         // remove an non-existing key
         EXPECT_TRUE(remove_all(k0) == 0);

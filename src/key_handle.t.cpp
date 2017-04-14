@@ -373,10 +373,9 @@ TEST(KeyHandle, OperationsOnRegistry)
         const key sk2 = TEXT("new_key_4");
         const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::query_value);
 
-        /*
         EXPECT_TRUE(!exists(h.key().append(sk0)));
-        EXPECT_TRUE(exists(h.key().append(sk1)) && info(h.key().append(sk1)).subkeys == 2);
-        EXPECT_TRUE(exists(h.key().append(sk2)) && info(h.key().append(sk2)).subkeys == 2);
+        EXPECT_TRUE(exists(h.key().append(sk1)) && info(h.key().append(sk1)).subkeys > 0);
+        EXPECT_TRUE(exists(h.key().append(sk2)) && info(h.key().append(sk2)).subkeys > 0);
 
         // remove an non-existing key
         EXPECT_TRUE(h.remove_all(sk0) == 0);
@@ -385,7 +384,6 @@ TEST(KeyHandle, OperationsOnRegistry)
         // remove an non-empty key (which have subkeys)
         EXPECT_TRUE(h.remove_all(sk1) == 3 && !exists(h.key().append(sk1)));
         EXPECT_TRUE(h.remove_all(sk2, ec) == 3 && !ec && !exists(h.key().append(sk2)));
-        */
 
         // some clean-up
         remove_all(h.key());
