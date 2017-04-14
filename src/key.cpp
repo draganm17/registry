@@ -61,13 +61,6 @@ namespace registry {
 //                                   class key                                        //
 //------------------------------------------------------------------------------------//
 
-const view key::default_view =
-#if defined(_WIN64)
-    view::view_64bit;
-#elif defined(_WIN32)
-    view::view_32bit;
-#endif
-
 key& key::append_impl(string_view_type subkey)
 {
     const bool add_slash = !(begin() == end() || m_name.back() == separator ||

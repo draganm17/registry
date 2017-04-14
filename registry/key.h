@@ -9,6 +9,16 @@
 
 namespace registry
 {
+    //\cond HIDDEN_SYMBOLS
+    namespace details
+    {
+#if defined(_WIN64)
+        static constexpr view default_view = view::view_64bit;
+#elif defined(_WIN32)
+        static constexpr view default_view = view::view_32bit;
+#endif
+    } //\endcond
+
     //------------------------------------------------------------------------------------//
     //                                   class key                                        //
     //------------------------------------------------------------------------------------//
@@ -35,17 +45,16 @@ namespace registry
         using const_iterator = iterator;
 
     public:
-        //! Key separator.
+        /*! \brief
+        The value of type `registry::view` which is passed to `registry::key` constructor by default. Is equal to
+        `registry::view::view_32bit` for 32-bit applications and `registry::view::view_64bit` for 64-bit applications. */
+        static constexpr view default_view = details::default_view;
+
+        //! Key separator. Always a backslash.
         static constexpr string_type::value_type separator = string_type::value_type('\\');
 
     private:
         key& append_impl(string_view_type subkey);
-
-    public:
-        /*! \brief
-        The value of type `registry::view` which is passed to `registry::key` constructor by default. Is equal to
-        `registry::view::view_32bit` for 32-bit applications and `registry::view::view_64bit` for 64-bit applications. */
-        static const view default_view;
 
     public:
         //! Constructs a key that corresponds to an predefined registry key.
