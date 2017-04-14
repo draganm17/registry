@@ -254,7 +254,9 @@ namespace registry
         // TODO: describe what happens if subkey name is empty ...
         key_handle open(const registry::key& subkey, access_rights rights, std::error_code& ec = throws()) const;
 
-        //! Reads the content of an registry value contained inside the registry key specified by this handle.
+        /*! \brief
+        Retrieves the type and data for the specified value name associated with the registry key specified by this 
+        handle. /*
         /*!
         The key must have been opened with the `access_rights::query_value` access right.
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the 
@@ -313,7 +315,7 @@ namespace registry
         @param[in] subkey - an relative key specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
         @return The number of keys that were deleted (which may be zero if `subkey` did not exist to begin with). 
-                The overload that takes `std::error_code&` parameter returns `static_cast<uintmax_t>(-1)` on error.
+                The overload that takes `std::error_code&` parameter returns `static_cast<uint32_t>(-1)` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
                API errors, constructed with the first key set to `this->key()`, the second key set `subkey` and the OS 
                error code as the error code argument. \n
@@ -321,9 +323,9 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        uintmax_t remove_all(const registry::key& subkey, std::error_code& ec = throws()) const;
+        uint32_t remove_all(const registry::key& subkey, std::error_code& ec = throws()) const;
 
-        //! Writes an value to the registry key specified by this handle.
+        //! Sets the data and type of a specified value under the registry key specified by this handle.
         /*!
         The key must have been opened with the `access_rights::set_value` access right.
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the

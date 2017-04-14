@@ -114,16 +114,16 @@ bool remove(const key& key, string_view_type value_name, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key, registry::key(), value_name), false;
 }
 
-uintmax_t remove_all(const key& key, std::error_code& ec)
+uint32_t remove_all(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
     // NOTE: key open rights does not affect the delete operation.
     const auto handle = open(key.parent_key(), access_rights::query_value, ec2);
-    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, static_cast<uintmax_t>(0));
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, 0);
 
-    uintmax_t result;
+    uint32_t result;
     if (!ec2 && (result = handle.remove_all(key.leaf_key(), ec2), !ec2)) RETURN_RESULT(ec, result);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), static_cast<uintmax_t>(-1);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), static_cast<uint32_t>(-1);
 }
 
 space_info space(std::error_code& ec)

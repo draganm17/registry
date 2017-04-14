@@ -18,8 +18,8 @@ namespace registry
 
     //! Creates a registry key.
     /*!
-    If the key already exists, the function has no effect (the returned value is `false`). The function creates 
-    all missing keys in the specified path.
+    The function creates all missing keys in the specified path. If the key already exists, the function returns 
+    `false` and has no effect.
     @param[in] key - an absolute key specifying the registry key that this function creates.
     @param[out] ec - out-parameter for error reporting.
     @return `true` if key creation is successful, `false` otherwise. The overload that takes `std::error_code&` 
@@ -46,6 +46,7 @@ namespace registry
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
+    // TODO: write something about redirection and reflection ???
     bool equivalent(const key& key1, const key& key2, std::error_code& ec = throws());
 
     //! Check whether a registry key exist. 
@@ -97,7 +98,7 @@ namespace registry
     */
     key_info info(const key& key, key_info_mask mask = key_info_mask::all, std::error_code& ec = throws());
 
-    //! Reads the content of an existing registry value.
+    //! Retrieves the type and data for the specified value name associated with an registry key.
     /*!
     @param[in] key - an absolute key specifying the location of the value.
     @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the 
@@ -151,14 +152,14 @@ namespace registry
     @param[in] key - an absolute key specifying the registry key that this function deletes.
     @param[out] ec - out-parameter for error reporting.
     @return The number of keys that were deleted (which may be zero if `key` did not exist to begin with). The 
-            overload that takes `std::error_code&` parameter returns `static_cast<uintmax_t>(-1)` on error.
+            overload that takes `std::error_code&` parameter returns `static_cast<uint32_t>(-1)` on error.
     @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
            API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n
            `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
-    uintmax_t remove_all(const key& key, std::error_code& ec = throws());
+    uint32_t remove_all(const key& key, std::error_code& ec = throws());
 
     //! Retrieves the information about the size of the registry on the system.
     /*!
@@ -173,7 +174,7 @@ namespace registry
     */
     space_info space(std::error_code& ec = throws());
 
-    //! Writes an value to an existing registry key.
+    //! Sets the data and type of a specified value under a registry key.
     /*!
     @param[in] key - an absolute key specifying the location of the value.
     @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the

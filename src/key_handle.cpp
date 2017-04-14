@@ -125,7 +125,7 @@ const auto RegDeleteKeyEx_ = []() noexcept
 }();
 #endif
 
-uintmax_t remove_all_inside(const key_handle& handle, const registry::key& subkey, std::error_code& ec)
+uint32_t remove_all_inside(const key_handle& handle, const registry::key& subkey, std::error_code& ec)
 {
     ec.clear();
     constexpr auto perms = access_rights::query_value |
@@ -134,10 +134,10 @@ uintmax_t remove_all_inside(const key_handle& handle, const registry::key& subke
     
     if (ec) {
         return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), 0)
-                                                    : static_cast<uintmax_t>(-1);
+                                                    : static_cast<uint32_t>(-1);
     }
 
-    uintmax_t keys_deleted = 0;
+    uint32_t keys_deleted = 0;
     std::vector<registry::key> rm_list;
     for (auto it = key_iterator(subkey_handle, ec); !ec && it != key_iterator(); it.increment(ec))
     {
@@ -150,7 +150,7 @@ uintmax_t remove_all_inside(const key_handle& handle, const registry::key& subke
         keys_deleted += subkey_handle.remove(*it, ec);
     }
 
-    return !ec ? keys_deleted : static_cast<uintmax_t>(-1);
+    return !ec ? keys_deleted : static_cast<uint32_t>(-1);
 }
 
 std::wstring nt_name(key_handle::native_handle_type handle)
@@ -354,16 +354,16 @@ bool key_handle::remove(string_view_type value_name, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), registry::key(), value_name), false;
 }
 
-uintmax_t key_handle::remove_all(const registry::key& subkey, std::error_code& ec) const
+uint32_t key_handle::remove_all(const registry::key& subkey, std::error_code& ec) const
 {
     std::error_code ec2;
-    uintmax_t keys_deleted = 0;
+    uint32_t keys_deleted = 0;
     if ((keys_deleted += remove_all_inside(*this, subkey, ec2), !ec2) &&
-        (keys_deleted += static_cast<uintmax_t>(remove(subkey, ec2)), !ec2))
+        (keys_deleted += static_cast<uint32_t>(remove(subkey, ec2)), !ec2))
     {
         RETURN_RESULT(ec, keys_deleted);
     }
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), subkey), static_cast<uintmax_t>(-1);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), subkey), static_cast<uint32_t>(-1);
 }
 
 void key_handle::write_value(string_view_type value_name, const value& value, std::error_code& ec) const
