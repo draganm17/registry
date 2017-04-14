@@ -143,9 +143,8 @@ namespace registry
 
         //! Returns the parent of the key.
         /*!
-        Returns `key(string_type(), view())` if `!has_parent_key()` or there's only a single element in the key 
-        name (`begin() == --end()`). The resulting key is constructed by appending all elements in a range 
-        `[begin(), --end())` to an key constructed as `key(string_type(), view())`.
+        Returns `key(string_type(), view())` if `!has_parent_key()`. The resulting key is constructed by appending all 
+        elements in a range `[begin(), --end())` to an key constructed as `key(string_type(), view())`.
         */
         key parent_key() const;
 
