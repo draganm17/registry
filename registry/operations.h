@@ -150,7 +150,7 @@ namespace registry
     /*!
     @param[in] key - an absolute key specifying the registry key that this function deletes.
     @param[out] ec - out-parameter for error reporting.
-    @return the number of keys that were deleted (which may be zero if `key` did not exist to begin with). The 
+    @return The number of keys that were deleted (which may be zero if `key` did not exist to begin with). The 
             overload that takes `std::error_code&` parameter returns `static_cast<uintmax_t>(-1)` on error.
     @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
            API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n
@@ -163,7 +163,7 @@ namespace registry
     //! Retrieves the information about the size of the registry on the system.
     /*!
     @param[out] ec - out-parameter for error reporting.
-    @return an instance of space_info. The overload that takes `std::error_code&` parameter sets all members to 
+    @return An instance of space_info. The overload that takes `std::error_code&` parameter sets all members to 
             `static_cast<uint32_t>(-1)` on error.
     @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
            API errors, constructed with the OS error code as the error code argument. \n

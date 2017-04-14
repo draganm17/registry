@@ -247,6 +247,8 @@ recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
 
 void recursive_key_iterator::pop(std::error_code& ec)
 {
+    // TODO: forward progress guarantee ???
+
     assert(*this != recursive_key_iterator());
 
     std::error_code ec2;

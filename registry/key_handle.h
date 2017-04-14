@@ -150,7 +150,7 @@ namespace registry
                             handle.
         @param[in] rights - the access rights for the key to be created.
         @param[out] ec - out-parameter for error reporting.
-        @return a pair consisting of an handle to the opened or created key and a `bool` denoting whether the key was
+        @return A pair consisting of an handle to the opened or created key and a `bool` denoting whether the key was
                 created. The overload that takes `std::error_code&` parameter returns 
                 `std::make_pair(key_handle(), false)` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
@@ -224,7 +224,7 @@ namespace registry
                           aren't filled out will be set to `static_cast<uint32_t>(-1)`, except for `last_write_time`,
                           which default value is `key_time_type::min()`.
         @param[out] ec - out-parameter for error reporting.
-        @return an instance of key_info. The overload that takes `std::error_code&` parameter sets all members but 
+        @return An instance of key_info. The overload that takes `std::error_code&` parameter sets all members but 
                 `last_write_time` to `static_cast<uint32_t>(-1)` on error, `last_write_time` is set to 
                 `key_time_type::min()`.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
@@ -241,7 +241,7 @@ namespace registry
         @param[in] key - an relative key specifying the subkey that this function opens.
         @param[in] rights - the access rights for the key to be opened.
         @param[out] ec - out-parameter for error reporting.
-        @return a valid `key_handle` object, which `key()` method will return `this->key().append(subkey)` and 
+        @return A valid `key_handle` object, which `key()` method will return `this->key().append(subkey)` and 
                 `rights()` method will return `rights`. The overload  that takes `std::error_code&` parameter returns 
                 an  default-constructed (not valid) handle on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
@@ -312,7 +312,7 @@ namespace registry
         Note that a deleted key is not removed until the last handle to it is closed.
         @param[in] subkey - an relative key specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
-        @return the number of keys that were deleted (which may be zero if `subkey` did not exist to begin with). 
+        @return The number of keys that were deleted (which may be zero if `subkey` did not exist to begin with). 
                 The overload that takes `std::error_code&` parameter returns `static_cast<uintmax_t>(-1)` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
                API errors, constructed with the first key set to `this->key()`, the second key set `subkey` and the OS 
@@ -447,7 +447,7 @@ namespace registry
     @param[in] key - an absolute key specifying the registry key that this function opens.
     @param[in] rights - the access rights for the key to be opened.
     @param[out] ec - out-parameter for error reporting.`
-    @return a valid `key_handle` object. The overload  that takes `std::error_code&` parameter returns an 
+    @return A valid `key_handle` object. The overload  that takes `std::error_code&` parameter returns an 
             default-constructed (not valid) handle on error.
     @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
            API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n

@@ -148,8 +148,8 @@ namespace registry
 
         //! Constructs a iterator that refers to the first value of a key specified by `key`.
         /*!
-        If `key` refers to an non-existing registry key, returns the end iterator. The overload that takes 
-        `std::error_code&` parameter constructs an end iterator on error.
+        If `key` refers to an non-existing registry key, returns the end iterator and does not report an error. 
+        The overload that takes `std::error_code&` parameter constructs an end iterator on error.
         @param[in] key - an absolute key specifying the registry key that this iterator iterates on.
         @param[out] ec - out-parameter for error reporting.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
@@ -218,7 +218,7 @@ namespace registry
         /*!
         @pre `*this != value_iterator()`.
         @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
-                argument. std::bad_alloc may be thrown if memory allocation fails.
+                argument. `std::bad_alloc` may be thrown if memory allocation fails.
         */
         value_iterator& operator++();
 
@@ -226,7 +226,7 @@ namespace registry
         /*!
         @pre `*this != value_iterator()`.
         @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
-                argument. std::bad_alloc may be thrown if memory allocation fails.
+                argument. `std::bad_alloc` may be thrown if memory allocation fails.
         */
         value_iterator operator++(int);
 
