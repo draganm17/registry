@@ -23,13 +23,15 @@ TEST(KeyIterator, Construct)
         std::error_code ec;
 
         key_iterator it1(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"));
-        key_iterator it2(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"), ec);
         EXPECT_TRUE(it1 == key_iterator());
+
+        key_iterator it2(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"), ec);
         EXPECT_TRUE(it2 == key_iterator() && !ec);
 
         key_iterator it3(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"));
-        key_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
         EXPECT_TRUE(it3 != key_iterator());
+
+        key_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
         EXPECT_TRUE(it4 != key_iterator() && !ec);
     }
 
@@ -109,14 +111,20 @@ TEST(RecursiveKeyIterator, Construct)
         std::error_code ec;
 
         recursive_key_iterator it1(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"));
-        recursive_key_iterator it2(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"), ec);
         EXPECT_TRUE(it1 == recursive_key_iterator());
+
+        recursive_key_iterator it2(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"), ec);
         EXPECT_TRUE(it2 == recursive_key_iterator() && !ec);
 
         recursive_key_iterator it3(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"));
-        recursive_key_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
         EXPECT_TRUE(it3 != recursive_key_iterator());
+        EXPECT_TRUE(it3.options() == key_options::none);
+
+        recursive_key_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
         EXPECT_TRUE(it4 != recursive_key_iterator() && !ec);
+        EXPECT_TRUE(it4.options() == key_options::none);
+
+        // TODO: test construction with key_options::skip_permission_denied
     }
 
     // recursive_key_iterator::recursive_key_iterator(const key_handle&)

@@ -23,13 +23,15 @@ TEST(ValueIterator, Construct)
         std::error_code ec;
 
         value_iterator it1(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"));
-        value_iterator it2(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"), ec);
         EXPECT_TRUE(it1 == value_iterator());
+
+        value_iterator it2(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"), ec);
         EXPECT_TRUE(it2 == value_iterator() && !ec);
 
         value_iterator it3(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"));
-        value_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
         EXPECT_TRUE(it3 != value_iterator());
+
+        value_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
         EXPECT_TRUE(it4 != value_iterator() && !ec);
     }
 
