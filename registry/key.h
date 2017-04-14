@@ -34,6 +34,10 @@ namespace registry
         class iterator;
         using const_iterator = iterator;
 
+    public:
+        //! Key separator.
+        static constexpr string_type::value_type separator = string_type::value_type('\\');
+
     private:
         key& append_impl(string_view_type subkey);
 

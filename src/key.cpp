@@ -70,8 +70,9 @@ const view key::default_view =
 
 key& key::append_impl(string_view_type subkey)
 {
-    const bool add_slash = !(begin() == end() || m_name.back() == TEXT('\\') ||
-                             subkey.empty() || subkey.front() == TEXT('\\'));
+    const bool add_slash = !(begin() == end() || m_name.back() == separator ||
+                             subkey.empty() || subkey.front() == separator);
+
 
     m_name.reserve(m_name.size() + subkey.size() + static_cast<int>(add_slash));
     m_name.append(add_slash ? TEXT("\\") : TEXT("")).append(subkey.data(), subkey.size());
@@ -231,10 +232,10 @@ key::iterator& key::iterator::operator++() noexcept
     const auto end = m_key_name_view.end();
 
     auto first = m_value.end();
-    for (; first != end && *first == TEXT('\\'); ++first);
+    for (; first != end && *first == separator; ++first);
 
     auto last = first;
-    for (; last != end && *last != TEXT('\\'); ++last);
+    for (; last != end && *last != separator; ++last);
 
     m_value = string_view_type(first, last - first);
     return *this;
@@ -249,10 +250,10 @@ key::iterator& key::iterator::operator--() noexcept
     const auto rbegin = m_key_name_view.begin() - 1;
 
     auto last = m_value.begin() - 1;
-    for (; last != rbegin && *last == TEXT('\\'); --last);
+    for (; last != rbegin && *last == separator; --last);
 
     auto first = last;
-    for (; first != rbegin && *first != TEXT('\\'); --first);
+    for (; first != rbegin && *first != separator; --first);
 
     m_value = string_view_type(++first, ++last - first);
     return *this;
