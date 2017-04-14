@@ -25,8 +25,6 @@ key_entry::key_entry(const registry::key_handle& handle)
 
 const registry::key& key_entry::key() const noexcept { return m_key; }
 
-registry::key_handle key_entry::key_handle() const noexcept { return m_key_handle; }
-
 key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 {
     std::error_code ec2;
