@@ -61,7 +61,7 @@ struct key_iterator::state
     uint32_t                              idx;
     key_handle                            hkey;
     key_entry                             entry;
-    std::vector<string_type::value_type>  buffer;
+    std::vector<string_type::value_type>  buffer; // TODO: write data directly to the key name ???
 };
 
 key_iterator::key_iterator(const key& key, std::error_code& ec)
@@ -121,6 +121,8 @@ key_iterator key_iterator::operator++(int) { auto tmp = *this; ++*this; return t
 
 key_iterator& key_iterator::increment(std::error_code& ec)
 {
+    // TODO: guarantee forward progress on error
+
     LSTATUS rc;
     assert(*this != key_iterator());
 
@@ -226,6 +228,8 @@ recursive_key_iterator recursive_key_iterator::operator++(int) { auto tmp = *thi
 
 recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
 {
+    // TODO: guarantee forward progress on error
+
     assert(*this != recursive_key_iterator());
 
     ec.clear();

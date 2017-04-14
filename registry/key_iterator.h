@@ -211,24 +211,24 @@ namespace registry
         //! Calls `increment()`, then returns `*this`.
         /*!
         @pre `*this != key_iterator()`.
-        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
-               allocation fails.
+        @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
+                argument. std::bad_alloc may be thrown if memory allocation fails.
         */
         key_iterator& operator++();
 
         //! Makes a copy of `*this`, calls `increment()`, then returns the copy.
         /*!
         @pre `*this != key_iterator()`.
-        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
-               allocation fails.
+        @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
+                argument. std::bad_alloc may be thrown if memory allocation fails.
         */
         key_iterator operator++(int);
 
         //! Advances the iterator to the next entry.
         /*!
-        If an error occurs `*this` is becoming equal to the end iterator.
         @pre `*this != key_iterator()`.
         */
+        // TODO: document forward progress guarantee 
         key_iterator& increment(std::error_code& ec);
 
         //! Swaps the contents of `*this` and `other`.
@@ -383,16 +383,16 @@ namespace registry
         //! Calls `increment()`, then returns `*this`.
         /*!
         @pre `*this != recursive_key_iterator()`.
-        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
-               allocation fails.
+        @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
+                argument. std::bad_alloc may be thrown if memory allocation fails.
         */
         recursive_key_iterator& operator++();
 
         //! Makes a copy of `*this`, calls `increment()`, then returns the copy.
         /*!
         @pre `*this != recursive_key_iterator()`.
-        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
-               allocation fails.
+        @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
+                argument. std::bad_alloc may be thrown if memory allocation fails.
         */
         recursive_key_iterator operator++(int);
 

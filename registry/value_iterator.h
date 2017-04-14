@@ -165,7 +165,7 @@ namespace registry
         /*!
         The overload that takes `std::error_code&` parameter constructs an end iterator on error.
         @param[in] handle - a handle to an opened key. The key must have been opened with the 
-                             `access_rights::query_value` access right.
+                            `access_rights::query_value` access right.
         @param[out] ec - out-parameter for error reporting.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
                API errors, constructed with the first key set to `handle.key()` and the OS error code as the error code
@@ -217,24 +217,24 @@ namespace registry
         //! Calls `increment()`, then returns `*this`.
         /*!
         @pre `*this != value_iterator()`.
-        @throw registry::registry_error on underlying OS API errors. std::bad_alloc may be thrown if memory allocation 
-               fails.
+        @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
+                argument. std::bad_alloc may be thrown if memory allocation fails.
         */
         value_iterator& operator++();
 
         //! Makes a copy of `*this`, calls `increment()`, then returns the copy.
         /*!
         @pre `*this != value_iterator()`.
-        @throw `registry::registry_error` on underlying OS API errors. `std::bad_alloc` may be thrown if memory 
-               allocation fails.
+        @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
+                argument. std::bad_alloc may be thrown if memory allocation fails.
         */
         value_iterator operator++(int);
 
         //! Advances the iterator to the next entry.
         /*!
-        If an error occurs `*this` is becoming equal to the end iterator.
         @pre `*this != value_iterator()`.
         */
+        // TODO: document forward progress guarantee 
         value_iterator& increment(std::error_code& ec);
 
         //! Swaps the contents of `*this` and `other`.

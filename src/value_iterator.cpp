@@ -132,6 +132,8 @@ value_iterator value_iterator::operator++(int) { auto tmp = *this; ++*this; retu
 
 value_iterator& value_iterator::increment(std::error_code& ec)
 {
+    // TODO: guarantee forward progress on error
+
     LSTATUS rc;
     assert(*this != value_iterator());
 
