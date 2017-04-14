@@ -155,25 +155,25 @@ namespace registry
         /*! TODO: ... */
         create_link =          0x00000020,
 
-        /*! TODO: ... */
+        /*! Required to create a subkey of a registry key. */
         create_sub_key =       0x00000004,
 
-        /*! TODO: ... */
+        /*! Required to enumerate the subkeys of a registry key. */
         enumerate_sub_keys =   0x00000008,
 
-        /*! TODO: ... */
+        /*! Equivalent to `read`. */
         execute =              0x00020019,
 
-        /*! TODO: ... */
+        /*! Required to request change notifications for a registry key or for subkeys of a registry key. */
         notify =               0x00000010,
 
-        /*! TODO: ... */
+        /*! Required to query the values of a registry key. */
         query_value =          0x00000001,
 
         /*! TODO: ... */
         read =                 0x00020019,
 
-        /*! TODO: ... */
+        /*! Required to create, delete, or set a registry value. */
         set_value =            0x00000002,
 
         /*! TODO: ... */
@@ -195,34 +195,33 @@ namespace registry
         skip_permission_denied =  0x0001
     };
 
-    /*! The Windows security model enables you to control access to registry keys. For more information see:
-    https://msdn.microsoft.com/en-us/library/windows/desktop/ms724878 \n
+    /*! TODO: ...
     key_info_mask satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
     `operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
     enum class key_info_mask : uint16_t
     {
-        /*! TODO: ... */
+        /*! Request nothing. */
         none =                      0x0000,
 
-        /*! TODO: ... */
+        /*! Request the number of subkeys that are contained by the key. */
         read_subkeys =              0x0001,
 
-        /*! TODO: ... */
+        /*! Request the number of values that are associated with the key. */
         read_values =               0x0002,
 
-        /*! TODO: ... */
+        /*! Request the size of the key's subkey with the longest name. */
         read_max_subkey_size =      0x0004,
 
-        /*! TODO: ... */
+        /*! Request the size of the key's longest value name. */
         read_max_value_name_size =  0x0008,
 
-        /*! TODO: ... */
+        /*! Request the size of the longest data component among the key's values. */
         read_max_value_data_size =  0x0010,
 
-        /*! TODO: ... */
+        /*! Request the last time that the key or any of its value entries is modified. */
         read_last_write_time =      0x0020,
 
-        /*! TODO: ... */
+        /*! Request all fields values. */
         all =                       0x003F
     };
 
