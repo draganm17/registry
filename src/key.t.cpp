@@ -11,12 +11,20 @@ using namespace registry;
 
 TEST(Key, Construct) 
 {
+    // default constructor
     key k1;
-    ASSERT_TRUE(k1 == key(string_type()));
+    ASSERT_TRUE(k1.name().empty());
+    ASSERT_TRUE(k1.view() == key::default_view);
 
+    // construct from name an view
     key k2(TEXT("HKEY_CURRENT_user\\Test"), view::view_32bit);
     EXPECT_TRUE(k2.name() == TEXT("HKEY_CURRENT_user\\Test"));
     EXPECT_TRUE(k2.view() == view::view_32bit);
+
+    // test implicit from-string construction
+    key k3 = TEXT("HKEY_CURRENT_user\\Test");
+    EXPECT_TRUE(k2.name() == TEXT("HKEY_CURRENT_user\\Test"));
+    EXPECT_TRUE(k2.view() == key::default_view);
 }
 
 TEST(Key, Assign)
