@@ -12,6 +12,42 @@
 
 namespace registry
 {
+    /*! A registry value can store data in various formats. When you store data under a registry value, you can
+    specify one of the following values to indicate the type of data being stored. For more information see: 
+    https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms724884 */
+    enum class value_type : uint32_t
+    {
+        /*! No defined value type. */
+        none =                 0,
+
+        /*! A null-terminated string. */
+        sz =                   1,
+        
+        /*! A null-terminated string that contains unexpanded references to environment variables 
+        (for example, "%PATH%"). */
+        expand_sz =            2,
+
+        /*! Binary data in any form. */
+        binary =               3,
+        
+        /*! A 32-bit number. */
+        dword =                4,
+        
+        /*! A 32-bit number in big-endian format. */
+        dword_big_endian =     5,
+        
+        /*! A null-terminated string that contains the target path of a symbolic link. */
+        link =                 6,
+        
+        /*! A sequence of null-terminated strings, terminated by an empty string (\0). */
+        multi_sz =             7,
+        
+        /*! A 64-bit number. */
+        qword =                11
+    };
+    //TODO: Should I support REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR and REG_RESOURCE_REQUIREMENTS_LIST types ?
+    //      If not, should I specify an 'unknown' type in case such a value is readed into registry::value object ?
+
     //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct none_value_tag             { };
 
