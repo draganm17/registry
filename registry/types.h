@@ -14,6 +14,8 @@
 #include <boost/utility/string_view.hpp> //awaiting for C++17 std::string_view
 #endif
 
+// TODO: rename types.h to common.h  ???
+
 
 namespace registry
 {
