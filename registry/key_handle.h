@@ -14,6 +14,46 @@
 
 namespace registry
 {
+    /*! The Windows security model enables you to control access to registry keys. For more information see:
+    https://msdn.microsoft.com/en-us/library/windows/desktop/ms724878 \n
+    access_rights satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
+    operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
+    enum class access_rights : uint32_t
+    {
+        /*! TODO: ... */
+        all_access =           0x000F003F,
+
+        /*! TODO: ... */
+        create_link =          0x00000020,
+
+        /*! Required to create a subkey of a registry key. */
+        create_sub_key =       0x00000004,
+
+        /*! Required to enumerate the subkeys of a registry key. */
+        enumerate_sub_keys =   0x00000008,
+
+        /*! Equivalent to `read`. */
+        execute =              0x00020019,
+
+        /*! Required to request change notifications for a registry key or for subkeys of a registry key. */
+        notify =               0x00000010,
+
+        /*! Required to query the values of a registry key. */
+        query_value =          0x00000001,
+
+        /*! TODO: ... */
+        read =                 0x00020019,
+
+        /*! Required to create, delete, or set a registry value. */
+        set_value =            0x00000002,
+
+        /*! TODO: ... */
+        write =                0x00020006,
+
+        /*! TODO: ... */
+        unknown =              0x00000000
+    };
+
     //------------------------------------------------------------------------------------//
     //                           class bad_weak_key_handle                                //
     //------------------------------------------------------------------------------------//
@@ -423,6 +463,20 @@ namespace registry
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
 
+    constexpr access_rights operator&(access_rights lhs, access_rights rhs) noexcept;
+
+    constexpr access_rights operator|(access_rights lhs, access_rights rhs) noexcept;
+
+    constexpr access_rights operator^(access_rights lhs, access_rights rhs) noexcept;
+
+    constexpr access_rights operator~(access_rights lhs) noexcept;
+
+    access_rights& operator&=(access_rights& lhs, access_rights rhs) noexcept;
+
+    access_rights& operator|=(access_rights& lhs, access_rights rhs) noexcept;
+
+    access_rights& operator^=(access_rights& lhs, access_rights rhs) noexcept;
+
     //! Checks whether `lhs` is equal to `rhs`.
     bool operator==(const key_handle& lhs, const key_handle& rhs) noexcept;
 
@@ -462,6 +516,24 @@ namespace registry
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
+
+    inline constexpr access_rights operator&(access_rights lhs, access_rights rhs) noexcept
+    { return static_cast<access_rights>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
+
+    inline constexpr access_rights operator|(access_rights lhs, access_rights rhs) noexcept
+    { return static_cast<access_rights>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
+
+    inline constexpr access_rights operator^(access_rights lhs, access_rights rhs) noexcept
+    { return static_cast<access_rights>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs)); }
+
+    inline constexpr access_rights operator~(access_rights lhs) noexcept
+    { return static_cast<access_rights>(~static_cast<uint32_t>(lhs)); }
+
+    inline access_rights& operator&=(access_rights& lhs, access_rights rhs) noexcept { return lhs = lhs & rhs; }
+
+    inline access_rights& operator|=(access_rights& lhs, access_rights rhs) noexcept { return lhs = lhs | rhs; }
+
+    inline access_rights& operator^=(access_rights& lhs, access_rights rhs) noexcept { return lhs = lhs ^ rhs; }
 
     inline bool operator==(const key_handle& lhs, const key_handle& rhs) noexcept 
     { return lhs.native_handle() == rhs.native_handle(); }
