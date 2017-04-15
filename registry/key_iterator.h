@@ -13,6 +13,18 @@
 
 namespace registry
 {
+    /*! This type represents available options that control the behavior of the `recursive_key_iterator`. \n
+    key_options satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
+    `operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
+    enum class key_options : uint16_t
+    {
+        /*! (Default) Permission denied is error. */
+        none =                    0x0000,
+
+        /*! Skip keys that would otherwise result in permission denied errors. */
+        skip_permission_denied =  0x0001
+    };
+
     //------------------------------------------------------------------------------------//
     //                               class key_entry                                      //
     //------------------------------------------------------------------------------------//
@@ -436,6 +448,20 @@ namespace registry
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
 
+    constexpr key_options operator&(key_options lhs, key_options rhs) noexcept;
+
+    constexpr key_options operator|(key_options lhs, key_options rhs) noexcept;
+
+    constexpr key_options operator^(key_options lhs, key_options rhs) noexcept;
+
+    constexpr key_options operator~(key_options lhs) noexcept;
+
+    key_options& operator&=(key_options& lhs, key_options rhs) noexcept;
+
+    key_options& operator|=(key_options& lhs, key_options rhs) noexcept;
+
+    key_options& operator^=(key_options& lhs, key_options rhs) noexcept;
+
     //! Checks whether `lhs` is equal to `rhs`.
     bool operator==(const key_entry& lhs, const key_entry& rhs) noexcept;
 
@@ -478,6 +504,24 @@ namespace registry
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
+
+    inline constexpr key_options operator&(key_options lhs, key_options rhs) noexcept
+    { return static_cast<key_options>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
+
+    inline constexpr key_options operator|(key_options lhs, key_options rhs) noexcept
+    { return static_cast<key_options>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
+
+    inline constexpr key_options operator^(key_options lhs, key_options rhs) noexcept
+    { return static_cast<key_options>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs)); }
+
+    inline constexpr key_options operator~(key_options lhs) noexcept
+    { return static_cast<key_options>(~static_cast<uint32_t>(lhs)); }
+
+    inline key_options& operator&=(key_options& lhs, key_options rhs) noexcept { return lhs = lhs & rhs; }
+
+    inline key_options& operator|=(key_options& lhs, key_options rhs) noexcept { return lhs = lhs | rhs; }
+
+    inline key_options& operator^=(key_options& lhs, key_options rhs) noexcept { return lhs = lhs ^ rhs; }
 
     inline bool operator==(const key_entry& lhs, const key_entry& rhs) noexcept { return lhs.key() == rhs.key(); }
 

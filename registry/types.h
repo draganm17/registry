@@ -132,18 +132,6 @@ namespace registry
         unknown =              0x00000000
     };
 
-    /*! This type represents available options that control the behavior of the `recursive_key_iterator`. \n
-    key_options satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
-    `operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
-    enum class key_options : uint16_t
-    {
-        /*! (Default) Permission denied is error. */
-        none =                    0x0000,
-
-        /*! Skip keys that would otherwise result in permission denied errors. */
-        skip_permission_denied =  0x0001
-    };
-
     /*! TODO: ...
     key_info_mask satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
     `operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
@@ -232,20 +220,6 @@ namespace registry
 
     access_rights& operator^=(access_rights& lhs, access_rights rhs) noexcept;
 
-    constexpr key_options operator&(key_options lhs, key_options rhs) noexcept;
-
-    constexpr key_options operator|(key_options lhs, key_options rhs) noexcept;
-
-    constexpr key_options operator^(key_options lhs, key_options rhs) noexcept;
-
-    constexpr key_options operator~(key_options lhs) noexcept;
-
-    key_options& operator&=(key_options& lhs, key_options rhs) noexcept;
-
-    key_options& operator|=(key_options& lhs, key_options rhs) noexcept;
-
-    key_options& operator^=(key_options& lhs, key_options rhs) noexcept;
-
     constexpr key_info_mask operator&(key_info_mask lhs, key_info_mask rhs) noexcept;
 
     constexpr key_info_mask operator|(key_info_mask lhs, key_info_mask rhs) noexcept;
@@ -281,24 +255,6 @@ namespace registry
     inline access_rights& operator|=(access_rights& lhs, access_rights rhs) noexcept { return lhs = lhs | rhs; }
 
     inline access_rights& operator^=(access_rights& lhs, access_rights rhs) noexcept { return lhs = lhs ^ rhs; }
-
-    inline constexpr key_options operator&(key_options lhs, key_options rhs) noexcept
-    { return static_cast<key_options>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
-
-    inline constexpr key_options operator|(key_options lhs, key_options rhs) noexcept
-    { return static_cast<key_options>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
-
-    inline constexpr key_options operator^(key_options lhs, key_options rhs) noexcept
-    { return static_cast<key_options>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs)); }
-
-    inline constexpr key_options operator~(key_options lhs) noexcept
-    { return static_cast<key_options>(~static_cast<uint32_t>(lhs)); }
-
-    inline key_options& operator&=(key_options& lhs, key_options rhs) noexcept { return lhs = lhs & rhs; }
-
-    inline key_options& operator|=(key_options& lhs, key_options rhs) noexcept { return lhs = lhs | rhs; }
-
-    inline key_options& operator^=(key_options& lhs, key_options rhs) noexcept { return lhs = lhs ^ rhs; }
 
     inline constexpr key_info_mask operator&(key_info_mask lhs, key_info_mask rhs) noexcept
     { return static_cast<key_info_mask>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
