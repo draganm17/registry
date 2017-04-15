@@ -92,21 +92,6 @@ namespace registry
         unknown =                      0x00000000
     };
 
-    /*! On 64-bit Windows, portions of the registry entries are stored separately for 32-bit application and 64-bit
-    applications and mapped into separate logical registry views using the registry redirector and registry reflection,
-    because the 64-bit version of an application may use different registry keys and values than the 32-bit version. 
-    These flags enable explicit access to the 64-bit registry view and the 32-bit view, respectively. For more 
-    information see: https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms724072 */
-    enum class view : uint32_t
-    {
-        /*! Access a 64-bit key from either a 32-bit or 64-bit application */
-        view_32bit =    0x0200,
-
-        /*! Access a 32-bit key from either a 32-bit or 64-bit application.
-        Ignored on the 32-bit versions of Windows. */
-        view_64bit =    0x0100
-    };
-
     /*! The Windows security model enables you to control access to registry keys. For more information see:
     https://msdn.microsoft.com/en-us/library/windows/desktop/ms724878 \n
     access_rights satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
