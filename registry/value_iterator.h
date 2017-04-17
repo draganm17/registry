@@ -51,13 +51,6 @@ namespace registry
         */
         value_entry(const key& key, string_view_type value_name);
 
-        //! TODO: ...
-        /*!
-        @post `this->key() == handle.key()`.
-        @post `this->value_name() == value_name`.
-        */
-        value_entry(const key_handle& handle, string_view_type value_name);
-
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
         @post `*this == other`.
@@ -82,7 +75,7 @@ namespace registry
         const string_type& value_name() const noexcept;
 
         // TODO: ...
-        registry::value value(std::error_code& ec = throws()) const;
+        registry::value value(std::error_code& ec = throws()) const; // TODO: rename to 'read_value' ???
 
     public:
         //! Replaces the contents of the entry.
@@ -91,19 +84,13 @@ namespace registry
         */
         value_entry& assign(const registry::key& key, string_view_type value_name);
 
-        //! Replaces the contents of the entry.
-        /*!
-        @post `*this == key_entry(handle, value_name)`.
-        */
-        value_entry& assign(const registry::key_handle& handle, string_view_type value_name);
-
         //! Swaps the contents of `*this` and `other`.
         void swap(value_entry& other) noexcept;
 
     private:
-        registry::key    m_key;
-        string_type      m_value_name;
-        weak_key_handle  m_key_handle;
+        registry::key              m_key;
+        string_type                m_value_name;
+        std::weak_ptr<key_handle>  m_key_handle;
     };
     
     //------------------------------------------------------------------------------------//
@@ -174,7 +161,7 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        explicit value_iterator(const key_handle& handle, std::error_code& ec = throws());
+        explicit value_iterator(key_handle handle, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!

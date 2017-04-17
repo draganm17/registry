@@ -55,19 +55,6 @@ namespace registry
     };
 
     //------------------------------------------------------------------------------------//
-    //                           class bad_weak_key_handle                                //
-    //------------------------------------------------------------------------------------//
-
-    /*! \brief
-    Defines a type of the object thrown by the constructors of `registry::key_handle` that take
-    `registry::weak_key_handle` as the argument, when the `registry::weak_key_handle` is already expired. */
-    class bad_weak_key_handle : public std::exception
-    {
-    public:
-        const char* what() const noexcept override { return "registry::bad_weak_key_handle"; }
-    };
-
-    //------------------------------------------------------------------------------------//
     //                                class key_handle                                    //
     //------------------------------------------------------------------------------------//
 
@@ -84,25 +71,20 @@ namespace registry
     // TODO: describe the internal implementation ???
     class key_handle
     {
-        friend class weak_key_handle;
-
-        struct state;
-        std::shared_ptr<state> m_state;
-
     public:
-        using native_handle_type = std::underlying_type_t<key_id>;
+        using native_handle_type = void*;
+
+    private:
+        struct close_handle { void operator()(void*) const noexcept; };
 
     public:
         //! Default constructor.
         /*!
         @post `!valid()`.
         */
-        constexpr key_handle() noexcept = default;
+        key_handle() noexcept = default;
 
-        /*! \brief
-        Constructs a `key_handle` which shares ownership of the handle managed by `other`. If `other` manages no
-        handle, `*this` manages no handle too. */
-        key_handle(const key_handle& other) noexcept = default;
+        key_handle(const key_handle& other) = delete;
 
         //! Constructs the handle with the contents of `other` using move semantics.
         /*!
@@ -110,12 +92,6 @@ namespace registry
         @post `*this` has the original value of `other`.
         */
         key_handle(key_handle&& other) noexcept = default;
-
-        //! Constructs a `key_handle` which shares ownership of the handle managed by `handle`.
-        /*!
-        @throw `registry::bad_weak_key_handle` if `handle.expired()`.
-        */
-        key_handle(const weak_key_handle& handle);
 
         // Constructs a handle to an prdefined registry key.
         /*!
@@ -130,24 +106,9 @@ namespace registry
         key_handle(key_id id);
 
         // TODO: ...
-        /*!
-        Unless `handle == native_handle_type{}` the postconditions are the following:
-        - `valid()`.
-        - `this->key() == key`.
-        - `this->rights() == rights`.
-        - `this->native_handle() == handle`.
+        key_handle(const registry::key& key, access_rights rights, std::error_code& ec = throws());
 
-        Otherwise: `!valid()`.
-        */
-        key_handle(native_handle_type handle, const registry::key& key, access_rights rights);
-
-        /*! \brief
-        Replaces the managed handle with the one managed by `other`. If `*this` already owns an handle and it 
-        is the last key_handle owning it, and `other` is not the same as `*this`, the owned handle is closed. */
-        /*!
-        @return `*this`.
-        */
-        key_handle& operator=(const key_handle& other) noexcept = default;
+        key_handle& operator=(const key_handle& other) = delete;
 
         //! Replaces the contents of `*this` with those of `other` using move semantics.
         /*!
@@ -162,7 +123,7 @@ namespace registry
         /*!
         @return An value of type `registry::key`. If `!valid()` returns `registry::key()`.
         */
-        registry::key key() const;
+        registry::key key() const; // TODO: const ref ???
 
         //! Returns the access rights this handle was initialized with.
         /*!
@@ -177,7 +138,7 @@ namespace registry
         native_handle_type native_handle() const noexcept;
 
         // TODO: ...
-        bool valid() const noexcept;
+        bool is_open() const noexcept;
 
     public:
         //! Creates a subkey inside the registry key specified by this handle.
@@ -382,81 +343,16 @@ namespace registry
         void write_value(string_view_type value_name, const value& value, std::error_code& ec = throws()) const;
 
     public:
+        // TODO: ...
+        void close(std::error_code& ec = throws());
+
         //! Swaps the contents of `*this` and `other`.
         void swap(key_handle& other) noexcept;
-    };
 
-    //------------------------------------------------------------------------------------//
-    //                            class weak_key_handle                                   //
-    //------------------------------------------------------------------------------------//
-
-    //! Represents a weak reference to a registry key handle managed by `registry::key_handle`.
-    /*!
-    `registry::weak_key_handle` is a wrapper around a native key handle that holds a non-owning ("weak") reference to
-    a key handle that is managed by `registry::key_handle`. It must be converted to `registry::key_handle` in order to
-    access the referenced handle.
-    */
-    // TODO: describe the internal umplementation ???
-    class weak_key_handle
-    {
-        friend class key_handle;
-
-        std::weak_ptr<key_handle::state> m_state;
-
-    public:
-        //! Default constructor. Constructs an invalid `weak_key_handle`.
-        /*!
-        @post `expired()`.
-        */
-        constexpr weak_key_handle() noexcept = default;
-
-        /*! \brief
-        Constructs a `weak_key_handle` which shares ownership of the handle managed by `other`. If `other` manages no
-        handle, `*this` manages no handle too. */
-        weak_key_handle(const weak_key_handle& other) noexcept = default;
-
-        //! Constructs the handle with the contents of `other` using move semantics.
-        /*!
-        @post `other.expired()`.
-        @post `*this` has the original value of `other`.
-        */
-        weak_key_handle(weak_key_handle&& other) noexcept = default;
-
-        // TODO: ...
-        weak_key_handle(const key_handle& handle) noexcept;
-
-        /*! \brief
-        Replaces the managed handle with the one managed by `other`. The handle is shared with `other`. If `other` 
-        manages no handle, `*this` manages no handle too. */
-        /*!
-        @return `*this`.
-        */
-        weak_key_handle& operator=(const weak_key_handle& other) noexcept = default;
-
-        //! Replaces the contents of `*this` with those of `other` using move semantics.
-        /*!
-        @post `other.expired()`.
-        @post `*this` has the original value of `other`.
-        @return `*this`.
-        */
-        weak_key_handle& operator=(weak_key_handle&& other) noexcept = default;
-
-        // TODO: ...
-        weak_key_handle& operator=(const key_handle& other) noexcept;
-
-    public:
-        //! Checks whether the referenced handle was already closed.
-        bool expired() const noexcept;
-
-        //! Creates a `key_handle` that manages the referenced handle. 
-        /*!
-        If there is no managed handle, i.e. `*this` is invalid, then the returned key_handle also is invalid.
-        */
-        key_handle lock() const noexcept;
-
-    public:
-        //! Swaps the contents of `*this` and `other`.
-        void swap(weak_key_handle& other) noexcept;
+    private:
+        registry::key                        m_key;
+        access_rights                        m_rights;
+        std::unique_ptr<void, close_handle>  m_handle;
     };
 
     //------------------------------------------------------------------------------------//
@@ -511,7 +407,7 @@ namespace registry
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur.
     */
-    key_handle open(const key& key, access_rights rights, std::error_code& ec = throws());
+    //key_handle open(const key& key, access_rights rights, std::error_code& ec = throws());
 
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //

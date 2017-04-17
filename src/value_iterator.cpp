@@ -18,12 +18,6 @@ value_entry::value_entry(const registry::key& key, string_view_type value_name)
     , m_value_name(value_name)
 { }
 
-value_entry::value_entry(const registry::key_handle& handle, string_view_type value_name)
-    : m_key(handle.key())
-    , m_value_name(value_name)
-    , m_key_handle(handle)
-{ }
-
 const key& value_entry::key() const noexcept { return m_key; }
 
 const string_type& value_entry::value_name() const noexcept { return m_value_name; }
@@ -32,7 +26,7 @@ value value_entry::value(std::error_code& ec) const
 {
     std::error_code ec2;
     const auto handle = m_key_handle.lock();
-    auto result = handle.valid() ? handle.read_value(m_value_name, ec2) : read_value(m_key, m_value_name, ec2);
+    auto result = handle ? handle->read_value(m_value_name, ec2) : read_value(m_key, m_value_name, ec2);
 
     if (!ec2) RETURN_RESULT(ec, result);
     details::set_or_throw(&ec, ec2, __FUNCTION__, m_key, registry::key(), m_value_name);
@@ -42,15 +36,7 @@ value_entry& value_entry::assign(const registry::key& key, string_view_type valu
 {
     m_key = key;
     m_value_name.assign(value_name.data(), value_name.size());
-    m_key_handle.swap(weak_key_handle());
-    return *this;
-}
-
-value_entry& value_entry::assign(const registry::key_handle& handle, string_view_type value_name)
-{
-    m_key.swap(registry::key());
-    m_value_name.assign(value_name.data(), value_name.size());
-    m_key_handle = handle;
+    m_key_handle.swap(std::weak_ptr<key_handle>());
     return *this;
 }
 
@@ -79,30 +65,31 @@ struct value_iterator::state
 value_iterator::value_iterator(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
-    const auto handle = open(key, access_rights::query_value, ec2);
+    key_handle handle(key, access_rights::query_value, ec2);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
+    if (!ec2 && (swap(value_iterator(std::move(handle), ec2)), !ec2)) RETURN_RESULT(ec, VOID);
 
-    value_iterator tmp;
-    if (!ec2 && (tmp = value_iterator(handle, ec2), !ec2)) {
-        swap(tmp);
-        RETURN_RESULT(ec, VOID);
-    }
     details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
-value_iterator::value_iterator(const key_handle& handle, std::error_code& ec)
-    : m_state(std::make_shared<state>(state{ uint32_t(-1), handle, value_entry(handle, string_type()) }))
+value_iterator::value_iterator(key_handle handle, std::error_code& ec)
+    : m_state(std::make_shared<state>(state{ uint32_t(-1), std::move(handle) }))
 {
+    m_state->entry.m_key = m_state->hkey.key();
+    m_state->entry.m_key_handle = std::shared_ptr<registry::key_handle>(m_state, &m_state->hkey);
+
     std::error_code ec2;
-    key_info info = handle.info(key_info_mask::read_max_value_name_size, ec2);
+    key_info info = m_state->hkey.info(key_info_mask::read_max_value_name_size, ec2);
 
     if (!ec2) {
         m_state->buffer.resize(++info.max_value_name_size);
         m_state->entry.m_value_name.reserve(info.max_value_name_size);
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
-    m_state.reset();
-    details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());
+
+    key key = m_state->hkey.key();
+    m_state.reset(); // *this becomes the end iterator
+    details::set_or_throw(&ec, ec2, __FUNCTION__, std::move(key));
 }
 
 bool value_iterator::operator==(const value_iterator& rhs) const noexcept { return m_state == rhs.m_state; }

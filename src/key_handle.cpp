@@ -6,105 +6,12 @@
 #include <registry/exception.h>
 #include <registry/details/utils.impl.h>
 #include <registry/key_handle.h>
-#include <registry/key_iterator.h>
+//#include <registry/key_iterator.h> // TODO: ...
 
 
 namespace  {
 
 using namespace registry;
-
-class unique_hkey
-{
-    struct deleter
-    {
-        void operator()(void* hkey) const noexcept
-        {
-            switch ((ULONG_PTR)hkey) {
-                case (ULONG_PTR)0x0:
-                case (ULONG_PTR)HKEY_CLASSES_ROOT:
-                case (ULONG_PTR)HKEY_CURRENT_USER:
-                case (ULONG_PTR)HKEY_LOCAL_MACHINE:
-                case (ULONG_PTR)HKEY_USERS:
-                case (ULONG_PTR)HKEY_PERFORMANCE_DATA:
-                case (ULONG_PTR)HKEY_PERFORMANCE_TEXT:
-                case (ULONG_PTR)HKEY_PERFORMANCE_NLSTEXT:
-                case (ULONG_PTR)HKEY_CURRENT_CONFIG:
-                case (ULONG_PTR)HKEY_DYN_DATA:
-                case (ULONG_PTR)HKEY_CURRENT_USER_LOCAL_SETTINGS: return;
-            }
-            ::RegCloseKey((HKEY)hkey);
-        }
-    };
-
-    std::unique_ptr<void, deleter> m_handle;
-
-public:
-    constexpr unique_hkey(key_id id) noexcept
-    : m_handle((void*)id, deleter{})
-    { }
-
-    constexpr unique_hkey(key_handle::native_handle_type hkey) noexcept
-    : m_handle((void*)hkey, deleter{})
-    { }
-
-    operator key_id() const noexcept
-    { return (key_id)((uintptr_t)m_handle.get()); }
-
-    operator key_handle::native_handle_type() const noexcept 
-    { return reinterpret_cast<key_handle::native_handle_type>(m_handle.get()); }
-};
-
-struct key_handle_state
-{
-    unique_hkey    handle = key_id::unknown;
-    access_rights  rights = access_rights::unknown;
-    registry::key  key =    key::from_key_id(handle);
-};
-
-class key_handle_pool
-{
-private:
-    struct pool_t
-    {
-        key_handle_state classes_root                { key_id::classes_root };
-        key_handle_state current_user                { key_id::current_user };
-        key_handle_state local_machine               { key_id::local_machine };
-        key_handle_state users                       { key_id::users };
-        key_handle_state performance_data            { key_id::performance_data };
-        key_handle_state performance_text            { key_id::performance_text };
-        key_handle_state performance_nlstext         { key_id::performance_nlstext };
-        key_handle_state current_config              { key_id::current_config };
-        key_handle_state current_user_local_settings { key_id::current_user_local_settings };
-    };
-
-private:
-    key_handle_pool() = default;
-
-public:
-    static const key_handle_pool& instance() { static const key_handle_pool pool; return pool; }
-
-public:
-    std::shared_ptr<key_handle_state> get(key_id id) const noexcept
-    {
-        using R = std::shared_ptr<key_handle_state>;
-
-        switch (id) {
-            case key_id::classes_root:                return R(m_pool, &m_pool->classes_root);
-            case key_id::current_user:                return R(m_pool, &m_pool->current_user);
-            case key_id::local_machine:               return R(m_pool, &m_pool->local_machine);
-            case key_id::users:                       return R(m_pool, &m_pool->users);
-            case key_id::performance_data:            return R(m_pool, &m_pool->performance_data);
-            case key_id::performance_text:            return R(m_pool, &m_pool->performance_text);
-            case key_id::performance_nlstext:         return R(m_pool, &m_pool->performance_nlstext);
-            case key_id::current_config:              return R(m_pool, &m_pool->current_config);
-            case key_id::current_user_local_settings: return R(m_pool, &m_pool->current_user_local_settings);
-        }
-        return R();
-    }
-
-private:
-    const std::shared_ptr<pool_t> m_pool = std::make_shared<pool_t>();
-};
 
 const auto NtQueryKey_ = []() noexcept
 {
@@ -127,6 +34,7 @@ const auto RegDeleteKeyEx_ = []() noexcept
 
 uint32_t remove_all_inside(const key_handle& handle, const registry::key& subkey, std::error_code& ec)
 {
+    /*
     ec.clear();
     constexpr auto perms = access_rights::query_value |
                            access_rights::enumerate_sub_keys;
@@ -151,6 +59,10 @@ uint32_t remove_all_inside(const key_handle& handle, const registry::key& subkey
     }
 
     return !ec ? keys_deleted : static_cast<uint32_t>(-1);
+    */
+
+    // TODO: ...
+    return 0;
 }
 
 std::wstring nt_name(key_handle::native_handle_type handle)
@@ -180,37 +92,63 @@ namespace registry {
 //                                class key_handle                                    //
 //------------------------------------------------------------------------------------//
 
-struct key_handle::state : key_handle_state { };
-
-key_handle::key_handle(const weak_key_handle& handle)
-    : m_state(handle.m_state.lock())
+void key_handle::close_handle::operator()(void* hkey) const noexcept
 {
-    if (handle.expired()) throw bad_weak_key_handle();
+    switch ((ULONG_PTR)hkey) {
+        case (ULONG_PTR)0x0:
+        case (ULONG_PTR)HKEY_CLASSES_ROOT:
+        case (ULONG_PTR)HKEY_CURRENT_USER:
+        case (ULONG_PTR)HKEY_LOCAL_MACHINE:
+        case (ULONG_PTR)HKEY_USERS:
+        case (ULONG_PTR)HKEY_PERFORMANCE_DATA:
+        case (ULONG_PTR)HKEY_PERFORMANCE_TEXT:
+        case (ULONG_PTR)HKEY_PERFORMANCE_NLSTEXT:
+        case (ULONG_PTR)HKEY_CURRENT_CONFIG:
+        case (ULONG_PTR)HKEY_DYN_DATA:
+        case (ULONG_PTR)HKEY_CURRENT_USER_LOCAL_SETTINGS: return;
+    }
+    ::RegCloseKey((HKEY)hkey);
 }
 
 key_handle::key_handle(key_id id)
-    : m_state(std::static_pointer_cast<state>(key_handle_pool::instance().get(id)))
-{ }
-
-key_handle::key_handle(native_handle_type handle, const registry::key& key, access_rights rights)
-    : m_state(handle == native_handle_type{} ? nullptr :
-        std::static_pointer_cast<state>(std::make_shared<key_handle_state>(key_handle_state{ handle, rights, key })))
-{ }
-
-key key_handle::key() const { return m_state ? m_state->key : registry::key(); }
-
-access_rights key_handle::rights() const noexcept { return m_state ? m_state->rights : access_rights::unknown; }
-
-key_handle::native_handle_type key_handle::native_handle() const noexcept
 {
-    return m_state ? static_cast<native_handle_type>(m_state->handle) : native_handle_type{};
+    // TODO: ...
 }
 
-bool key_handle::valid() const noexcept { return static_cast<bool>(m_state); }
+key_handle::key_handle(const registry::key& key, access_rights rights, std::error_code& ec)
+{
+    // TODO: ...
+
+    /*
+    std::error_code ec2;
+    if (!key.is_absolute()) {
+        ec2 = std::error_code(ERROR_FILE_NOT_FOUND, std::system_category());
+        return details::set_or_throw(&ec, ec2, __FUNCTION__, key), key_handle();
+    }
+
+    const key_handle root = key.root_key_id();
+    const registry::key subkey(key.has_parent_key() ? (++key.begin())->data() : TEXT(""), key.view());
+
+    auto handle = root.open(subkey, rights, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, handle);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), key_handle();
+    */
+}
+
+key key_handle::key() const { return m_key; }
+
+access_rights key_handle::rights() const noexcept { return m_rights; }
+
+key_handle::native_handle_type key_handle::native_handle() const noexcept
+{ return reinterpret_cast<native_handle_type>(m_handle.get()); }
+
+bool key_handle::is_open() const noexcept { return static_cast<bool>(m_handle); }
 
 std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, 
                                                    access_rights rights, std::error_code& ec) const
 {
+    /*
     DWORD disp;
     key_handle::native_handle_type hkey;
     auto new_key = key().append(subkey);
@@ -223,6 +161,10 @@ std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey,
     }
     const std::error_code ec2(rc, std::system_category());
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), subkey), std::make_pair(key_handle(), false);
+    */
+
+    // TODO: ...
+    return std::pair<key_handle, bool>{};
 }
 
 bool key_handle::equivalent(const registry::key& key, std::error_code& ec) const
@@ -290,6 +232,7 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
 
 key_handle key_handle::open(const registry::key& subkey, access_rights rights, std::error_code& ec) const
 {
+    /*
     LRESULT rc;
     key_handle::native_handle_type hkey;
     registry::key opened_key = key().append(subkey);
@@ -300,6 +243,10 @@ key_handle key_handle::open(const registry::key& subkey, access_rights rights, s
 
     const std::error_code ec2(rc, std::system_category());
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), subkey), key_handle();
+    */
+
+    // TODO: ...
+    return key_handle();
 }
 
 value key_handle::read_value(string_view_type value_name, std::error_code& ec) const
@@ -377,54 +324,17 @@ void key_handle::write_value(string_view_type value_name, const value& value, st
     details::set_or_throw(&ec, ec2, __FUNCTION__, key(), registry::key(), value_name);
 }
 
-void key_handle::swap(key_handle& other) noexcept { m_state.swap(other.m_state); }
+void key_handle::close(std::error_code& ec)
+{
+    // TODO: ...
+}
 
-
-//------------------------------------------------------------------------------------//
-//                            class weak_key_handle                                   //
-//------------------------------------------------------------------------------------//
-
-weak_key_handle::weak_key_handle(const key_handle& handle) noexcept
-    : m_state(handle.m_state)
-{ }
-
-weak_key_handle& weak_key_handle::operator=(const key_handle& other) noexcept 
+void key_handle::swap(key_handle& other) noexcept
 { 
-    m_state = other.m_state;
-    return *this;
-}
-
-bool weak_key_handle::expired() const noexcept { return m_state.expired(); }
-
-key_handle weak_key_handle::lock() const noexcept
-{
-    key_handle handle;
-    handle.m_state = m_state.lock();
-    return handle;
-}
-
-void weak_key_handle::swap(weak_key_handle& other) noexcept { m_state.swap(other.m_state); }
-
-
-//------------------------------------------------------------------------------------//
-//                             NON-MEMBER FUNCTIONS                                   //
-//------------------------------------------------------------------------------------//
-
-key_handle open(const key& key, access_rights rights, std::error_code& ec)
-{
-    std::error_code ec2;
-    if (!key.is_absolute()) {
-        ec2 = std::error_code(ERROR_FILE_NOT_FOUND, std::system_category());
-        return details::set_or_throw(&ec, ec2, __FUNCTION__, key), key_handle();
-    }
-
-    const key_handle root = key.root_key_id();
-    const registry::key subkey(key.has_parent_key() ? (++key.begin())->data() : TEXT(""), key.view());
-
-    auto handle = root.open(subkey, rights, ec2);
-
-    if (!ec2) RETURN_RESULT(ec, handle);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), key_handle();
+    using std::swap;
+    swap(m_key, other.m_key);
+    swap(m_rights, other.m_rights);
+    swap(m_handle, other.m_handle);
 }
 
 }  // namespace registry
