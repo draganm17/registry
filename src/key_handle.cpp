@@ -111,9 +111,10 @@ void key_handle::close_handle::operator()(void* hkey) const noexcept
 }
 
 key_handle::key_handle(key_id id)
-{
-    // TODO: ...
-}
+    : m_key(key::from_key_id(id))
+    , m_rights(access_rights::unknown)
+    , m_handle(reinterpret_cast<void*>(id), close_handle{})
+{ }
 
 key_handle::key_handle(const registry::key& key, access_rights rights, std::error_code& ec)
 {
