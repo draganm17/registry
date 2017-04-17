@@ -59,6 +59,7 @@ void value_entry::swap(value_entry& other) noexcept
     using std::swap;
     swap(m_key, other.m_key);
     swap(m_value_name, other.m_value_name);
+    swap(m_key_handle, other.m_key_handle);
 }
 
 

@@ -49,7 +49,12 @@ key_entry& key_entry::assign(const registry::key_handle& handle)
     return *this;
 }
 
-void key_entry::swap(key_entry& other) noexcept { m_key.swap(other.m_key); }
+void key_entry::swap(key_entry& other) noexcept 
+{ 
+    using std::swap;
+    swap(m_key, other.m_key);
+    swap(m_key_handle, other.m_key_handle);
+}
 
 
 //------------------------------------------------------------------------------------//
