@@ -117,24 +117,26 @@ key_handle::key_handle(key_id id)
 { }
 
 key_handle::key_handle(const registry::key& key, access_rights rights, std::error_code& ec)
+    : m_key(key)
+    , m_rights(rights)
 {
-    // TODO: ...
+    LRESULT rc = ERROR_FILE_NOT_FOUND;
 
-    /*
-    std::error_code ec2;
-    if (!key.is_absolute()) {
-        ec2 = std::error_code(ERROR_FILE_NOT_FOUND, std::system_category());
-        return details::set_or_throw(&ec, ec2, __FUNCTION__, key), key_handle();
+    if (key.is_absolute())
+    {
+        HKEY hkey;
+        const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(key.root_key_id()), 
+                                        key.has_parent_key() ? (++key.begin())->data() : TEXT(""), 0,
+                                        static_cast<DWORD>(rights) | static_cast<DWORD>(key.view()), &hkey);
+
+        if (rc == ERROR_SUCCESS) {
+            m_handle = std::unique_ptr<void, close_handle>(reinterpret_cast<void*>(hkey), close_handle{});
+            RETURN_RESULT(ec, VOID);
+        }
     }
 
-    const key_handle root = key.root_key_id();
-    const registry::key subkey(key.has_parent_key() ? (++key.begin())->data() : TEXT(""), key.view());
-
-    auto handle = root.open(subkey, rights, ec2);
-
-    if (!ec2) RETURN_RESULT(ec, handle);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, key), key_handle();
-    */
+    swap(key_handle()); // close this handle
+    details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__, key);
 }
 
 key key_handle::key() const { return m_key; }
@@ -149,23 +151,22 @@ bool key_handle::is_open() const noexcept { return static_cast<bool>(m_handle); 
 std::pair<key_handle, bool> key_handle::create_key(const registry::key& subkey, 
                                                    access_rights rights, std::error_code& ec) const
 {
-    /*
+    HKEY hkey;
     DWORD disp;
-    key_handle::native_handle_type hkey;
-    auto new_key = key().append(subkey);
+    key_handle handle;
+    handle.m_rights = rights;
+    handle.m_key = key().append(subkey);
     const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(subkey.view());
-    LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), subkey.name().data(), 0, nullptr,
-                                REG_OPTION_NON_VOLATILE, sam_desired, nullptr, reinterpret_cast<HKEY*>(&hkey), &disp);
+    const LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), subkey.name().data(),
+                                      0, nullptr, REG_OPTION_NON_VOLATILE, sam_desired, nullptr, &hkey, &disp);
     
     if (rc == ERROR_SUCCESS) {
-        RETURN_RESULT(ec, std::make_pair(key_handle(hkey, std::move(new_key), rights), disp == REG_CREATED_NEW_KEY));
+        handle.m_handle = std::unique_ptr<void, close_handle>(reinterpret_cast<void*>(hkey), close_handle{});
+        RETURN_RESULT(ec, std::make_pair(std::move(handle), disp == REG_CREATED_NEW_KEY));
     }
+
     const std::error_code ec2(rc, std::system_category());
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), subkey), std::make_pair(key_handle(), false);
-    */
-
-    // TODO: ...
-    return std::pair<key_handle, bool>{};
 }
 
 bool key_handle::equivalent(const registry::key& key, std::error_code& ec) const
@@ -233,21 +234,20 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
 
 key_handle key_handle::open(const registry::key& subkey, access_rights rights, std::error_code& ec) const
 {
-    /*
-    LRESULT rc;
-    key_handle::native_handle_type hkey;
-    registry::key opened_key = key().append(subkey);
-    rc = RegOpenKeyEx(reinterpret_cast<HKEY>(native_handle()), subkey.name().data(), 0,
-                      static_cast<DWORD>(rights) | static_cast<DWORD>(subkey.view()), reinterpret_cast<HKEY*>(&hkey));
+    HKEY hkey;
+    key_handle handle;
+    handle.m_rights = rights;
+    handle.m_key = key().append(subkey);
+    const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(native_handle()), subkey.name().data(), 0,
+                                    static_cast<DWORD>(rights) | static_cast<DWORD>(subkey.view()), &hkey);
 
-    if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, key_handle(hkey, std::move(opened_key), rights));
+    if (rc == ERROR_SUCCESS) {
+        handle.m_handle = std::unique_ptr<void, close_handle>(reinterpret_cast<void*>(hkey), close_handle{});
+        RETURN_RESULT(ec, handle);
+    }
 
     const std::error_code ec2(rc, std::system_category());
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key(), subkey), key_handle();
-    */
-
-    // TODO: ...
-    return key_handle();
 }
 
 value key_handle::read_value(string_view_type value_name, std::error_code& ec) const
