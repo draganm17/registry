@@ -382,7 +382,7 @@ namespace registry
     //! Checks whether `lhs` is greater than or equal to `rhs`. Equivalent to `lhs.compare(rhs) >= 0`.
     bool operator>=(const key& lhs, const key& rhs) noexcept;
 
-    //! Calculates a hash value for a key object.
+    //! Calculates a hash value for a `key` object.
     /*!
     @return A hash value such that if for two keys, `k1 == k2` then `hash_value(k1) == hash_value(k2)`.
     */

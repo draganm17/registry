@@ -465,7 +465,7 @@ namespace registry
     //! Checks whether `lhs` is greater than or equal to `rhs`.
     bool operator>=(const value& lhs, const value& rhs) noexcept;
 
-    //! Calculates a hash value for a value object.
+    //! Calculates a hash value for a `value` object.
     /*!
     @return A hash value such that if for two values, `v1 == v2` then `hash_value(v1) == hash_value(v2)`.
     */
