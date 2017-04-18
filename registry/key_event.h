@@ -6,14 +6,13 @@
 #include <memory>
 #include <system_error>
 
+#include <registry/key.h>
 #include <registry/key_handle.h>
 #include <registry/types.h>
 
 
 namespace registry
 {
-    class key;
-
     // TODO: ...
     enum class key_event_status : uint32_t
     {
@@ -53,11 +52,11 @@ namespace registry
     };
 
     //------------------------------------------------------------------------------------//
-    //                             class key_event_handle                                 //
+    //                                class key_event                                     //
     //------------------------------------------------------------------------------------//
 
     // TODO: ...
-    class key_event_handle
+    class key_event
     {
     public:
         // TODO: ...
@@ -74,43 +73,44 @@ namespace registry
 
     public:
         // TODO: ...
-        key_event_handle() noexcept = default;
+        key_event() noexcept = default;
 
         // TODO: ...
-        key_event_handle(const key_event_handle&) = delete;
+        key_event(const key_event&) = delete;
 
         // TODO: ...
-        key_event_handle(key_event_handle&&) noexcept = default;
+        key_event(key_event&&) noexcept = default;
 
         // TODO: ...
-        key_event_handle& operator=(const key_event_handle&) = delete;
+        key_event& operator=(const key_event&) = delete;
 
         // TODO: ...
-        key_event_handle& operator=(key_event_handle&&) noexcept = default;
+        key_event& operator=(key_event&&) noexcept = default;
 
         // TODO: ...
-        key_event_handle(const key& key, key_event_filter filter, 
-                         bool watch_subtree, std::error_code& ec = throws());
+        key_event(const key& key, key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
 
         // TODO: ...
-        key_event_handle(key_handle handle, key_event_filter filter, 
-                         bool watch_subtree, std::error_code& ec = throws());
+        key_event(key_handle handle, key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
 
         // TODO: ...
-        ~key_event_handle() noexcept = default;
+        ~key_event() noexcept = default;
 
     public:
+        // TODO: ...
+        key key() const;
+
         // TODO: ...
         key_event_filter filter() const noexcept;
 
         // TODO: ...
-        bool is_open() const noexcept;
+        bool watch_subtree() const noexcept;
 
         // TODO: ...
         native_handle_type native_handle() const noexcept;
 
         // TODO: ...
-        bool watch_subtree() const noexcept;
+        bool valid() const noexcept;
 
     public:
         // TODO: ...
@@ -127,15 +127,8 @@ namespace registry
                                     std::error_code& ec = throws()) const;
 
     public:
-        // TODO: ...
-        void close(std::error_code& ec = throws());
-
-        // TODO: ...
-        // post cond: !is_open() 
-        native_handle_type release() noexcept;  // TODO: ???
-
         //! Swaps the contents of `*this` and `other`.
-        void swap(key_event_handle& other) noexcept;
+        void swap(key_event& other) noexcept;
 
     private:
         bool                                   m_watch_subtree;
@@ -163,26 +156,8 @@ namespace registry
 
     key_event_filter& operator^=(key_event_filter& lhs, key_event_filter rhs) noexcept;
 
-    bool operator==(const key_event_handle& lhs, const key_event_handle& rhs) noexcept;
-
-    bool operator!=(const key_event_handle& lhs, const key_event_handle& rhs) noexcept;
-
-    bool operator<(const key_event_handle& lhs, const key_event_handle& rhs) noexcept;
-
-    bool operator>(const key_event_handle& lhs, const key_event_handle& rhs) noexcept;
-
-    bool operator<=(const key_event_handle& lhs, const key_event_handle& rhs) noexcept;
-
-    bool operator>=(const key_event_handle& lhs, const key_event_handle& rhs) noexcept;
-
-    //! Calculates a hash value for a `key_handle` object.
-    /*!
-    @return A hash value such that if for two handles, `h1 == h2` then `hash_value(h1) == hash_value(h2)`.
-    */
-    size_t hash_value(const key_event_handle& handle) noexcept;
-
     //! Swaps the contents of `lhs` and `rhs`.
-    void swap(key_event_handle& lhs, key_event_handle& rhs) noexcept;
+    void swap(key_event& lhs, key_event& rhs) noexcept;
 
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //
@@ -206,34 +181,19 @@ namespace registry
 
     inline key_event_filter& operator^=(key_event_filter& lhs, key_event_filter rhs) noexcept { return lhs = lhs ^ rhs; }
 
-    inline bool operator==(const key_event_handle& lhs, const key_event_handle& rhs) noexcept
-    { return lhs.native_handle() == rhs.native_handle(); }
+    inline void swap(key_event& lhs, key_event& rhs) noexcept { lhs.swap(rhs); }
 
-    inline bool operator!=(const key_event_handle& lhs, const key_event_handle& rhs) noexcept { return !(lhs == rhs); }
-
-    inline bool operator<(const key_event_handle& lhs, const key_event_handle& rhs) noexcept
-    { return lhs.native_handle() < rhs.native_handle(); }
-
-    inline bool operator>(const key_event_handle& lhs, const key_event_handle& rhs) noexcept
-    { return lhs.native_handle() > rhs.native_handle(); }
-
-    inline bool operator<=(const key_event_handle& lhs, const key_event_handle& rhs) noexcept { return !(lhs > rhs); }
-
-    inline bool operator>=(const key_event_handle& lhs, const key_event_handle& rhs) noexcept { return !(lhs < rhs); }
-
-    inline void swap(key_event_handle& lhs, key_event_handle& rhs) noexcept { lhs.swap(rhs); }
-
-    inline void key_event_handle::wait(std::error_code& ec) const 
+    inline void key_event::wait(std::error_code& ec) const
     { wait_impl(__FUNCTION__, std::chrono::milliseconds::max(), ec); }
 
     template< class Rep, class Period >
-    inline key_event_status key_event_handle::wait_for(const std::chrono::duration<Rep, Period>& rel_time,
-                                                       std::error_code& ec) const
+    inline key_event_status key_event::wait_for(const std::chrono::duration<Rep, Period>& rel_time,
+                                                std::error_code& ec) const
     { return wait_impl(__FUNCTION__, std::chrono::duration_cast<std::chrono::milliseconds>(rel_time), ec); }
 
     template< class Clock, class Duration >
-    inline key_event_status key_event_handle::wait_until(const std::chrono::time_point<Clock, Duration>& abs_time,
-                                                         std::error_code& ec) const
+    inline key_event_status key_event::wait_until(const std::chrono::time_point<Clock, Duration>& abs_time,
+                                                  std::error_code& ec) const
     { return wait_impl(__FUNCTION__, std::chrono::duration_cast<std::chrono::milliseconds>(abs_time - Clock::now()), ec); }
 
 } // namespace registry
