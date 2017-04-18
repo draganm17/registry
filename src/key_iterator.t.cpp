@@ -39,13 +39,12 @@ TEST(KeyIterator, Construct)
     // key_iterator::key_iterator(const key_handle&, std::error_code&)
     {
         std::error_code ec;
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), 
-                            access_rights::enumerate_sub_keys | access_rights::query_value);
+        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
-        key_iterator it3(h);
-        key_iterator it4(h, ec);
-        EXPECT_TRUE(it3 != key_iterator());
-        EXPECT_TRUE(it4 != key_iterator() && !ec);
+        key_iterator it1(key_handle(k, access_rights::enumerate_sub_keys | access_rights::query_value));
+        key_iterator it2(key_handle(k, access_rights::enumerate_sub_keys | access_rights::query_value), ec);
+        EXPECT_TRUE(it1 != key_iterator());
+        EXPECT_TRUE(it2 != key_iterator() && !ec);
     }
 }
 

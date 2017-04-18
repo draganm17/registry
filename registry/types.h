@@ -97,7 +97,7 @@ namespace registry
     /*! TODO: ...
     key_info_mask satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
     `operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
-    enum class key_info_mask : uint16_t
+    enum class key_info_mask : uint16_t  // TODO: rename to key_info_filter ???
     {
         /*! Request nothing. */
         none =                      0x0000,

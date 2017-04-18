@@ -18,18 +18,13 @@ key_entry::key_entry(const registry::key& key)
     : m_key(key)
 { }
 
-key_entry::key_entry(const registry::key_handle& handle)
-    : m_key(handle.key())
-    , m_key_handle(handle)
-{ }
-
 const registry::key& key_entry::key() const noexcept { return m_key; }
 
 key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 {
     std::error_code ec2;
     const auto handle = m_key_handle.lock();
-    auto result = handle.valid() ? handle.info(mask, ec2) : registry::info(m_key, mask, ec2);
+    auto result = handle ? handle->info(mask, ec2) : registry::info(m_key, mask, ec2);
 
     if (!ec2) RETURN_RESULT(ec, result);
     details::set_or_throw(&ec, ec2, __FUNCTION__, m_key);
@@ -38,19 +33,12 @@ key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 key_entry& key_entry::assign(const registry::key& key)
 { 
     m_key = key;
-    m_key_handle.swap(weak_key_handle());
+    m_key_handle.swap(std::weak_ptr<key_handle>());
     return *this;
 }
 
-key_entry& key_entry::assign(const registry::key_handle& handle)
+void key_entry::swap(key_entry& other) noexcept
 {
-    m_key.swap(registry::key());
-    m_key_handle = handle;
-    return *this;
-}
-
-void key_entry::swap(key_entry& other) noexcept 
-{ 
     using std::swap;
     swap(m_key, other.m_key);
     swap(m_key_handle, other.m_key_handle);
@@ -72,30 +60,32 @@ struct key_iterator::state
 key_iterator::key_iterator(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
-    const auto handle = open(key, access_rights::enumerate_sub_keys | access_rights::query_value, ec2);
-    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
+    key_handle handle(key, access_rights::enumerate_sub_keys | access_rights::query_value, ec2);
 
-    key_iterator tmp;
-    if (!ec2 && (tmp = key_iterator(handle, ec2), !ec2)) {
-        swap(tmp);
-        RETURN_RESULT(ec, VOID);
-    }
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
+    if (!ec2 && (swap(key_iterator(std::move(handle), ec2)), !ec2)) RETURN_RESULT(ec, VOID);
+
     details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
-key_iterator::key_iterator(const key_handle& handle, std::error_code& ec)
-    : m_state(std::make_shared<state>(state{ uint32_t(-1), handle, key_entry(handle) }))
+key_iterator::key_iterator(key_handle handle, std::error_code& ec)
+    : m_state(std::make_shared<state>(state{ uint32_t(-1), std::move(handle) }))
 {
+    m_state->entry.m_key = m_state->hkey.key();
+    m_state->entry.m_key_handle = std::shared_ptr<registry::key_handle>(m_state, &m_state->hkey);
+
     std::error_code ec2;
-    key_info info = handle.info(key_info_mask::read_max_subkey_size, ec2);
+    key_info info = m_state->hkey.info(key_info_mask::read_max_subkey_size, ec2);
 
     if (!ec2) {
         m_state->buffer.resize(++info.max_subkey_size, TEXT('_'));
         m_state->entry.m_key.append(string_view_type(m_state->buffer.data(), m_state->buffer.size()));
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
-    m_state.reset();
-    details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());
+
+    key key = m_state->hkey.key();
+    m_state.reset(); // *this becomes the end iterator
+    details::set_or_throw(&ec, ec2, __FUNCTION__, std::move(key));
 }
 
 bool key_iterator::operator==(const key_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
@@ -165,26 +155,22 @@ recursive_key_iterator::recursive_key_iterator(const key& key, key_options optio
     : m_options(options)
 {
     std::error_code ec2;
-    const auto handle = open(key, access_rights::enumerate_sub_keys | access_rights::query_value, ec2);
+    key_handle handle(key, access_rights::enumerate_sub_keys | access_rights::query_value, ec2);
     const bool skip_permission_denied = (options & key_options::skip_permission_denied) != key_options::none;
-    if (ec2.value() == ERROR_FILE_NOT_FOUND || (ec2.value() == ERROR_ACCESS_DENIED && skip_permission_denied)) {
-        RETURN_RESULT(ec, VOID);
-    }
+    
+    if (ec2.value() == ERROR_FILE_NOT_FOUND || 
+        (ec2.value() == ERROR_ACCESS_DENIED && skip_permission_denied)) RETURN_RESULT(ec, VOID);
 
-    recursive_key_iterator tmp;
-    if (!ec2 && (tmp = recursive_key_iterator(handle, options, ec2), !ec2)) {
-        swap(tmp);
-        RETURN_RESULT(ec, VOID);
-    }
+    if (!ec2 && (swap(recursive_key_iterator(std::move(handle), options, ec2)), !ec2)) RETURN_RESULT(ec, VOID);
+
     details::set_or_throw(&ec, ec2, __FUNCTION__, key);
 }
 
-recursive_key_iterator::recursive_key_iterator(const key_handle& handle, key_options options, std::error_code& ec)
+recursive_key_iterator::recursive_key_iterator(key_handle handle, key_options options, std::error_code& ec)
     : m_options(options)
 {
     std::error_code ec2;
-    m_stack.emplace_back(handle, ec2);
-    if (!ec2) RETURN_RESULT(ec, VOID);
+    if (m_stack.emplace_back(std::move(handle), ec2), !ec2) RETURN_RESULT(ec, VOID);
 
     m_stack.clear();
     details::set_or_throw(&ec, ec2, __FUNCTION__, handle.key());

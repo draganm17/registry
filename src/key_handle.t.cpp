@@ -15,61 +15,67 @@ TEST(KeyHandle, Construct)
     // default constructor
     {
         key_handle h;
-        EXPECT_TRUE(!h.valid());
+        EXPECT_TRUE(!h.is_open());
     }
 
-    // key_handle::key_handle(const weak_key_handle&);
+    // key_handle(key_id)
     {
         // TODO: ...
     }
-}
 
-TEST(KeyHandle, Factories)
-{
-    std::error_code ec;
-    const key k1 = key::from_key_id(key_id::current_user);
-    const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry");
-    const key k3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\non_existent");
-
-    // open a predefined key
-    const auto h1 = open(k1, access_rights::query_value);
-    EXPECT_TRUE(h1.valid());
-    EXPECT_TRUE(h1.key() == k1);
-    EXPECT_TRUE(h1.rights() == access_rights::query_value);
-    EXPECT_TRUE(h1.native_handle() != key_handle::native_handle_type{});
-
-    const auto h2 = open(k1, access_rights::query_value, ec);
-    EXPECT_TRUE(!ec);
-    EXPECT_TRUE(h2.valid());
-    EXPECT_TRUE(h2.key() == k1);
-    EXPECT_TRUE(h2.rights() == access_rights::query_value);
-    EXPECT_TRUE(h2.native_handle() != key_handle::native_handle_type{});
-
-    // open a regular key
-    const auto h3 = open(k2, access_rights::query_value);
-    EXPECT_TRUE(h3.valid());
-    EXPECT_TRUE(h3.key() == k2);
-    EXPECT_TRUE(h3.rights() == access_rights::query_value);
-    EXPECT_TRUE(h3.native_handle() != key_handle::native_handle_type{});
-
-    const auto h4 = open(k2, access_rights::query_value, ec);
-    EXPECT_TRUE(!ec);
-    EXPECT_TRUE(h4.valid());
-    EXPECT_TRUE(h4.key() == k2);
-    EXPECT_TRUE(h4.rights() == access_rights::query_value);
-    EXPECT_TRUE(h4.native_handle() != key_handle::native_handle_type{});
-
-    // try open an non-existing key
-    int exceptions = 0;
-    try {
-        const auto h5 = open(k3, access_rights::query_value);
-    } catch (const registry_error& e) {
-        ++exceptions;
+    // key_handle(key_id)
+    {
+        // TODO: ...
     }
-    EXPECT_TRUE(exceptions == 1);
 
-    const auto h6 = open(k3, access_rights::query_value, ec);
-    EXPECT_TRUE(ec && !h6.valid());
+    // key_handle(const registry::key&, access_rights)
+    // key_handle(const registry::key&, access_rights, std::error_code&)
+    {
+        std::error_code ec;
+        const key k1 = key::from_key_id(key_id::current_user);
+        const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry");
+        const key k3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\non_existent");
+
+        // open a predefined key
+        const key_handle h1(k1, access_rights::query_value);
+        EXPECT_TRUE(h1.is_open());
+        EXPECT_TRUE(h1.key() == k1);
+        EXPECT_TRUE(h1.rights() == access_rights::query_value);
+        EXPECT_TRUE(h1.native_handle() != key_handle::native_handle_type{});
+
+        const key_handle h2(k1, access_rights::query_value, ec);
+        EXPECT_TRUE(!ec);
+        EXPECT_TRUE(h2.is_open());
+        EXPECT_TRUE(h2.key() == k1);
+        EXPECT_TRUE(h2.rights() == access_rights::query_value);
+        EXPECT_TRUE(h2.native_handle() != key_handle::native_handle_type{});
+
+        // open a regular key
+        const key_handle h3(k2, access_rights::query_value);
+        EXPECT_TRUE(h3.is_open());
+        EXPECT_TRUE(h3.key() == k2);
+        EXPECT_TRUE(h3.rights() == access_rights::query_value);
+        EXPECT_TRUE(h3.native_handle() != key_handle::native_handle_type{});
+
+        const key_handle h4(k2, access_rights::query_value, ec);
+        EXPECT_TRUE(!ec);
+        EXPECT_TRUE(h4.is_open());
+        EXPECT_TRUE(h4.key() == k2);
+        EXPECT_TRUE(h4.rights() == access_rights::query_value);
+        EXPECT_TRUE(h4.native_handle() != key_handle::native_handle_type{});
+
+        // try open an non-existing key
+        int exceptions = 0;
+        try {
+            const key_handle h5(k3, access_rights::query_value);
+        } catch (const registry_error& e) {
+            ++exceptions;
+        }
+        EXPECT_TRUE(exceptions == 1);
+
+        const key_handle h6(k3, access_rights::query_value, ec);
+        EXPECT_TRUE(ec && !h6.is_open());
+    }
 }
 
 TEST(KeyHandle, GettersAndQueries)
@@ -78,12 +84,12 @@ TEST(KeyHandle, GettersAndQueries)
     {
         const key_handle h = id;
         if (id != key_id::unknown) {
-            EXPECT_TRUE(h.valid());
+            EXPECT_TRUE(h.is_open());
             EXPECT_TRUE(h.key() == key::from_key_id(id));
             EXPECT_TRUE(h.rights() == access_rights::unknown);
-            EXPECT_TRUE(h.native_handle() == static_cast<key_handle::native_handle_type>(id));
+            EXPECT_TRUE(h.native_handle() == reinterpret_cast<key_handle::native_handle_type>(id));
         } else {
-            EXPECT_TRUE(!h.valid());
+            EXPECT_TRUE(!h.is_open());
         }
     };
 
@@ -105,7 +111,7 @@ TEST(KeyHandle, OperationsOnRegistry)
     // key_handle::exists(string_view_type, std::error_code&)
     {
         std::error_code ec;
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
+        const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
 
         EXPECT_TRUE(h.exists(TEXT("val_01")) == true);
         EXPECT_TRUE(h.exists(TEXT("val_01"), ec) == true && !ec);
@@ -143,7 +149,7 @@ TEST(KeyHandle, OperationsOnRegistry)
         };
 
         std::error_code ec;
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
+        const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
 
         test_mask(h, key_info_mask::none);
         test_mask(h, key_info_mask::read_subkeys);
@@ -159,7 +165,7 @@ TEST(KeyHandle, OperationsOnRegistry)
     // key_handle::read_value(string_view_type, std::error_code&)
     {
         std::error_code ec;
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
+        const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
             
         auto v01  = h.read_value(TEXT("val_01"));
         auto v01a = h.read_value(TEXT("val_01"), ec);
@@ -234,7 +240,7 @@ TEST(KeyHandle, OperationsOnRegistry)
         const key sk2 = TEXT("new_key_2");
         const key sk3 = TEXT("new_key_3\\Inner1\\Inner2");
         const key sk4 = TEXT("new_key_4\\Inner1\\Inner2");
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::create_sub_key);
+        const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::create_sub_key);
 
         // create new keys (without subkeys)
         const key new_key1 = h.key().append(sk1);
@@ -242,13 +248,13 @@ TEST(KeyHandle, OperationsOnRegistry)
         EXPECT_TRUE(!exists(new_key1) && !exists(new_key2));           // check that the keys does not exist
         auto ret1 = h.create_key(sk1, access_rights::all_access);      // create the first key
         EXPECT_TRUE(ret1.second == true && exists(new_key1));          // the key was created
-        EXPECT_TRUE(ret1.first.valid()           && 
+        EXPECT_TRUE(ret1.first.is_open()         && 
                     ret1.first.key() == new_key1 && 
                     ret1.first.rights() == access_rights::all_access); // and we have a valid result
         //
         auto ret2 = h.create_key(sk2, access_rights::all_access, ec);  // create the second key
         EXPECT_TRUE(!ec && ret2.second == true && exists(new_key2));   // the key was created
-        EXPECT_TRUE(ret2.first.valid()           && 
+        EXPECT_TRUE(ret2.first.is_open()         && 
                     ret2.first.key() == new_key2 && 
                     ret2.first.rights() == access_rights::all_access); // and we have a valid result
 
@@ -258,35 +264,35 @@ TEST(KeyHandle, OperationsOnRegistry)
         EXPECT_TRUE(!exists(new_key3) && !exists(new_key4));           // check that the keys does not exist
         auto ret3 = h.create_key(sk3, access_rights::all_access);      // create the first key
         EXPECT_TRUE(ret3.second == true && exists(new_key3));          // the key was created
-        EXPECT_TRUE(ret3.first.valid()           && 
+        EXPECT_TRUE(ret3.first.is_open()         &&
                     ret3.first.key() == new_key3 && 
                     ret3.first.rights() == access_rights::all_access); // and we have a valid result
         auto ret4 = h.create_key(sk4, access_rights::all_access, ec);
         EXPECT_TRUE(!ec && ret4.second == true && exists(new_key4));   // the key was created
-        EXPECT_TRUE(ret4.first.valid()           && 
+        EXPECT_TRUE(ret4.first.is_open()         &&
                     ret4.first.key() == new_key4 && 
                     ret4.first.rights() == access_rights::all_access); // and we have a valid result
 
         // obtain a new handle to to the same key
         auto ret5 = h.create_key(key(), access_rights::all_access);
-        EXPECT_TRUE(ret5.second == false);                   // the key was not created
-        EXPECT_TRUE(ret5.first.valid() && ret5.first != h);  // we have a valid new handle ...
+        EXPECT_TRUE(ret5.second == false);                     // the key was not created
+        EXPECT_TRUE(ret5.first.is_open() && ret5.first != h);  // we have a valid new handle ...
         EXPECT_TRUE(ret5.first.key() == h.key() && ret5.first.rights() == access_rights::all_access); // to the same key
         //
         auto ret6 = h.create_key(key(), access_rights::all_access, ec);
         EXPECT_TRUE(!ec && ret6.second == false);            // the key was not created
-        EXPECT_TRUE(ret6.first.valid() && ret6.first != h);  // we have a valid new handle ...
+        EXPECT_TRUE(ret6.first.is_open() && ret6.first != h);  // we have a valid new handle ...
         EXPECT_TRUE(ret6.first.key() == h.key() && ret6.first.rights() == access_rights::all_access); // to the same key
 
         // try create already existing keys
         auto ret7 = h.create_key(sk1, access_rights::all_access);
         EXPECT_TRUE(ret7.second == false);                   // the key was not created
-        EXPECT_TRUE(ret7.first.valid() && ret7.first != h);  // we have a valid new handle ...
+        EXPECT_TRUE(ret7.first.is_open() && ret7.first != h);  // we have a valid new handle ...
         EXPECT_TRUE(ret7.first.key() == new_key1 && ret7.first.rights() == access_rights::all_access); // to the same key
         //
         auto ret8 = h.create_key(sk1, access_rights::all_access, ec);
         EXPECT_TRUE(!ec && ret8.second == false);            // the key was not created
-        EXPECT_TRUE(ret8.first.valid() && ret8.first != h);  // we have a valid new handle ...
+        EXPECT_TRUE(ret8.first.is_open() && ret8.first != h);  // we have a valid new handle ...
         EXPECT_TRUE(ret8.first.key() == new_key1 && ret8.first.rights() == access_rights::all_access); // to the same key
     }
 
@@ -295,8 +301,8 @@ TEST(KeyHandle, OperationsOnRegistry)
     {
         std::error_code ec;
         const uint8_t bytes[] = { 4, 2};
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), 
-                            access_rights::set_value | access_rights::query_value);
+        const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), 
+                           access_rights::set_value | access_rights::query_value);
         
         const value v01(none_value_tag{});
         h.write_value(TEXT("val_01"), v01);
@@ -350,7 +356,7 @@ TEST(KeyHandle, OperationsOnRegistry)
         // TODO: ...
 
         //std::error_code ec;
-        //const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_1"), access_rights::set_value);
+        //const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\new_key_1"), access_rights::set_value);
 
         //EXPECT_TRUE(!h.exists(TEXT("non_existing")));
         //EXPECT_TRUE(h.exists(TEXT("val_01")) && h.exists(TEXT("val_02")));
@@ -371,7 +377,7 @@ TEST(KeyHandle, OperationsOnRegistry)
         const key sk0 = TEXT("non_existing");
         const key sk1 = TEXT("new_key_3");
         const key sk2 = TEXT("new_key_4");
-        const auto h = open(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::query_value);
+        const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::query_value);
 
         EXPECT_TRUE(!exists(h.key().append(sk0)));
         EXPECT_TRUE(exists(h.key().append(sk1)) && info(h.key().append(sk1)).subkeys > 0);

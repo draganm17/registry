@@ -55,129 +55,105 @@ namespace registry
     };
 
     //------------------------------------------------------------------------------------//
-    //                           class bad_weak_key_handle                                //
-    //------------------------------------------------------------------------------------//
-
-    /*! \brief
-    Defines a type of the object thrown by the constructors of `registry::key_handle` that take
-    `registry::weak_key_handle` as the argument, when the `registry::weak_key_handle` is already expired. */
-    class bad_weak_key_handle : public std::exception
-    {
-    public:
-        const char* what() const noexcept override { return "registry::bad_weak_key_handle"; }
-    };
-
-    //------------------------------------------------------------------------------------//
     //                                class key_handle                                    //
     //------------------------------------------------------------------------------------//
 
     //! Represents a handle to an registry key.
     /*!
-    `registry::key_handle` is a wrapper around a native key handle that retains shared ownership of that handle. 
-    Several `key_handle` objects may own the same key handle. The object is destroyed and its handle is closed 
-    when either of the following happens:
-    - the last remaining `key_handle` owning the key handle is destroyed;
-    - the last remaining `key_handle` owning the key handle is assigned another handle via `operator=`.
+    `registry::key_handle` is a wrapper around a native registry key handle that retains exclusive ownership of that 
+    handle. The managed handle is closed when either of the following happens:
+    - the managing `key_handle` object is destroyed;
+    - the managing `key_handle` object is assigned another handle via `operator=`.
 
-    A `key_handle` may also own no handle, in which case it is called `invalid`.
+    A `key_handle` may alternatively own no handle, in which case it is called `empty`.
     */
-    // TODO: describe the internal implementation ???
     class key_handle
     {
-        friend class weak_key_handle;
+    public:
+        using native_handle_type = void*;
 
-        struct state;
-        std::shared_ptr<state> m_state;
+    private:
+        struct close_handle_t { void operator()(void*) const noexcept; };
 
     public:
-        using native_handle_type = std::underlying_type_t<key_id>;
-
-    public:
-        //! Default constructor.
+        //! Constructs an empty handle.
         /*!
-        @post `!valid()`.
+        @post `!is_open()`.
         */
-        constexpr key_handle() noexcept = default;
+        key_handle() noexcept = default;
 
-        /*! \brief
-        Constructs a `key_handle` which shares ownership of the handle managed by `other`. If `other` manages no
-        handle, `*this` manages no handle too. */
-        key_handle(const key_handle& other) noexcept = default;
+        key_handle(const key_handle& other) = delete;
 
         //! Constructs the handle with the contents of `other` using move semantics.
         /*!
-        @post `!other.valid()`.
+        @post `!other.is_open()`.
         @post `*this` has the original value of `other`.
         */
         key_handle(key_handle&& other) noexcept = default;
 
-        //! Constructs a `key_handle` which shares ownership of the handle managed by `handle`.
-        /*!
-        @throw `registry::bad_weak_key_handle` if `handle.expired()`.
-        */
-        key_handle(const weak_key_handle& handle);
-
-        // Constructs a handle to an prdefined registry key.
+        // Constructs a handle to an predefined registry key.
         /*!
         Unless `id == key_id::unknown` the postconditions are the following:
-        - `valid()`.
+        - `is_open()`.
         - `key() == registry::key::from_key_id(id)`.
         - `rights() == access_rights::unknown`.
-        - `native_handle() == static_cast<native_handle_type>(id)`.
+        - `native_handle() == reinterpret_cast<native_handle_type>(id)`.
 
-        Otherwise: `!valid()`.
+        Otherwise: `!is_open()`.
         */
         key_handle(key_id id);
 
+        // Constructs a handle to a registry key specified by `key`.
+        /*!
+        The overload that takes `std::error_code&` parameter constructs an empty handle on error.
+        @post `is_open()`.
+        @post `this->key() == key`.
+        @post `this->rights() == rights`.
+        @param[in] key - an absolute key specifying the registry key that this function opens.
+        @param[in] rights - the access rights for the key to be opened.
+        @param[out] ec - out-parameter for error reporting.`
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur.
+        */
+        key_handle(const registry::key& key, access_rights rights, std::error_code& ec = throws());
+
         // TODO: ...
-        /*!
-        Unless `handle == native_handle_type{}` the postconditions are the following:
-        - `valid()`.
-        - `this->key() == key`.
-        - `this->rights() == rights`.
-        - `this->native_handle() == handle`.
+        ~key_handle() noexcept = default;
 
-        Otherwise: `!valid()`.
-        */
-        key_handle(native_handle_type handle, const registry::key& key, access_rights rights);
-
-        /*! \brief
-        Replaces the managed handle with the one managed by `other`. If `*this` already owns an handle and it 
-        is the last key_handle owning it, and `other` is not the same as `*this`, the owned handle is closed. */
-        /*!
-        @return `*this`.
-        */
-        key_handle& operator=(const key_handle& other) noexcept = default;
+        key_handle& operator=(const key_handle& other) = delete;
 
         //! Replaces the contents of `*this` with those of `other` using move semantics.
         /*!
-        @post `!other.valid()`.
+        @post `!other.is_open()`.
         @post `*this` has the original value of `other`.
         @return `*this`.
         */
         key_handle& operator=(key_handle&& other) noexcept = default;
 
     public:
-        //! Returns the key this handle was initialized with.
+        //! Returns the key this handle is to.
         /*!
-        @return An value of type `registry::key`. If `!valid()` returns `registry::key()`.
+        If this handle is empty (i.e. `!is_open`), returns `registry::key()`.
         */
         registry::key key() const;
 
-        //! Returns the access rights this handle was initialized with.
+        //! Returns the access rights this handle was opened with.
         /*!
-        @return An value of type `registry::access_rights`. If `!valid()` returns `access_rights::unknown`.
+        If this handle is empty (i.e. `!is_open`), returns `access_rights::unknown`.
         */
         access_rights rights() const noexcept;
 
         //! Returns the underlying implementation-defined native handle object suitable for use with WinAPI.
         /*!
-        @return An value of type `native_handle_type`. If `!valid()` returns `native_handle_type{}`.
+        If this handle is empty (i.e. `!is_open`), returns `native_handle_type{}`.
         */
         native_handle_type native_handle() const noexcept;
 
-        // TODO: ...
-        bool valid() const noexcept;
+        //! Returns `true` if this handle is open (i.e. not empty) and `false` otherwise.
+        bool is_open() const noexcept;
 
     public:
         //! Creates a subkey inside the registry key specified by this handle.
@@ -191,8 +167,9 @@ namespace registry
         @param[in] rights - the access rights for the key to be created.
         @param[out] ec - out-parameter for error reporting.
         @return A pair consisting of an handle to the opened or created key and a `bool` denoting whether the key was
-                created. The overload that takes `std::error_code&` parameter returns 
-                `std::make_pair(key_handle(), false)` on error.
+                created. The returned handle is constructed as if by `key_handle(key().append(subkey), rights)`.
+                The overload that takes `std::error_code&` parameter returns `std::make_pair(key_handle(), false)` 
+                on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
                API errors, constructed with the first key set to `this->key()`, the second key set `subkey` and the OS 
                error code as the error code argument. \n
@@ -276,14 +253,13 @@ namespace registry
         */
         key_info info(key_info_mask mask = key_info_mask::all, std::error_code& ec = throws()) const;
 
-        //! Opens a subkey of a registry key specified by this handle
+        //! Opens a subkey of a registry key specified by this handle.
         /*!
         @param[in] key - an relative key specifying the subkey that this function opens.
         @param[in] rights - the access rights for the key to be opened.
         @param[out] ec - out-parameter for error reporting.
-        @return A valid `key_handle` object, which `key()` method will return `this->key().append(subkey)` and 
-                `rights()` method will return `rights`. The overload  that takes `std::error_code&` parameter returns 
-                an  default-constructed (not valid) handle on error.
+        @return An `key_handle` object constructed as if by `key_handle(key().append(subkey), rights)`.
+                The overload  that takes `std::error_code&` parameter returns an empty handle on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
                API errors, constructed with the first key set to `key()`, the second key set to `subkey` and the OS 
                error code as the error code argument. \n
@@ -382,81 +358,30 @@ namespace registry
         void write_value(string_view_type value_name, const value& value, std::error_code& ec = throws()) const;
 
     public:
+        //! Closes this handle.
+        /*!
+        If `*this` is an empty handle (i.e. `is_open() == false`), does nothing and does not report an error. \n
+        If `*this` is not an empty handle (i.e. `is_open() == true`) and is not a handle to one of the predefined
+        registry keys, establishes the postcondition as if by WinAPI `RegCloseKey(native_handle())`. \n
+        If an error occurred, the handle is left in an empty state.
+        @post `!is_open()`.
+        @param[out] ec - out-parameter for error reporting.`
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key set to `this->key()` and the OS error code as the error code 
+               argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur. 
+        */
+        void close(std::error_code& ec = throws());
+
         //! Swaps the contents of `*this` and `other`.
         void swap(key_handle& other) noexcept;
-    };
 
-    //------------------------------------------------------------------------------------//
-    //                            class weak_key_handle                                   //
-    //------------------------------------------------------------------------------------//
-
-    //! Represents a weak reference to a registry key handle managed by `registry::key_handle`.
-    /*!
-    `registry::weak_key_handle` is a wrapper around a native key handle that holds a non-owning ("weak") reference to
-    a key handle that is managed by `registry::key_handle`. It must be converted to `registry::key_handle` in order to
-    access the referenced handle.
-    */
-    // TODO: describe the internal umplementation ???
-    class weak_key_handle
-    {
-        friend class key_handle;
-
-        std::weak_ptr<key_handle::state> m_state;
-
-    public:
-        //! Default constructor. Constructs an invalid `weak_key_handle`.
-        /*!
-        @post `expired()`.
-        */
-        constexpr weak_key_handle() noexcept = default;
-
-        /*! \brief
-        Constructs a `weak_key_handle` which shares ownership of the handle managed by `other`. If `other` manages no
-        handle, `*this` manages no handle too. */
-        weak_key_handle(const weak_key_handle& other) noexcept = default;
-
-        //! Constructs the handle with the contents of `other` using move semantics.
-        /*!
-        @post `other.expired()`.
-        @post `*this` has the original value of `other`.
-        */
-        weak_key_handle(weak_key_handle&& other) noexcept = default;
-
-        // TODO: ...
-        weak_key_handle(const key_handle& handle) noexcept;
-
-        /*! \brief
-        Replaces the managed handle with the one managed by `other`. The handle is shared with `other`. If `other` 
-        manages no handle, `*this` manages no handle too. */
-        /*!
-        @return `*this`.
-        */
-        weak_key_handle& operator=(const weak_key_handle& other) noexcept = default;
-
-        //! Replaces the contents of `*this` with those of `other` using move semantics.
-        /*!
-        @post `other.expired()`.
-        @post `*this` has the original value of `other`.
-        @return `*this`.
-        */
-        weak_key_handle& operator=(weak_key_handle&& other) noexcept = default;
-
-        // TODO: ...
-        weak_key_handle& operator=(const key_handle& other) noexcept;
-
-    public:
-        //! Checks whether the referenced handle was already closed.
-        bool expired() const noexcept;
-
-        //! Creates a `key_handle` that manages the referenced handle. 
-        /*!
-        If there is no managed handle, i.e. `*this` is invalid, then the returned key_handle also is invalid.
-        */
-        key_handle lock() const noexcept;
-
-    public:
-        //! Swaps the contents of `*this` and `other`.
-        void swap(weak_key_handle& other) noexcept;
+    private:
+        registry::key                          m_key;
+        access_rights                          m_rights;
+        std::unique_ptr<void, close_handle_t>  m_handle;
     };
 
     //------------------------------------------------------------------------------------//
@@ -495,23 +420,14 @@ namespace registry
     //! Checks whether `lhs` is greater than or equal to `rhs`.
     bool operator>=(const key_handle& lhs, const key_handle& rhs) noexcept;
 
+    //! Calculates a hash value for a `key_handle` object.
+    /*!
+    @return A hash value such that if for two handles, `h1 == h2` then `hash_value(h1) == hash_value(h2)`.
+    */
+    size_t hash_value(const key_handle& handle) noexcept;
+
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(key_handle& lhs, key_handle& rhs) noexcept;
-
-    //! Opens a registry key and returns a handle to that key. 
-    /*!
-    @param[in] key - an absolute key specifying the registry key that this function opens.
-    @param[in] rights - the access rights for the key to be opened.
-    @param[out] ec - out-parameter for error reporting.`
-    @return A valid `key_handle` object. The overload  that takes `std::error_code&` parameter returns an 
-            default-constructed (not valid) handle on error.
-    @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-           API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n
-           `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
-           `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-           `ec.clear()` if no errors occur.
-    */
-    key_handle open(const key& key, access_rights rights, std::error_code& ec = throws());
 
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //

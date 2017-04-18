@@ -62,12 +62,6 @@ namespace registry
         */
         explicit key_entry(const key& key);
 
-        //! TODO: ...
-        /*!
-        @post `this->key() == handle.key()`.
-        */
-        explicit key_entry(const key_handle& handle);
-
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
         @post `*this == other`.
@@ -98,18 +92,12 @@ namespace registry
         */
         key_entry& assign(const registry::key& key);
 
-        //! Replaces the contents of the entry.
-        /*!
-        @post `*this == key_entry(handle)`.
-        */
-        key_entry& assign(const registry::key_handle& handle);
-
         //! Swaps the contents of `*this` and `other`.
         void swap(key_entry& other) noexcept;
 
     private:
-        registry::key    m_key;
-        weak_key_handle  m_key_handle;
+        registry::key              m_key;
+        std::weak_ptr<key_handle>  m_key_handle;
     };
 
     //------------------------------------------------------------------------------------//
@@ -180,7 +168,7 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        explicit key_iterator(const key_handle& handle, std::error_code& ec = throws());
+        explicit key_iterator(key_handle handle, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -317,10 +305,10 @@ namespace registry
 
         //! Constructs a iterator that refers to the first subkey of a registry key specified by `handle`.
         /*!
-        Calls `recursive_key_iterator(handle, key_options::none, ec)`.
+        Calls `recursive_key_iterator(std::move(handle), key_options::none, ec)`.
         */
-        explicit recursive_key_iterator(const key_handle& handle, std::error_code& ec = throws())
-        : recursive_key_iterator(handle, key_options::none, ec) { }
+        explicit recursive_key_iterator(key_handle handle, std::error_code& ec = throws())
+        : recursive_key_iterator(std::move(handle), key_options::none, ec) { }
 
         //! Constructs a iterator that refers to the first subkey of a registry key specified by `handle`. 
         /*!
@@ -337,7 +325,7 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        recursive_key_iterator(const key_handle& handle, key_options options, std::error_code& ec = throws());
+        recursive_key_iterator(key_handle handle, key_options options, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!

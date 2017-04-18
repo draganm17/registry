@@ -18,12 +18,12 @@ bool create_key(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
     registry::key base_key = key, subkey;
-    auto handle = open(base_key, access_rights::create_sub_key, ec2);
+    key_handle handle(base_key, access_rights::create_sub_key, ec2);
 
     if (!ec2) RETURN_RESULT(ec, false);
     while (ec2.value() == ERROR_FILE_NOT_FOUND && base_key.has_parent_key()) {
         subkey = base_key.leaf_key().append(subkey.name());
-        handle = open(base_key.remove_leaf(), access_rights::create_sub_key, ec2);
+        handle = key_handle(base_key.remove_leaf(), access_rights::create_sub_key, ec2);
     }
 
     bool result;
@@ -38,8 +38,8 @@ bool equivalent(const key& key1, const key& key2, std::error_code& ec)
     bool result;
     std::error_code ec2;
     key_handle handle1, handle2;
-    if ((handle1 = open(key1, access_rights::query_value, ec2), !ec2) &&
-        (handle2 = open(key2, access_rights::query_value, ec2), !ec2) &&
+    if ((handle1 = key_handle(key1, access_rights::query_value, ec2), !ec2) &&
+        (handle2 = key_handle(key2, access_rights::query_value, ec2), !ec2) &&
         (result = handle1.equivalent(handle2, ec2), !ec2))
     {
         RETURN_RESULT(ec, result);
@@ -50,7 +50,7 @@ bool equivalent(const key& key1, const key& key2, std::error_code& ec)
 bool exists(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
-    open(key, access_rights::query_value, ec2);
+    key_handle(key, access_rights::query_value, ec2);
 
     if (!ec2) RETURN_RESULT(ec, true);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
@@ -60,7 +60,7 @@ bool exists(const key& key, std::error_code& ec)
 bool exists(const key& key, string_view_type value_name, std::error_code& ec)
 {
     std::error_code ec2;
-    const auto handle = open(key, access_rights::query_value, ec2);
+    const key_handle handle(key, access_rights::query_value, ec2);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     bool result;
@@ -74,7 +74,7 @@ key_info info(const key& key, key_info_mask mask, std::error_code& ec)
                                      uint32_t(-1), uint32_t(-1), key_time_type::min() };
 
     std::error_code ec2;
-    const auto handle = open(key, access_rights::query_value, ec2);
+    const key_handle handle(key, access_rights::query_value, ec2);
 
     key_info info;
     if (!ec2 && (info = handle.info(mask, ec2), !ec2)) RETURN_RESULT(ec, info);
@@ -84,7 +84,7 @@ key_info info(const key& key, key_info_mask mask, std::error_code& ec)
 value read_value(const key& key, string_view_type value_name, std::error_code& ec)
 {
     std::error_code ec2;
-    const auto handle = open(key, access_rights::query_value, ec2);
+    const key_handle handle(key, access_rights::query_value, ec2);
 
     value result;
     if (!ec2 && (result = handle.read_value(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
@@ -95,7 +95,7 @@ bool remove(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
     // NOTE: key open rights does not affect the delete operation.
-    const auto handle = open(key.parent_key(), access_rights::query_value, ec2);
+    const key_handle handle(key.parent_key(), access_rights::query_value, ec2);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     bool result;
@@ -106,7 +106,7 @@ bool remove(const key& key, std::error_code& ec)
 bool remove(const key& key, string_view_type value_name, std::error_code& ec)
 {
     std::error_code ec2;
-    const auto handle = open(key, access_rights::set_value, ec2);
+    const key_handle handle(key, access_rights::set_value, ec2);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     bool result;
@@ -118,7 +118,7 @@ uint32_t remove_all(const key& key, std::error_code& ec)
 {
     std::error_code ec2;
     // NOTE: key open rights does not affect the delete operation.
-    const auto handle = open(key.parent_key(), access_rights::query_value, ec2);
+    const key_handle handle(key.parent_key(), access_rights::query_value, ec2);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, 0);
 
     uint32_t result;
@@ -142,7 +142,7 @@ space_info space(std::error_code& ec)
 void write_value(const key& key, string_view_type value_name, const value& value, std::error_code& ec)
 {
     std::error_code ec2;
-    const auto handle = open(key, access_rights::set_value, ec2);
+    const key_handle handle(key, access_rights::set_value, ec2);
 
     if (!ec2 && (handle.write_value(value_name, value), !ec2)) RETURN_RESULT(ec, VOID);
     details::set_or_throw(&ec, ec2, __FUNCTION__, key, registry::key(), value_name);
