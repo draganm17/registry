@@ -36,7 +36,7 @@ namespace registry
     } //\endcond
 
     //------------------------------------------------------------------------------------//
-    //                                   class key                                        //
+    //                                 class key_path                                     //
     //------------------------------------------------------------------------------------//
 
     //! Represents a registry key.
@@ -54,7 +54,7 @@ namespace registry
     iterates over all subkeys (key separators are skipped). Calling any non-const member function of a key invalidates
     all iterators referring to elements of that object.
     */
-    class key 
+    class key_path
     {
     public:
         class iterator;
@@ -70,14 +70,14 @@ namespace registry
         static constexpr string_type::value_type separator = string_type::value_type('\\');
 
     private:
-        key& append_impl(string_view_type subkey);
+        key_path& append_impl(string_view_type subkey);
 
     public:
         //! Constructs a key that corresponds to an predefined registry key.
         /*!
         Returns `key()` if `id == key_id::unknown`. The view of the returned key is always equal to `default_view`.
         */
-        static key from_key_id(key_id id);
+        static key_path from_key_id(key_id id);
 
     public:
         //! Default constructor.
@@ -85,13 +85,13 @@ namespace registry
         @post `name().empty()`.
         @post `view() == default_view`.
         */
-        key() noexcept = default;
+        key_path() noexcept = default;
 
         //! Constructs the key with the copy of the contents of `other`.
         /*!
         @post `*this == other`.
         */
-        key(const key& other) = default;
+        key_path(const key_path& other) = default;
 
         /*! \brief
         Constructs the key with the contents of `other` using move semantics. `other` is left in a valid but
@@ -99,7 +99,7 @@ namespace registry
         /*!
         @post `*this` has the original value of `other`.
         */
-        key(key&& other) noexcept = default;
+        key_path(key_path&& other) noexcept = default;
 
         //! Constructs the key from a key name string and a registry view.
         /*!
@@ -108,20 +108,20 @@ namespace registry
         @param[in] name - a key name string.
         @param[in] view - a registry view.
         */
-        key(string_view_type name, view view = default_view);
+        key_path(string_view_type name, view view = default_view);
 
         // TODO: ...
         template <typename Source, 
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
         >
-        key(const Source& name);
+        key_path(const Source& name);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
         @post `*this == other`.
         @return `*this`.
         */
-        key& operator=(const key& other) = default;
+        key_path& operator=(const key_path& other) = default;
 
         /*! \brief
         Replaces the contents of `*this` with those of `other` using move semantics. `other` is left in a valid, but 
@@ -130,7 +130,7 @@ namespace registry
         @post `*this` has the original value of `other`.
         @return `*this`.
         */
-        key& operator=(key&& other) noexcept = default;
+        key_path& operator=(key_path&& other) noexcept = default;
 
     public:
         //! Returns the name of the key.
@@ -143,7 +143,7 @@ namespace registry
         /*!
         Equivalent to `has_root_key() ? key(*begin(), view()) : key(string_type(), view())`.
         */
-        key root_key() const;
+        key_path root_key() const;
 
         //! Returns the identifier of the root key.
         /*!
@@ -155,14 +155,14 @@ namespace registry
         /*!
         Equivalent to `has_leaf_key() ? key(*--end(), view()) : key(string_type(), view())`.
         */
-        key leaf_key() const;
+        key_path leaf_key() const;
 
         //! Returns the parent of the key.
         /*!
         Returns `key(string_type(), view())` if `!has_parent_key()`. The resulting key is constructed by appending all 
         elements in a range `[begin(), --end())` to an key constructed as `key(string_type(), view())`.
         */
-        key parent_key() const;
+        key_path parent_key() const;
 
         //! Checks if the key has a root key.
         /*!
@@ -207,7 +207,7 @@ namespace registry
             A value equal to 0 if the key is equal to the given key.\n
             A value greater than 0 if the key is greater than the given key.
         */
-        int compare(const key& other) const noexcept;
+        int compare(const key_path& other) const noexcept;
 
         /*! \brief
         Returns an iterator to the first component of the key name. If the key name has no components, the returned
@@ -227,7 +227,7 @@ namespace registry
         @param[in] view - a registry view.
         @return `*this`.
         */
-        key& assign(string_view_type name, registry::view view = default_view);
+        key_path& assign(string_view_type name, registry::view view = default_view);
 
         //! Appends elements to the key name.
         /*!
@@ -244,28 +244,28 @@ namespace registry
         template <typename Source, 
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
         >
-        key& append(const Source& subkey);
+        key_path& append(const Source& subkey);
 
         //! Appends elements to the key name.
         /*!
         First, appends each component of `subkey` name to the key name. Then, assigns the key view to `subkey.view()`.
         @return `*this`.
         */
-        key& append(const key& subkey);
+        key_path& append(const key_path& subkey);
 
         //! Concatenates the key name with `subkey` without introducing a key separator.
         /*!
         Equivalent to `*this = key(name() + static_cast<string_type>(subkey)), view())`.
         @return `*this`.
         */
-        key& concat(string_view_type subkey);
+        key_path& concat(string_view_type subkey);
 
         //! Removes a single leaf component.
         /*!
         @pre `has_leaf_key()`.
         @return `*this`.
         */
-        key& remove_leaf();
+        key_path& remove_leaf();
 
         //! Replaces a single leaf component with `replacement`.
         /*!
@@ -273,10 +273,10 @@ namespace registry
         @pre `has_leaf_key()`.
         @return `*this`.
         */
-        key& replace_leaf(string_view_type replacement);
+        key_path& replace_leaf(string_view_type replacement);
 
         //! Swaps the contents of `*this` and `other`.
-        void swap(key& other) noexcept;
+        void swap(key_path& other) noexcept;
 
     private:
         registry::view  m_view = default_view;
@@ -285,13 +285,13 @@ namespace registry
     };
 
     //------------------------------------------------------------------------------------//
-    //                             class key::iterator                                    //
+    //                          class key_path::iterator                                  //
     //------------------------------------------------------------------------------------//
 
     //! A constant BidirectionalIterator with a value_type of registry::string_view_type.
-    class key::iterator
+    class key_path::iterator
     {
-        friend class key;
+        friend class key_path;
 
         string_view_type  m_value;
         string_view_type  m_key_name_view;
@@ -365,31 +365,31 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     //! Checks whether `lhs` is equal to `rhs`. Equivalent to `lhs.compare(rhs) == 0`.
-    bool operator==(const key& lhs, const key& rhs) noexcept;
+    bool operator==(const key_path& lhs, const key_path& rhs) noexcept;
 
     //! Checks whether `lhs` is not equal to `rhs`. Equivalent to `lhs.compare(rhs) != 0`.
-    bool operator!=(const key& lhs, const key& rhs) noexcept;
+    bool operator!=(const key_path& lhs, const key_path& rhs) noexcept;
 
     //! Checks whether `lhs` is less than `rhs`. Equivalent to `lhs.compare(rhs) < 0`.
-    bool operator<(const key& lhs, const key& rhs) noexcept;
+    bool operator<(const key_path& lhs, const key_path& rhs) noexcept;
 
     //! Checks whether `lhs` is greater than `rhs`. Equivalent to `lhs.compare(rhs) > 0`.
-    bool operator>(const key& lhs, const key& rhs) noexcept;
+    bool operator>(const key_path& lhs, const key_path& rhs) noexcept;
 
     //! Checks whether `lhs` is less than or equal to `rhs`. Equivalent to `lhs.compare(rhs) <= 0`.
-    bool operator<=(const key& lhs, const key& rhs) noexcept;
+    bool operator<=(const key_path& lhs, const key_path& rhs) noexcept;
 
     //! Checks whether `lhs` is greater than or equal to `rhs`. Equivalent to `lhs.compare(rhs) >= 0`.
-    bool operator>=(const key& lhs, const key& rhs) noexcept;
+    bool operator>=(const key_path& lhs, const key_path& rhs) noexcept;
 
     //! Calculates a hash value for a `key` object.
     /*!
     @return A hash value such that if for two keys, `k1 == k2` then `hash_value(k1) == hash_value(k2)`.
     */
-    size_t hash_value(const key& key) noexcept;
+    size_t hash_value(const key_path& key) noexcept;
 
     //! Swaps the contents of `lhs` and `rhs`.
-    void swap(key& lhs, key& rhs) noexcept;
+    void swap(key_path& lhs, key_path& rhs) noexcept;
 
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //
@@ -398,25 +398,25 @@ namespace registry
     template <typename Source, 
               typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
     >
-    key::key(const Source& name) : key(string_view_type(name)) { }
+    key_path::key_path(const Source& name) : key_path(string_view_type(name)) { }
 
     template <typename Source, 
               typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
     >
-    inline key& key::append(const Source& subkey) { return append_impl(subkey); }
+    inline key_path& key_path::append(const Source& subkey) { return append_impl(subkey); }
 
-    inline bool operator==(const key& lhs, const key& rhs) noexcept { return lhs.compare(rhs) == 0; }
+    inline bool operator==(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) == 0; }
 
-    inline bool operator!=(const key& lhs, const key& rhs) noexcept { return lhs.compare(rhs) != 0; }
+    inline bool operator!=(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) != 0; }
 
-    inline bool operator<(const key& lhs, const key& rhs) noexcept { return lhs.compare(rhs) < 0; }
+    inline bool operator<(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) < 0; }
 
-    inline bool operator>(const key& lhs, const key& rhs) noexcept { return lhs.compare(rhs) > 0; }
+    inline bool operator>(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) > 0; }
 
-    inline bool operator<=(const key& lhs, const key& rhs) noexcept { return lhs.compare(rhs) <= 0; }
+    inline bool operator<=(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) <= 0; }
 
-    inline bool operator>=(const key& lhs, const key& rhs) noexcept { return lhs.compare(rhs) >= 0; }
+    inline bool operator>=(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) >= 0; }
 
-    inline void swap(key& lhs, key& rhs) noexcept { lhs.swap(rhs); }
+    inline void swap(key_path& lhs, key_path& rhs) noexcept { lhs.swap(rhs); }
 
 } // namespace registry
