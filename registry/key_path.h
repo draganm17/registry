@@ -265,7 +265,7 @@ namespace registry
         @pre `has_leaf_key()`.
         @return `*this`.
         */
-        key_path& remove_leaf();
+        key_path& remove_leaf(); // TODO: rename to 'remove_leaf_key' ???
 
         //! Replaces a single leaf component with `replacement`.
         /*!
@@ -273,7 +273,7 @@ namespace registry
         @pre `has_leaf_key()`.
         @return `*this`.
         */
-        key_path& replace_leaf(string_view_type replacement);
+        key_path& replace_leaf(string_view_type replacement);  // TODO: rename to 'replace_leaf_key' ???
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;
