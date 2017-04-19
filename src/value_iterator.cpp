@@ -87,9 +87,8 @@ value_iterator::value_iterator(key_handle handle, std::error_code& ec)
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
 
-    key_path path = m_state->hkey.path();
-    m_state.reset(); // *this becomes the end iterator
-    details::set_or_throw(&ec, ec2, __FUNCTION__, std::move(path));
+    value_iterator tmp(std::move(*this));
+    details::set_or_throw(&ec, ec2, __FUNCTION__, tmp.m_state->hkey.path());
 }
 
 bool value_iterator::operator==(const value_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
