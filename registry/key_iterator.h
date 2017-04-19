@@ -226,9 +226,10 @@ namespace registry
 
         //! Advances the iterator to the next entry.
         /*!
+        If an error occured, `*this` is set to an end iterator, regardless of whether any error is reported by 
+        exception or error code.
         @pre `*this != key_iterator()`.
         */
-        // TODO: document forward progress guarantee 
         key_iterator& increment(std::error_code& ec);
 
         //! Swaps the contents of `*this` and `other`.
@@ -404,7 +405,8 @@ namespace registry
         key. The process is repeated if the parent key has no sibling entries that can to be iterated on. If the 
         parent of the key hierarchy that has been recursively iterated on is reached (there are no candidate entries
         at `depth() == 0`), `*this` is set to an end iterator. Otherwise, `*this` is iterated. \n
-        If an error occurs `*this` is becoming equal to the end iterator.
+        If an error occured, `*this` is set to an end iterator, regardless of whether any error is reported by 
+        exception or error code.
         @pre `*this != recursive_key_iterator()`.
         */
         recursive_key_iterator& increment(std::error_code& ec);
@@ -412,7 +414,9 @@ namespace registry
         //! Moves the iterator one level up in the key hierarchy. 
         /*!
         If `depth() == 0`, set `*this` to `recursive_key_iterator()`. Otherwise, cease iteration of the key currently
-        being iterated over, and continue iteration over the parent key.
+        being iterated over, and continue iteration over the parent key. \n
+        If an error occured, `*this` is set to an end iterator, regardless of whether any error is reported by 
+        exception or error code.
         @param[out] ec - out-parameter for error reporting.
         @pre `*this != recursive_key_iterator()`.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
@@ -421,7 +425,6 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        // TODO: forward progress guarantee ???
         void pop(std::error_code& ec = throws());
 
         //! Swaps the contents of `*this` and `other`.

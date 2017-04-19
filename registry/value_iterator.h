@@ -219,9 +219,10 @@ namespace registry
 
         //! Advances the iterator to the next entry.
         /*!
+        If an error occured, `*this` is set to an end iterator, regardless of whether any error is reported by 
+        exception or error code.
         @pre `*this != value_iterator()`.
         */
-        // TODO: document forward progress guarantee 
         value_iterator& increment(std::error_code& ec);
 
         //! Swaps the contents of `*this` and `other`.
