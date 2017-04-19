@@ -1,3 +1,4 @@
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <Windows.h>
@@ -6,6 +7,13 @@
 #include <registry/exception.h>
 #include <registry/key_iterator.h>
 #include <registry/operations.h>
+
+
+namespace {
+
+    constexpr size_t MAX_KEY_SIZE = 260;
+
+}
 
 
 namespace registry {
@@ -51,10 +59,10 @@ void key_entry::swap(key_entry& other) noexcept
 
 struct key_iterator::state
 {
-    uint32_t                              idx;
-    key_handle                            hkey;
-    key_entry                             entry;
-    std::vector<string_type::value_type>  buffer; // TODO: write data directly to the key name ???
+    uint32_t                                           idx;
+    key_handle                                         hkey;
+    key_entry                                          entry;
+    std::array<string_type::value_type, MAX_KEY_SIZE>  buffer;
 };
 
 key_iterator::key_iterator(const key_path& path, std::error_code& ec)
@@ -75,17 +83,11 @@ key_iterator::key_iterator(key_handle handle, std::error_code& ec)
     m_state->entry.m_key_handle = std::shared_ptr<key_handle>(m_state, &m_state->hkey);
 
     std::error_code ec2;
-    key_info info = m_state->hkey.info(key_info_mask::read_max_subkey_size, ec2);
+    m_state->entry.m_path.append(TEXT("PLACEHOLDER"));
+    if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
 
-    if (!ec2) {
-        m_state->buffer.resize(++info.max_subkey_size, TEXT('_'));
-        m_state->entry.m_path.append(string_view_type(m_state->buffer.data(), m_state->buffer.size()));
-        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
-    }
-
-    key_path path = m_state->hkey.path();
-    m_state.reset(); // *this becomes the end iterator
-    details::set_or_throw(&ec, ec2, __FUNCTION__, std::move(path));
+    key_iterator tmp(std::move(*this));
+    details::set_or_throw(&ec, ec2, __FUNCTION__, tmp.m_state->hkey.path());
 }
 
 bool key_iterator::operator==(const key_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
@@ -118,28 +120,22 @@ key_iterator& key_iterator::increment(std::error_code& ec)
 {
     // TODO: guarantee forward progress on error
 
-    LSTATUS rc;
     assert(*this != key_iterator());
 
-    // NOTE: Subkeys which names size exceed the size of the pre-allocated buffer are ignored.
-    //       Such values may only appear in the enumerated sequence if they were added to the registry key after the
-    //       iterator was constructed. Therefore this behaviour is consistent with what the class documentation states.
-    
-    do {
-        DWORD buffer_size = m_state->buffer.size();
-        rc = RegEnumKeyEx(reinterpret_cast<HKEY>(m_state->hkey.native_handle()), ++m_state->idx,
-                          m_state->buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
+    LSTATUS rc;
+    DWORD buffer_size = m_state->buffer.size();
+    rc = RegEnumKeyEx(reinterpret_cast<HKEY>(m_state->hkey.native_handle()), ++m_state->idx,
+                      m_state->buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
-        if (rc == ERROR_SUCCESS) {
-            m_state->entry.m_path.replace_leaf({ m_state->buffer.data(), buffer_size });
-        } else if (rc == ERROR_NO_MORE_ITEMS) {
-            m_state.reset(); // *this becomes the end iterator
-        } else if (rc != ERROR_MORE_DATA) {
-            m_state.reset(); // *this becomes the end iterator
-            const std::error_code ec2(rc, std::system_category());
-            return details::set_or_throw(&ec, ec2, __FUNCTION__), *this;
-        }
-    } while (rc == ERROR_MORE_DATA);
+    if (rc == ERROR_SUCCESS) {
+        m_state->entry.m_path.replace_leaf({ m_state->buffer.data(), buffer_size });
+    } else if (rc == ERROR_NO_MORE_ITEMS) {
+        m_state.reset(); // *this becomes the end iterator
+    } else {
+        m_state.reset(); // *this becomes the end iterator
+        const std::error_code ec2(rc, std::system_category());
+        return details::set_or_throw(&ec, ec2, __FUNCTION__), *this;
+    }
 
     RETURN_RESULT(ec, *this);
 }
