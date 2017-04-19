@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <registry/exception.h>
-#include <registry/key.h>
+#include <registry/key_path.h>
 
 using namespace registry;
 
@@ -16,40 +16,42 @@ TEST(RegistryError, Construct)
         const auto ec = std::make_error_code(std::errc::not_enough_memory);
         registry_error ex(ec, "test");
 
-        EXPECT_TRUE(ex.key1() == key());
-        EXPECT_TRUE(ex.key2() == key());
+        EXPECT_TRUE(ex.path1() == key_path());
+        EXPECT_TRUE(ex.path2() == key_path());
         EXPECT_TRUE(ex.value_name().empty());
     }
 
-    // registry_error::registry_error(std::error_code, const std::string&, const key&)
+    // registry_error::registry_error(std::error_code, const std::string&, const key_path&)
     {
         const auto ec = std::make_error_code(std::errc::not_enough_memory);
-        registry_error ex(ec, "test", key::from_key_id(key_id::current_user));
+        registry_error ex(ec, "test", key_path::from_key_id(key_id::current_user));
 
-        EXPECT_TRUE(ex.key1() == key::from_key_id(key_id::current_user));
-        EXPECT_TRUE(ex.key2() == key());
+        EXPECT_TRUE(ex.path1() == key_path::from_key_id(key_id::current_user));
+        EXPECT_TRUE(ex.path2() == key_path());
         EXPECT_TRUE(ex.value_name().empty());
     }
 
-    // registry_error::registry_error(std::error_code, const std::string&, const key&, const key&)
+    // registry_error::registry_error(std::error_code, const std::string&, const key_path&, const key_path&)
     {
         const auto ec = std::make_error_code(std::errc::not_enough_memory);
-        registry_error ex(ec, "test", key::from_key_id(key_id::current_user), key::from_key_id(key_id::local_machine));
+        registry_error ex(ec, "test", 
+                          key_path::from_key_id(key_id::current_user), 
+                          key_path::from_key_id(key_id::local_machine));
 
-        EXPECT_TRUE(ex.key1() == key::from_key_id(key_id::current_user));
-        EXPECT_TRUE(ex.key2() == key::from_key_id(key_id::local_machine));
+        EXPECT_TRUE(ex.path1() == key_path::from_key_id(key_id::current_user));
+        EXPECT_TRUE(ex.path2() == key_path::from_key_id(key_id::local_machine));
         EXPECT_TRUE(ex.value_name().empty());
     }
 
     // registry_error::registry_error(std::error_code, const std::string&, 
-    //                                const key&, const key&, string_view_type)
+    //                                const key_path&, const key_path&, string_view_type)
     {
         const auto ec = std::make_error_code(std::errc::not_enough_memory);
-        registry_error ex(ec, "test", key::from_key_id(key_id::current_user), 
-                          key::from_key_id(key_id::local_machine), TEXT("test"));
+        registry_error ex(ec, "test", key_path::from_key_id(key_id::current_user),
+                          key_path::from_key_id(key_id::local_machine), TEXT("test"));
 
-        EXPECT_TRUE(ex.key1() == key::from_key_id(key_id::current_user));
-        EXPECT_TRUE(ex.key2() == key::from_key_id(key_id::local_machine));
+        EXPECT_TRUE(ex.path1() == key_path::from_key_id(key_id::current_user));
+        EXPECT_TRUE(ex.path2() == key_path::from_key_id(key_id::local_machine));
         EXPECT_TRUE(ex.value_name() == TEXT("test"));
     }
 }

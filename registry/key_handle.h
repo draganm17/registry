@@ -7,7 +7,7 @@
 #include <system_error>
 #include <type_traits>
 
-#include <registry/key.h>
+#include <registry/key_path.h>
 #include <registry/types.h>
 #include <registry/value.h>
 
@@ -95,7 +95,7 @@ namespace registry
         /*!
         Unless `id == key_id::unknown` the postconditions are the following:
         - `is_open()`.
-        - `key() == registry::key::from_key_id(id)`.
+        - `path() == key_path::from_key_id(id)`.
         - `rights() == access_rights::unknown`.
         - `native_handle() == reinterpret_cast<native_handle_type>(id)`.
 
@@ -103,22 +103,23 @@ namespace registry
         */
         key_handle(key_id id);
 
-        // Constructs a handle to a registry key specified by `key`.
+        // Constructs a handle to a registry key specified by `path`.
         /*!
         The overload that takes `std::error_code&` parameter constructs an empty handle on error.
         @post `is_open()`.
-        @post `this->key() == key`.
+        @post `this->path() == path`.
         @post `this->rights() == rights`.
-        @param[in] key - an absolute key specifying the registry key that this function opens.
+        @param[in] path - an absolute key path specifying the registry key that this function opens.
         @param[in] rights - the access rights for the key to be opened.
         @param[out] ec - out-parameter for error reporting.`
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `key` and the OS error code as the error code argument. \n
+               API errors, constructed with the first key path set to `path` and the OS error code as the error code 
+               argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        key_handle(const registry::key& key, access_rights rights, std::error_code& ec = throws());
+        key_handle(const key_path& path, access_rights rights, std::error_code& ec = throws());
 
         // TODO: ...
         ~key_handle() noexcept = default;
@@ -134,11 +135,11 @@ namespace registry
         key_handle& operator=(key_handle&& other) noexcept = default;
 
     public:
-        //! Returns the key this handle is to.
+        //! Returns the path to the key this handle is to.
         /*!
-        If this handle is empty (i.e. `!is_open`), returns `registry::key()`.
+        If this handle is empty (i.e. `!is_open`), returns `key_path()`.
         */
-        registry::key key() const;
+        key_path path() const;
 
         //! Returns the access rights this handle was opened with.
         /*!
@@ -161,43 +162,43 @@ namespace registry
         If the key already exists, the function opens it. The function creates all missing keys in the specified path. \n
         The calling process must have `access_rights::create_sub_key` access to the key specified by this handle. The 
         access rights the key was opened with does not affect the operation.
-        @param[in] subkey - an relative key specifying the subkey that this function opens or creates. If the subkey
-                            name is an empty string the function will return a new handle to the key specified by this
-                            handle.
+        @param[in] path - an relative key path specifying the subkey that this function opens or creates. If the subkey
+                          name is an empty string the function will return a new handle to the key specified by this
+                          handle.
         @param[in] rights - the access rights for the key to be created.
         @param[out] ec - out-parameter for error reporting.
         @return A pair consisting of an handle to the opened or created key and a `bool` denoting whether the key was
-                created. The returned handle is constructed as if by `key_handle(key().append(subkey), rights)`.
+                created. The returned handle is constructed as if by `key_handle(this->path().append(path), rights)`.
                 The overload that takes `std::error_code&` parameter returns `std::make_pair(key_handle(), false)` 
                 on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the second key set `subkey` and the OS 
-               error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the second key path set to `path`
+               and the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        std::pair<key_handle, bool> create_key(const registry::key& subkey, 
+        std::pair<key_handle, bool> create_key(const key_path& path,
                                                access_rights rights = access_rights::all_access, 
                                                std::error_code& ec = throws()) const;
 
         /*! \brief 
-        Checks whether the registry key specified by this handle and the registry key specified by 
-        `key` refer to the same registry key. */
+        Checks whether the registry key specified by this handle and the registry key specified by `path` refer to
+        the same registry key. */
         /*!
         The key must have been opened with the `access_rights::query_value` access right.
-        @param[in] key - an absolute registry key.
+        @param[in] path - an absolute registry key path.
         @param[out] ec - out-parameter for error reporting.
-        @return `true` if `*this` and `key` resolve to the same registry key, `false` otherwise. The overload that 
+        @return `true` if `*this` and `path` resolve to the same registry key, `false` otherwise. The overload that 
                 takes `std::error_code&` parameter returns `false` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the second key set `key` and the OS 
-               error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the second key path set `path` 
+               and the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        bool equivalent(const registry::key& key, std::error_code& ec = throws()) const;
+        bool equivalent(const key_path& path, std::error_code& ec = throws()) const;
 
         /*! \brief 
         Checks whether the registry key specified by this handle and the registry key specified by 
@@ -208,14 +209,16 @@ namespace registry
         @param[out] ec - out-parameter for error reporting.
         @return `true` if `*this` and `handle` resolve to the same registry key, `false` otherwise. The overload that 
                 takes `std::error_code&` parameter returns `false` on error.
-        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the second key set `handle.key()` and 
-               the OS  error code as the error code argument. \n
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying
+               OS API errors, constructed with the first key path set to `this->path()`, the second key path set to 
+               `handle.path()` and the OS  error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
         bool equivalent(const key_handle& handle, std::error_code& ec = throws()) const;
+
+        // TODO: exists() for subkeys ???
 
         //! Check whether the registry key specified by this handle contains the given value.
         /*!
@@ -226,8 +229,8 @@ namespace registry
         @return `true` if the given name corresponds to an existing registry value, `false` otherwise. The overload  
                 that takes `std::error_code&` parameter returns `false` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the value name set to `value_name` and
-               the OS error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the value name set to `value_name` 
+               and the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur. 
@@ -245,8 +248,8 @@ namespace registry
                 `last_write_time` to `static_cast<uint32_t>(-1)` on error, `last_write_time` is set to 
                 `key_time_type::min()`.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()` and the OS error code as the error code 
-               argument. \n
+               API errors, constructed with the first key path set to `this->path()` and the OS error code as the error
+               code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
@@ -255,20 +258,20 @@ namespace registry
 
         //! Opens a subkey of a registry key specified by this handle.
         /*!
-        @param[in] key - an relative key specifying the subkey that this function opens.
+        @param[in] path - an relative key path specifying the subkey that this function opens.
         @param[in] rights - the access rights for the key to be opened.
         @param[out] ec - out-parameter for error reporting.
-        @return An `key_handle` object constructed as if by `key_handle(key().append(subkey), rights)`.
+        @return An `key_handle` object constructed as if by `key_handle(this->path().append(path), rights)`.
                 The overload  that takes `std::error_code&` parameter returns an empty handle on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `key()`, the second key set to `subkey` and the OS 
-               error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the second key path set to `path`
+               and the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
         // TODO: describe what happens if subkey name is empty ...
-        key_handle open(const registry::key& subkey, access_rights rights, std::error_code& ec = throws()) const;
+        key_handle open(const key_path& path, access_rights rights, std::error_code& ec = throws()) const;
 
         /*! \brief
         Retrieves the type and data for the specified value name associated with the registry key specified by this 
@@ -281,8 +284,8 @@ namespace registry
         @return An instance of registry::value. The overload that takes `std::error_code&` parameter returns an 
                 default-constructed value on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the value name set to `value_name` and
-               the OS error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the value name set to `value_name`
+               and the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur. 
@@ -294,18 +297,18 @@ namespace registry
         The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_all` function. \n
         The access rights of this key do not affect the delete operation. \n
         Note that a deleted key is not removed until the last handle to it is closed.
-        @param[in] subkey - an relative key specifying the subkey that this function deletes.
+        @param[in] path - an relative key path specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
         @return `true` if the subkey was deleted, `false` if it did not exist. The overload  that takes 
                 `std::error_code&` parameter returns `false` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the second key set `subkey` and the OS 
-               error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the second key path set `path` and
+               the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        bool remove(const registry::key& subkey, std::error_code& ec = throws()) const;
+        bool remove(const key_path& path, std::error_code& ec = throws()) const;
 
         //! Deletes an registry value from the registry key specified by this handle.
         /*!
@@ -315,8 +318,8 @@ namespace registry
         @return `true` if the value was deleted, `false` if it did not exist. The overload  that takes 
                 `std::error_code&` parameter returns `false` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the value name set to `value_name` and
-               the OS error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the value name set to `value_name`
+               and the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur. 
@@ -328,18 +331,18 @@ namespace registry
         The key must have been opened with the `access_rights::enumerate_sub_keys` and `access_rights::query_value` 
         access right. \n
         Note that a deleted key is not removed until the last handle to it is closed.
-        @param[in] subkey - an relative key specifying the subkey that this function deletes.
+        @param[in] path - an relative key path specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
-        @return The number of keys that were deleted (which may be zero if `subkey` did not exist to begin with). 
+        @return The number of keys that were deleted (which may be zero if `path` did not exist to begin with). 
                 The overload that takes `std::error_code&` parameter returns `static_cast<uint32_t>(-1)` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the second key set `subkey` and the OS 
-               error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the second key path set `path` and
+               the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        uint32_t remove_all(const registry::key& subkey, std::error_code& ec = throws()) const;
+        uint32_t remove_all(const key_path& path, std::error_code& ec = throws()) const;
 
         //! Sets the data and type of a specified value under the registry key specified by this handle.
         /*!
@@ -349,8 +352,8 @@ namespace registry
         @param[in] value - the content of the value.
         @param[out] ec - out-parameter for error reporting.`
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()`, the value name set to `value_name` and
-               the OS error code as the error code argument. \n
+               API errors, constructed with the first key path set to `this->path()`, the value name set to `value_name`
+               and the OS error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur. 
@@ -367,8 +370,8 @@ namespace registry
         @post `!is_open()`.
         @param[out] ec - out-parameter for error reporting.`
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `this->key()` and the OS error code as the error code 
-               argument. \n
+               API errors, constructed with the first key path set to `this->path()` and the OS error code as the error
+               code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur. 
@@ -379,7 +382,7 @@ namespace registry
         void swap(key_handle& other) noexcept;
 
     private:
-        registry::key                          m_key;
+        key_path                               m_path;
         access_rights                          m_rights;
         std::unique_ptr<void, close_handle_t>  m_handle;
     };
