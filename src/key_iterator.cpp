@@ -130,11 +130,10 @@ key_iterator& key_iterator::increment(std::error_code& ec)
     if (rc == ERROR_SUCCESS) {
         m_state->entry.m_path.replace_leaf({ m_state->buffer.data(), buffer_size });
     } else if (rc == ERROR_NO_MORE_ITEMS) {
-        m_state.reset(); // *this becomes the end iterator
+        key_iterator tmp(std::move(*this)); // *this becomes the end iterator
     } else {
-        m_state.reset(); // *this becomes the end iterator
-        const std::error_code ec2(rc, std::system_category());
-        return details::set_or_throw(&ec, ec2, __FUNCTION__), *this;
+        key_iterator tmp(std::move(*this)); // *this becomes the end iterator
+        return details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__), *this;
     }
 
     RETURN_RESULT(ec, *this);
