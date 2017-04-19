@@ -1,5 +1,5 @@
 /*!
-## Registry library version 0.93 ##
+## Registry library version 0.94 ##
 The Registry library provides facilities for performing operations on Windows registry and its components, such as keys
 and values. The registry library was inspired by the <a href="http://en.cppreference.com/w/cpp/filesystem">Filesystem</a>
 library and tries to mimic its design whenever possible.
@@ -15,7 +15,7 @@ library and tries to mimic its design whenever possible.
 
 #include <registry/config.h>
 #include <registry/exception.h>
-#include <registry/key.h>
+#include <registry/key_path.h>
 #include <registry/key_handle.h>
 #include <registry/key_iterator.h>
 #include <registry/operations.h>

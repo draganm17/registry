@@ -101,7 +101,7 @@ namespace registry
     //                                 class value                                        //
     //------------------------------------------------------------------------------------//
 
-    //! Represents a registry value.
+    //! Represents the content of a registry value.
     /*!
     Objects of type `registry::value` represent a typed piece of data that can be written to or readed from the
     Windows registry by using the registry library API. Values are raw-data storages that does not handle syntactic

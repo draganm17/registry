@@ -7,7 +7,7 @@
 #include <boost/functional/hash.hpp>
 
 #include <registry/details/utils.impl.h>
-#include <registry/key.h>
+#include <registry/key_path.h>
 
 
 namespace
@@ -267,11 +267,11 @@ void key_path::iterator::swap(iterator& other) noexcept
 //                             NON-MEMBER FUNCTIONS                                   //
 //------------------------------------------------------------------------------------//
 
-size_t hash_value(const key_path& key_path) noexcept
+size_t hash_value(const key_path& path) noexcept
 {
     const auto locale = std::locale();
-    size_t hash = std::hash<view>()(key_path.view());
-    for (auto it = key_path.begin(); it != key_path.end(); ++it) {
+    size_t hash = std::hash<view>()(path.view());
+    for (auto it = path.begin(); it != path.end(); ++it) {
         std::for_each(it->begin(), it->end(), [&](auto c) { boost::hash_combine(hash, std::tolower(c, locale)); });
     }
     return hash;

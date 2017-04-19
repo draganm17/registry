@@ -1,5 +1,5 @@
 #include <registry/exception.h>
-#include <registry/key.h>
+#include <registry/key_path.h>
 
 
 namespace registry {
@@ -10,8 +10,8 @@ namespace registry {
 
 struct registry_error::storage
 {
-    key          key1;
-    key          key2;
+    key_path     path1;
+    key_path     path2;
     string_type  value_name;
 };
 
@@ -20,33 +20,33 @@ registry_error::registry_error(std::error_code ec, const std::string& msg)
 { }
 
 registry_error::registry_error(std::error_code ec, const std::string& msg,
-                               const key& key1)
+                               const key_path& path1)
     : std::system_error(ec, msg)
-    , m_info(std::make_shared<storage>(storage{ key1 }))
+    , m_info(std::make_shared<storage>(storage{ path1 }))
 { }
 
 registry_error::registry_error(std::error_code ec, const std::string& msg,
-                               const key& key1, const key& key2)
+                               const key_path& path1, const key_path& path2)
     : std::system_error(ec, msg)
-    , m_info(std::make_shared<storage>(storage{ key1, key2 }))
+    , m_info(std::make_shared<storage>(storage{ path1, path2 }))
 { }
 
 registry_error::registry_error(std::error_code ec, const std::string& msg,
-                               const key& key1, const key& key2, string_view_type value_name)
+                               const key_path& path1, const key_path& path2, string_view_type value_name)
     : std::system_error(ec, msg)
-    , m_info(std::make_shared<storage>(storage{ key1, key2, static_cast<string_type>(value_name) }))
+    , m_info(std::make_shared<storage>(storage{ path1, path2, static_cast<string_type>(value_name) }))
 { }
 
-const key& registry_error::key1() const noexcept
+const key_path& registry_error::path1() const noexcept
 {
-    static const key empty_key;
-    return m_info ? m_info->key1 : empty_key;
+    static const key_path empty_path;
+    return m_info ? m_info->path1 : empty_path;
 }
 
-const key& registry_error::key2() const noexcept
+const key_path& registry_error::path2() const noexcept
 {
-    static const key empty_key;
-    return m_info ? m_info->key2 : empty_key;
+    static const key_path empty_path;
+    return m_info ? m_info->path2 : empty_path;
 }
 
 const string_type& registry_error::value_name() const noexcept

@@ -11,7 +11,7 @@
 
 namespace registry
 {
-    class key;
+    class key_path;
 
     /*! \brief 
     Defines an exception object that is thrown on failure by the overloads of registry library functions
@@ -21,33 +21,35 @@ namespace registry
     public:
         /*! \brief
         Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
-        the first key, the second key and the value name are default-constructed. */
+        the first key path, the second key path and the value name are default-constructed. */
         registry_error(std::error_code ec, const std::string& msg);
 
         /*! \brief
         Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
-        the first key is set to `key1`, the second key and the value name are default-constructed. */
+        the first key path is set to `path1`, the second key path and the value name are default-constructed. */
         registry_error(std::error_code ec, const std::string& msg, 
-                       const key& key1);
+                       const key_path& path1);
 
         /*! \brief
         Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
-        the first key is set to `key1`, the second key is set to `key2`, the value name is default-constructed. */
+        the first key path is set to `path1`, the second key path is set to `path2`, the value name is 
+        default-constructed. */
         registry_error(std::error_code ec, const std::string& msg, 
-                       const key& key1, const key& key2);
+                       const key_path& path1, const key_path& path2);
         
         /*! \brief
         Constructs a new registry error object. The explanatory string is set to `msg`, error code is set to `ec`,
-        the first key is set to `key1`, the second key is set to `key2`, the value name is set to `value_name`. */
+        the first key path is set to `path1`, the second key path is set to `path2`, the value name is set to 
+        `value_name`. */
         registry_error(std::error_code ec, const std::string& msg,
-                       const key& key1, const key& key2, string_view_type value_name);
+                       const key_path& path1, const key_path& path2, string_view_type value_name);
 
     public:
-        //! Returns the first key this object was initialized with.
-        const key& key1() const noexcept;
+        //! Returns the first key path this object was initialized with.
+        const key_path& path1() const noexcept;
 
-        //! Returns the second key this object was initialized with.
-        const key& key2() const noexcept;
+        //! Returns the second key path this object was initialized with.
+        const key_path& path2() const noexcept;
 
         //! Returns the value name this object was initialized with.
         const string_type& value_name() const noexcept;
