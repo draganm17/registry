@@ -119,8 +119,6 @@ value_iterator value_iterator::operator++(int) { auto tmp = *this; ++*this; retu
 
 value_iterator& value_iterator::increment(std::error_code& ec)
 {
-    // TODO: guarantee forward progress on error
-
     LSTATUS rc;
     assert(*this != value_iterator());
 
@@ -128,22 +126,27 @@ value_iterator& value_iterator::increment(std::error_code& ec)
     //       Such values may only appear in the enumerated sequence if they were added to the registry key after the
     //       iterator was constructed. Therefore this behaviour is consistent with what the class documentation states.
 
-    do {
-        DWORD buffer_size = m_state->buffer.size();
-        rc = RegEnumValue(reinterpret_cast<HKEY>(m_state->hkey.native_handle()), ++m_state->idx,
-                          m_state->buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
+    try {
+        do {
+            DWORD buffer_size = m_state->buffer.size();
+            rc = RegEnumValue(reinterpret_cast<HKEY>(m_state->hkey.native_handle()), ++m_state->idx,
+                              m_state->buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
-        if (rc == ERROR_SUCCESS) {
-            m_state->entry.m_value_name.assign(m_state->buffer.data(), buffer_size);
-        } else if (rc == ERROR_NO_MORE_ITEMS) {
-            value_iterator tmp(std::move(*this)); // *this becomes the end iterator
-        } else if (rc != ERROR_MORE_DATA) {
-            value_iterator tmp(std::move(*this)); // *this becomes the end iterator
-            return details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__), *this;
-        }
-    } while (rc == ERROR_MORE_DATA);
+            if (rc == ERROR_SUCCESS) {
+                m_state->entry.m_value_name.assign(m_state->buffer.data(), buffer_size);
+            } else if (rc == ERROR_NO_MORE_ITEMS) {
+                value_iterator tmp(std::move(*this)); // *this becomes the end iterator
+            } else if (rc != ERROR_MORE_DATA) {
+                value_iterator tmp(std::move(*this)); // *this becomes the end iterator
+                return details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__), *this;
+            }
+        } while (rc == ERROR_MORE_DATA);
 
-    RETURN_RESULT(ec, *this);
+        RETURN_RESULT(ec, *this);
+    } catch(...) {
+        value_iterator(std::move(*this)); // *this becomes the end iterator (if not already)
+        throw;
+    }
 }
 
 void value_iterator::swap(value_iterator& other) noexcept { m_state.swap(other.m_state); }

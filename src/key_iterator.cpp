@@ -118,25 +118,28 @@ key_iterator key_iterator::operator++(int) { auto tmp = *this; ++*this; return t
 
 key_iterator& key_iterator::increment(std::error_code& ec)
 {
-    // TODO: guarantee forward progress on error
-
     assert(*this != key_iterator());
 
-    LSTATUS rc;
-    DWORD buffer_size = m_state->buffer.size();
-    rc = RegEnumKeyEx(reinterpret_cast<HKEY>(m_state->hkey.native_handle()), ++m_state->idx,
-                      m_state->buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
+    try {
+        LSTATUS rc;
+        DWORD buffer_size = m_state->buffer.size();
+        rc = RegEnumKeyEx(reinterpret_cast<HKEY>(m_state->hkey.native_handle()), ++m_state->idx,
+                          m_state->buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
-    if (rc == ERROR_SUCCESS) {
-        m_state->entry.m_path.replace_leaf({ m_state->buffer.data(), buffer_size });
-    } else if (rc == ERROR_NO_MORE_ITEMS) {
-        key_iterator tmp(std::move(*this)); // *this becomes the end iterator
-    } else {
-        key_iterator tmp(std::move(*this)); // *this becomes the end iterator
-        return details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__), *this;
+        if (rc == ERROR_SUCCESS) {
+            m_state->entry.m_path.replace_leaf({ m_state->buffer.data(), buffer_size });
+        } else if (rc == ERROR_NO_MORE_ITEMS) {
+            key_iterator tmp(std::move(*this)); // *this becomes the end iterator
+        } else {
+            key_iterator tmp(std::move(*this)); // *this becomes the end iterator
+            return details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__), *this;
+        }
+
+        RETURN_RESULT(ec, *this);
+    } catch(...) {
+        key_iterator(std::move(*this)); // *this becomes the end iterator (if not already)
+        throw;
     }
-
-    RETURN_RESULT(ec, *this);
 }
 
 void key_iterator::swap(key_iterator& other) noexcept { m_state.swap(other.m_state); }
@@ -214,7 +217,7 @@ recursive_key_iterator recursive_key_iterator::operator++(int) { auto tmp = *thi
 
 recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
 {
-    // TODO: guarantee forward progress on error
+    // TODO: guarantee that '*this' is set ot the end iterator on error
 
     assert(*this != recursive_key_iterator());
 
@@ -233,7 +236,7 @@ recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
 
 void recursive_key_iterator::pop(std::error_code& ec)
 {
-    // TODO: forward progress guarantee ???
+    // TODO: guarantee that '*this' is set ot the end iterator on error
 
     assert(*this != recursive_key_iterator());
 
