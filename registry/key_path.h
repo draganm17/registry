@@ -149,7 +149,7 @@ namespace registry
         /*!
         Returns `key_id::unknown` if `!has_root_key()` or if the root key is not one of the predefined keys.
         */
-        key_id root_key_id() const;
+        key_id root_key_id() const; // TODO: noexcept ???
 
         //! Returns the leaf component of the path.
         /*!

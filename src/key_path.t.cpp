@@ -225,25 +225,31 @@ TEST(KeyPath, Decomposition)
     // key_path::root_key()
     {
         key_path p1;
-        ASSERT_TRUE(p1.root_key() == (p1.has_root_key() ? key_path(*p1.begin(), p1.key_view()) : key_path(string_type(), p1.key_view())));
+        ASSERT_TRUE(p1.root_key() == (p1.has_root_key() ? key_path(*p1.begin(), p1.key_view()) 
+                                                        : key_path(string_type(), p1.key_view())));
 
         key_path p2 = TEXT("Test");
-        ASSERT_TRUE(p2.root_key() == (p2.has_root_key() ? key_path(*p2.begin(), p2.key_view()) : key_path(string_type(), p2.key_view())));
+        ASSERT_TRUE(p2.root_key() == (p2.has_root_key() ? key_path(*p2.begin(), p2.key_view()) 
+                                                        : key_path(string_type(), p2.key_view())));
 
         key_path p3 = TEXT("Test1\\Test2\\Test3");
-        ASSERT_TRUE(p3.root_key() == (p3.has_root_key() ? key_path(*p3.begin(), p3.key_view()) : key_path(string_type(), p3.key_view())));
+        ASSERT_TRUE(p3.root_key() == (p3.has_root_key() ? key_path(*p3.begin(), p3.key_view()) 
+                                                        : key_path(string_type(), p3.key_view())));
     }
 
     // key_path::leaf_key()
     {
         key_path p1;
-        ASSERT_TRUE(p1.leaf_key() == (p1.has_leaf_key() ? key_path(*--p1.end(), p1.key_view()) : key_path(string_type(), p1.key_view())));
+        ASSERT_TRUE(p1.leaf_key() == (p1.has_leaf_key() ? key_path(*--p1.end(), p1.key_view()) 
+                                                        : key_path(string_type(), p1.key_view())));
 
         key_path p2 = TEXT("Test");
-        ASSERT_TRUE(p2.leaf_key() == (p2.has_leaf_key() ? key_path(*--p2.end(), p2.key_view()) : key_path(string_type(), p2.key_view())));
+        ASSERT_TRUE(p2.leaf_key() == (p2.has_leaf_key() ? key_path(*--p2.end(), p2.key_view()) 
+                                                        : key_path(string_type(), p2.key_view())));
 
         key_path p3 = TEXT("Test1\\Test2\\Test3");
-        ASSERT_TRUE(p3.leaf_key() == (p3.has_leaf_key() ? key_path(*--p3.end(), p3.key_view()) : key_path(string_type(), p3.key_view())));
+        ASSERT_TRUE(p3.leaf_key() == (p3.has_leaf_key() ? key_path(*--p3.end(), p3.key_view()) 
+                                                        : key_path(string_type(), p3.key_view())));
     }
 
     // key_path::parent_key()
