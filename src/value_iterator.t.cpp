@@ -17,8 +17,8 @@ TEST(ValueIterator, Construct)
         EXPECT_TRUE(it == value_iterator());
     }
 
-    // value_iterator::value_iterator(const key&)
-    // value_iterator::value_iterator(const key&, std::error_code&)
+    // value_iterator::value_iterator(const key_entry&)
+    // value_iterator::value_iterator(const key_entry&, std::error_code&)
     {
         std::error_code ec;
 
@@ -39,10 +39,10 @@ TEST(ValueIterator, Construct)
     // value_iterator::value_iterator(const key_handle&, std::error_code&)
     {
         std::error_code ec;
-        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
-        value_iterator it1(key_handle(k, access_rights::query_value));
-        value_iterator it2(key_handle(k, access_rights::query_value), ec);
+        value_iterator it1(key_handle(p, access_rights::query_value));
+        value_iterator it2(key_handle(p, access_rights::query_value), ec);
         EXPECT_TRUE(it1 != value_iterator());
         EXPECT_TRUE(it2 != value_iterator() && !ec);
     }
@@ -52,7 +52,7 @@ TEST(ValueIterator, Iterate)
 {
     std::error_code ec;
     const std::array<uint8_t, 2> data{ 4, 2 };
-    const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
     std::map<string_type, value> expected_values;
     expected_values.emplace(TEXT("val_01"), value(none_value_tag{}));
@@ -67,7 +67,7 @@ TEST(ValueIterator, Iterate)
 
     // using range-based for loop
     int elements = 0;
-    for (const auto& entry : value_iterator(k))
+    for (const auto& entry : value_iterator(p))
     {
         ++elements;
         EXPECT_TRUE(expected_values.at(entry.value_name()) == entry.value());
@@ -77,7 +77,7 @@ TEST(ValueIterator, Iterate)
 
     // using operator++()
     elements = 0;
-    for (auto it = value_iterator(k); it != value_iterator(); ++it)
+    for (auto it = value_iterator(p); it != value_iterator(); ++it)
     {
         ++elements;
         EXPECT_TRUE(expected_values.at(it->value_name()) == it->value());
@@ -87,7 +87,7 @@ TEST(ValueIterator, Iterate)
 
     // using operator++(int)
     elements = 0;
-    for (auto it = value_iterator(k); it != value_iterator(); it++)
+    for (auto it = value_iterator(p); it != value_iterator(); it++)
     {
         ++elements;
         EXPECT_TRUE(expected_values.at(it->value_name()) == it->value());
@@ -97,7 +97,7 @@ TEST(ValueIterator, Iterate)
 
     // using increment(error_code&)
     elements = 0;
-    for (auto it = value_iterator(k); it != value_iterator(); it.increment(ec))
+    for (auto it = value_iterator(p); it != value_iterator(); it.increment(ec))
     {
         ++elements;
         EXPECT_TRUE(!ec);

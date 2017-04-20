@@ -28,52 +28,52 @@ TEST(KeyHandle, Construct)
         // TODO: ...
     }
 
-    // key_handle(const registry::key&, access_rights)
-    // key_handle(const registry::key&, access_rights, std::error_code&)
+    // key_handle(const registry::key_path&, access_rights)
+    // key_handle(const registry::key_path&, access_rights, std::error_code&)
     {
         std::error_code ec;
-        const key k1 = key::from_key_id(key_id::current_user);
-        const key k2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry");
-        const key k3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\non_existent");
+        const key_path p1 = key_path::from_key_id(key_id::current_user);
+        const key_path p2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry");
+        const key_path p3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\non_existent");
 
         // open a predefined key
-        const key_handle h1(k1, access_rights::query_value);
+        const key_handle h1(p1, access_rights::query_value);
         EXPECT_TRUE(h1.is_open());
-        EXPECT_TRUE(h1.key() == k1);
+        EXPECT_TRUE(h1.path() == p1);
         EXPECT_TRUE(h1.rights() == access_rights::query_value);
         EXPECT_TRUE(h1.native_handle() != key_handle::native_handle_type{});
 
-        const key_handle h2(k1, access_rights::query_value, ec);
+        const key_handle h2(p1, access_rights::query_value, ec);
         EXPECT_TRUE(!ec);
         EXPECT_TRUE(h2.is_open());
-        EXPECT_TRUE(h2.key() == k1);
+        EXPECT_TRUE(h2.path() == p1);
         EXPECT_TRUE(h2.rights() == access_rights::query_value);
         EXPECT_TRUE(h2.native_handle() != key_handle::native_handle_type{});
 
         // open a regular key
-        const key_handle h3(k2, access_rights::query_value);
+        const key_handle h3(p2, access_rights::query_value);
         EXPECT_TRUE(h3.is_open());
-        EXPECT_TRUE(h3.key() == k2);
+        EXPECT_TRUE(h3.path() == p2);
         EXPECT_TRUE(h3.rights() == access_rights::query_value);
         EXPECT_TRUE(h3.native_handle() != key_handle::native_handle_type{});
 
-        const key_handle h4(k2, access_rights::query_value, ec);
+        const key_handle h4(p2, access_rights::query_value, ec);
         EXPECT_TRUE(!ec);
         EXPECT_TRUE(h4.is_open());
-        EXPECT_TRUE(h4.key() == k2);
+        EXPECT_TRUE(h4.path() == p2);
         EXPECT_TRUE(h4.rights() == access_rights::query_value);
         EXPECT_TRUE(h4.native_handle() != key_handle::native_handle_type{});
 
         // try open an non-existing key
         int exceptions = 0;
         try {
-            const key_handle h5(k3, access_rights::query_value);
+            const key_handle h5(p3, access_rights::query_value);
         } catch (const registry_error& e) {
             ++exceptions;
         }
         EXPECT_TRUE(exceptions == 1);
 
-        const key_handle h6(k3, access_rights::query_value, ec);
+        const key_handle h6(p3, access_rights::query_value, ec);
         EXPECT_TRUE(ec && !h6.is_open());
     }
 }
@@ -85,7 +85,7 @@ TEST(KeyHandle, GettersAndQueries)
         const key_handle h = id;
         if (id != key_id::unknown) {
             EXPECT_TRUE(h.is_open());
-            EXPECT_TRUE(h.key() == key::from_key_id(id));
+            EXPECT_TRUE(h.path() == key_path::from_key_id(id));
             EXPECT_TRUE(h.rights() == access_rights::unknown);
             EXPECT_TRUE(h.native_handle() == reinterpret_cast<key_handle::native_handle_type>(id));
         } else {
@@ -107,17 +107,17 @@ TEST(KeyHandle, GettersAndQueries)
 
 TEST(KeyHandle, OperationsOnRegistry)
 {
-    // key_handle::exists(string_view_type)
-    // key_handle::exists(string_view_type, std::error_code&)
+    // key_handle::value_exists(string_view_type)
+    // key_handle::value_exists(string_view_type, std::error_code&)
     {
         std::error_code ec;
         const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
 
-        EXPECT_TRUE(h.exists(TEXT("val_01")) == true);
-        EXPECT_TRUE(h.exists(TEXT("val_01"), ec) == true && !ec);
+        EXPECT_TRUE(h.value_exists(TEXT("val_01")) == true);
+        EXPECT_TRUE(h.value_exists(TEXT("val_01"), ec) == true && !ec);
 
-        EXPECT_TRUE(h.exists(TEXT("non_existent")) == false);
-        EXPECT_TRUE(h.exists(TEXT("non_existent"), ec) == false && !ec);
+        EXPECT_TRUE(h.value_exists(TEXT("non_existent")) == false);
+        EXPECT_TRUE(h.value_exists(TEXT("non_existent"), ec) == false && !ec);
     }
 
     // key_handle::info()
@@ -218,8 +218,8 @@ TEST(KeyHandle, OperationsOnRegistry)
             h.read_value(TEXT("non_existent"));
         } catch(const registry_error& e) {
             ++exceptions;
-            EXPECT_TRUE(e.key1() == h.key());
-            EXPECT_TRUE(e.key2() == key());
+            EXPECT_TRUE(e.path1() == h.path());
+            EXPECT_TRUE(e.path2() == key_path());
             EXPECT_TRUE(e.value_name() == TEXT("non_existent"));
         }
         EXPECT_TRUE(exceptions == 1);
@@ -228,72 +228,72 @@ TEST(KeyHandle, OperationsOnRegistry)
         EXPECT_TRUE(ec && v10 == value());
     }
 
-    // key_handle::create_key(const key& key, access_rights)
-    // key_handle::create_key(const key& key, access_rights, std::error_code&)
+    // key_handle::create_key(const key_path&, access_rights)
+    // key_handle::create_key(const key_path&, access_rights, std::error_code&)
     {
         // create the parent key
-        const key pk = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
-        EXPECT_TRUE(!exists(pk) && create_key(pk) && exists(pk));
+        const key_path pk = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
+        EXPECT_TRUE(!key_exists(pk) && create_key(pk) && key_exists(pk));
 
         std::error_code ec;
-        const key sk1 = TEXT("new_key_1");
-        const key sk2 = TEXT("new_key_2");
-        const key sk3 = TEXT("new_key_3\\Inner1\\Inner2");
-        const key sk4 = TEXT("new_key_4\\Inner1\\Inner2");
+        const key_path sk1 = TEXT("new_key_1");
+        const key_path sk2 = TEXT("new_key_2");
+        const key_path sk3 = TEXT("new_key_3\\Inner1\\Inner2");
+        const key_path sk4 = TEXT("new_key_4\\Inner1\\Inner2");
         const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::create_sub_key);
 
         // create new keys (without subkeys)
-        const key new_key1 = h.key().append(sk1);
-        const key new_key2 = h.key().append(sk2);
-        EXPECT_TRUE(!exists(new_key1) && !exists(new_key2));           // check that the keys does not exist
-        auto ret1 = h.create_key(sk1, access_rights::all_access);      // create the first key
-        EXPECT_TRUE(ret1.second == true && exists(new_key1));          // the key was created
-        EXPECT_TRUE(ret1.first.is_open()         && 
-                    ret1.first.key() == new_key1 && 
-                    ret1.first.rights() == access_rights::all_access); // and we have a valid result
+        const key_path new_key1 = h.path().append(sk1);
+        const key_path new_key2 = h.path().append(sk2);
+        EXPECT_TRUE(!key_exists(new_key1) && !key_exists(new_key2));      // check that the keys does not exist
+        auto ret1 = h.create_key(sk1, access_rights::all_access);         // create the first key
+        EXPECT_TRUE(ret1.second == true && key_exists(new_key1));         // the key was created
+        EXPECT_TRUE(ret1.first.is_open()          && 
+                    ret1.first.path() == new_key1 && 
+                    ret1.first.rights() == access_rights::all_access);    // and we have a valid result
         //
-        auto ret2 = h.create_key(sk2, access_rights::all_access, ec);  // create the second key
-        EXPECT_TRUE(!ec && ret2.second == true && exists(new_key2));   // the key was created
-        EXPECT_TRUE(ret2.first.is_open()         && 
-                    ret2.first.key() == new_key2 && 
-                    ret2.first.rights() == access_rights::all_access); // and we have a valid result
+        auto ret2 = h.create_key(sk2, access_rights::all_access, ec);     // create the second key
+        EXPECT_TRUE(!ec && ret2.second == true && key_exists(new_key2));  // the key was created
+        EXPECT_TRUE(ret2.first.is_open()          && 
+                    ret2.first.path() == new_key2 && 
+                    ret2.first.rights() == access_rights::all_access);    // and we have a valid result
 
         // create new keys (with subkeys)
-        const key new_key3 = h.key().append(sk3);
-        const key new_key4 = h.key().append(sk4);
-        EXPECT_TRUE(!exists(new_key3) && !exists(new_key4));           // check that the keys does not exist
-        auto ret3 = h.create_key(sk3, access_rights::all_access);      // create the first key
-        EXPECT_TRUE(ret3.second == true && exists(new_key3));          // the key was created
-        EXPECT_TRUE(ret3.first.is_open()         &&
-                    ret3.first.key() == new_key3 && 
-                    ret3.first.rights() == access_rights::all_access); // and we have a valid result
+        const key_path new_key3 = h.path().append(sk3);
+        const key_path new_key4 = h.path().append(sk4);
+        EXPECT_TRUE(!key_exists(new_key3) && !key_exists(new_key4));      // check that the keys does not exist
+        auto ret3 = h.create_key(sk3, access_rights::all_access);         // create the first key
+        EXPECT_TRUE(ret3.second == true && key_exists(new_key3));         // the key was created
+        EXPECT_TRUE(ret3.first.is_open()          &&
+                    ret3.first.path() == new_key3 &&
+                    ret3.first.rights() == access_rights::all_access);    // and we have a valid result
         auto ret4 = h.create_key(sk4, access_rights::all_access, ec);
-        EXPECT_TRUE(!ec && ret4.second == true && exists(new_key4));   // the key was created
-        EXPECT_TRUE(ret4.first.is_open()         &&
-                    ret4.first.key() == new_key4 && 
+        EXPECT_TRUE(!ec && ret4.second == true && key_exists(new_key4));  // the key was created
+        EXPECT_TRUE(ret4.first.is_open()          &&
+                    ret4.first.path() == new_key4 && 
                     ret4.first.rights() == access_rights::all_access); // and we have a valid result
 
         // obtain a new handle to to the same key
-        auto ret5 = h.create_key(key(), access_rights::all_access);
+        auto ret5 = h.create_key(key_path(), access_rights::all_access);
         EXPECT_TRUE(ret5.second == false);                     // the key was not created
         EXPECT_TRUE(ret5.first.is_open() && ret5.first != h);  // we have a valid new handle ...
-        EXPECT_TRUE(ret5.first.key() == h.key() && ret5.first.rights() == access_rights::all_access); // to the same key
+        EXPECT_TRUE(ret5.first.path() == h.path() && ret5.first.rights() == access_rights::all_access); // to the same key
         //
-        auto ret6 = h.create_key(key(), access_rights::all_access, ec);
-        EXPECT_TRUE(!ec && ret6.second == false);            // the key was not created
+        auto ret6 = h.create_key(key_path(), access_rights::all_access, ec);
+        EXPECT_TRUE(!ec && ret6.second == false);              // the key was not created
         EXPECT_TRUE(ret6.first.is_open() && ret6.first != h);  // we have a valid new handle ...
-        EXPECT_TRUE(ret6.first.key() == h.key() && ret6.first.rights() == access_rights::all_access); // to the same key
+        EXPECT_TRUE(ret6.first.path() == h.path() && ret6.first.rights() == access_rights::all_access); // to the same key
 
         // try create already existing keys
         auto ret7 = h.create_key(sk1, access_rights::all_access);
-        EXPECT_TRUE(ret7.second == false);                   // the key was not created
+        EXPECT_TRUE(ret7.second == false);                     // the key was not created
         EXPECT_TRUE(ret7.first.is_open() && ret7.first != h);  // we have a valid new handle ...
-        EXPECT_TRUE(ret7.first.key() == new_key1 && ret7.first.rights() == access_rights::all_access); // to the same key
+        EXPECT_TRUE(ret7.first.path() == new_key1 && ret7.first.rights() == access_rights::all_access); // to the same key
         //
         auto ret8 = h.create_key(sk1, access_rights::all_access, ec);
-        EXPECT_TRUE(!ec && ret8.second == false);            // the key was not created
+        EXPECT_TRUE(!ec && ret8.second == false);              // the key was not created
         EXPECT_TRUE(ret8.first.is_open() && ret8.first != h);  // we have a valid new handle ...
-        EXPECT_TRUE(ret8.first.key() == new_key1 && ret8.first.rights() == access_rights::all_access); // to the same key
+        EXPECT_TRUE(ret8.first.path() == new_key1 && ret8.first.rights() == access_rights::all_access); // to the same key
     }
 
     // key_handle::write_value(string_view_type, const value&)
@@ -350,8 +350,8 @@ TEST(KeyHandle, OperationsOnRegistry)
         EXPECT_TRUE(h.read_value(TEXT("val_09")) == v09 && h.read_value(TEXT("val_09a")) == v09);  
     }
 
-    // key_handle::remove(string_view_type)
-    // key_handle::remove(string_view_type, std::error_code&)
+    // key_handle::remove_key(string_view_type)
+    // key_handle::remove_key(string_view_type, std::error_code&)
     {
         // TODO: ...
 
@@ -370,28 +370,28 @@ TEST(KeyHandle, OperationsOnRegistry)
         //EXPECT_TRUE(h.remove(TEXT("val_02"), ec) == true && !ec && !h.exists(TEXT("val_02")));
     }
 
-    // key_handle::remove_all(string_view_type)
-    // key_handle::remove_all(string_view_type, std::error_code&)
+    // key_handle::remove_keys(string_view_type)
+    // key_handle::remove_keys(string_view_type, std::error_code&)
     {
         std::error_code ec;
-        const key sk0 = TEXT("non_existing");
-        const key sk1 = TEXT("new_key_3");
-        const key sk2 = TEXT("new_key_4");
+        const key_path p0 = TEXT("non_existing");
+        const key_path p1 = TEXT("new_key_3");
+        const key_path p2 = TEXT("new_key_4");
         const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::query_value);
 
-        EXPECT_TRUE(!exists(h.key().append(sk0)));
-        EXPECT_TRUE(exists(h.key().append(sk1)) && info(h.key().append(sk1)).subkeys > 0);
-        EXPECT_TRUE(exists(h.key().append(sk2)) && info(h.key().append(sk2)).subkeys > 0);
+        EXPECT_TRUE(!key_exists(h.path().append(p0)));
+        EXPECT_TRUE(key_exists(h.path().append(p1)) && info(h.path().append(p1)).subkeys > 0);
+        EXPECT_TRUE(key_exists(h.path().append(p2)) && info(h.path().append(p2)).subkeys > 0);
 
         // remove an non-existing key
-        EXPECT_TRUE(h.remove_all(sk0) == 0);
-        EXPECT_TRUE(h.remove_all(sk0, ec) == 0 && !ec);
+        EXPECT_TRUE(h.remove_keys(p0) == 0);
+        EXPECT_TRUE(h.remove_keys(p0, ec) == 0 && !ec);
 
         // remove an non-empty key (which have subkeys)
-        EXPECT_TRUE(h.remove_all(sk1) == 3 && !exists(h.key().append(sk1)));
-        EXPECT_TRUE(h.remove_all(sk2, ec) == 3 && !ec && !exists(h.key().append(sk2)));
+        EXPECT_TRUE(h.remove_keys(p1) == 3 && !key_exists(h.path().append(p1)));
+        EXPECT_TRUE(h.remove_keys(p2, ec) == 3 && !ec && !key_exists(h.path().append(p2)));
 
         // some clean-up
-        remove_all(h.key());
+        remove_keys(h.path());
     }
 }

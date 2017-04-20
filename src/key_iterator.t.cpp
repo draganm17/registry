@@ -17,8 +17,8 @@ TEST(KeyIterator, Construct)
         EXPECT_TRUE(it == key_iterator());
     }
 
-    // key_iterator::key_iterator(const key&)
-    // key_iterator::key_iterator(const key&, std::error_code&)
+    // key_iterator::key_iterator(const key_path&)
+    // key_iterator::key_iterator(const key_path&, std::error_code&)
     {
         std::error_code ec;
 
@@ -39,10 +39,10 @@ TEST(KeyIterator, Construct)
     // key_iterator::key_iterator(const key_handle&, std::error_code&)
     {
         std::error_code ec;
-        const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
-        key_iterator it1(key_handle(k, access_rights::enumerate_sub_keys | access_rights::query_value));
-        key_iterator it2(key_handle(k, access_rights::enumerate_sub_keys | access_rights::query_value), ec);
+        key_iterator it1(key_handle(p, access_rights::enumerate_sub_keys | access_rights::query_value));
+        key_iterator it2(key_handle(p, access_rights::enumerate_sub_keys | access_rights::query_value), ec);
         EXPECT_TRUE(it1 != key_iterator());
         EXPECT_TRUE(it2 != key_iterator() && !ec);
     }
@@ -51,47 +51,47 @@ TEST(KeyIterator, Construct)
 TEST(KeyIterator, Iterate)
 {
     std::error_code ec;
-    const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
-    std::set<key> expected_keys;
-    expected_keys.emplace(key(k).append(TEXT("key_1_deep_0")));
-    expected_keys.emplace(key(k).append(TEXT("key_2_deep_0")));
-    expected_keys.emplace(key(k).append(TEXT("key_3_deep_0")));
+    std::set<key_path> expected_keys;
+    expected_keys.emplace(key_path(p).append(TEXT("key_1_deep_0")));
+    expected_keys.emplace(key_path(p).append(TEXT("key_2_deep_0")));
+    expected_keys.emplace(key_path(p).append(TEXT("key_3_deep_0")));
 
     // using range-based for loop
     int elements = 0;
-    for (const auto& entry : key_iterator(k))
+    for (const auto& entry : key_iterator(p))
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.find(entry.key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.find(entry.path()) != expected_keys.end());
     }
     EXPECT_TRUE(elements == 3);
 
     // using operator++()
     elements = 0;
-    for (auto it = key_iterator(k); it != key_iterator(); ++it)
+    for (auto it = key_iterator(p); it != key_iterator(); ++it)
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.find(it->key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
     }
     EXPECT_TRUE(elements == 3);
 
     // using operator++(int)
     elements = 0;
-    for (auto it = key_iterator(k); it != key_iterator(); it++)
+    for (auto it = key_iterator(p); it != key_iterator(); it++)
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.find(it->key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
     }
     EXPECT_TRUE(elements == 3);
 
     // using increment(error_code&)
     elements = 0;
-    for (auto it = key_iterator(k); it != key_iterator(); it.increment(ec))
+    for (auto it = key_iterator(p); it != key_iterator(); it.increment(ec))
     {
         ++elements;
         EXPECT_TRUE(!ec);
-        EXPECT_TRUE(expected_keys.find(it->key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
     }
     EXPECT_TRUE(elements == 3);
 }
@@ -104,8 +104,8 @@ TEST(RecursiveKeyIterator, Construct)
         EXPECT_TRUE(it == recursive_key_iterator());
     }
 
-    // recursive_key_iterator::recursive_key_iterator(const key&)
-    // recursive_key_iterator::recursive_key_iterator(const key&, std::error_code&)
+    // recursive_key_iterator::recursive_key_iterator(const key_path&)
+    // recursive_key_iterator::recursive_key_iterator(const key_path&, std::error_code&)
     {
         std::error_code ec;
 
@@ -136,90 +136,90 @@ TEST(RecursiveKeyIterator, Construct)
 TEST(RecursiveKeyIterator, Iterate)
 {
     std::error_code ec;
-    const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
     // NOTE: vector element index represent the depth
-    std::vector<std::set<key>> expected_keys(3);
-    expected_keys[0].emplace(key(k).append(TEXT("key_1_deep_0")));
-    expected_keys[1].emplace(key(k).append(TEXT("key_1_deep_0\\key_1_deep_1")));
-    expected_keys[1].emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1")));
-    expected_keys[2].emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_1_deep_2")));
-    expected_keys[2].emplace(key(k).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_2_deep_2")));
-    expected_keys[0].emplace(key(k).append(TEXT("key_2_deep_0")));
-    expected_keys[0].emplace(key(k).append(TEXT("key_3_deep_0")));
-    expected_keys[1].emplace(key(k).append(TEXT("key_3_deep_0\\key_1_deep_1")));
-    expected_keys[1].emplace(key(k).append(TEXT("key_3_deep_0\\key_2_deep_1")));
+    std::vector<std::set<key_path>> expected_keys(3);
+    expected_keys[0].emplace(key_path(p).append(TEXT("key_1_deep_0")));
+    expected_keys[1].emplace(key_path(p).append(TEXT("key_1_deep_0\\key_1_deep_1")));
+    expected_keys[1].emplace(key_path(p).append(TEXT("key_1_deep_0\\key_2_deep_1")));
+    expected_keys[2].emplace(key_path(p).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_1_deep_2")));
+    expected_keys[2].emplace(key_path(p).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_2_deep_2")));
+    expected_keys[0].emplace(key_path(p).append(TEXT("key_2_deep_0")));
+    expected_keys[0].emplace(key_path(p).append(TEXT("key_3_deep_0")));
+    expected_keys[1].emplace(key_path(p).append(TEXT("key_3_deep_0\\key_1_deep_1")));
+    expected_keys[1].emplace(key_path(p).append(TEXT("key_3_deep_0\\key_2_deep_1")));
 
     // using range-based for loop
     int elements = 0;
-    for (const auto& entry : recursive_key_iterator(k))
+    for (const auto& entry : recursive_key_iterator(p))
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.at(0).find(entry.key()) != expected_keys.at(0).end() ||
-                    expected_keys.at(1).find(entry.key()) != expected_keys.at(1).end() ||
-                    expected_keys.at(2).find(entry.key()) != expected_keys.at(2).end());
+        EXPECT_TRUE(expected_keys.at(0).find(entry.path()) != expected_keys.at(0).end() ||
+                    expected_keys.at(1).find(entry.path()) != expected_keys.at(1).end() ||
+                    expected_keys.at(2).find(entry.path()) != expected_keys.at(2).end());
     }
     EXPECT_TRUE(elements == 9);
 
     // using operator++()
     elements = 0;
-    for (auto it = recursive_key_iterator(k); it != recursive_key_iterator(); ++it)
+    for (auto it = recursive_key_iterator(p); it != recursive_key_iterator(); ++it)
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->key()) != expected_keys.at(it.depth()).end());
+        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->path()) != expected_keys.at(it.depth()).end());
     }
     EXPECT_TRUE(elements == 9);
 
     // using operator++(int)
     elements = 0;
-    for (auto it = recursive_key_iterator(k); it != recursive_key_iterator(); it++)
+    for (auto it = recursive_key_iterator(p); it != recursive_key_iterator(); it++)
     {
         ++elements;
-        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->key()) != expected_keys.at(it.depth()).end());
+        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->path()) != expected_keys.at(it.depth()).end());
     }
     EXPECT_TRUE(elements == 9);
 
     // using increment(error_code&)
     elements = 0;
-    for (auto it = recursive_key_iterator(k); it != recursive_key_iterator(); it.increment(ec))
+    for (auto it = recursive_key_iterator(p); it != recursive_key_iterator(); it.increment(ec))
     {
         ++elements;
         EXPECT_TRUE(!ec);
-        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->key()) != expected_keys.at(it.depth()).end());
+        EXPECT_TRUE(expected_keys.at(it.depth()).find(it->path()) != expected_keys.at(it.depth()).end());
     }
     EXPECT_TRUE(elements == 9);
 }
 
 TEST(RecursiveKeyIterator, Pop)
 {
-    const key k = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
-    std::set<key> expected_keys;
-    expected_keys.emplace(key(k).append(TEXT("key_1_deep_0")));
-    expected_keys.emplace(key(k).append(TEXT("key_2_deep_0")));
-    expected_keys.emplace(key(k).append(TEXT("key_3_deep_0")));
+    std::set<key_path> expected_keys;
+    expected_keys.emplace(key_path(p).append(TEXT("key_1_deep_0")));
+    expected_keys.emplace(key_path(p).append(TEXT("key_2_deep_0")));
+    expected_keys.emplace(key_path(p).append(TEXT("key_3_deep_0")));
 
     int elements = 0;
-    for (auto it = recursive_key_iterator(k); ; ++it)
+    for (auto it = recursive_key_iterator(p); ; ++it)
     {
         if (it.depth()) it.pop();
         if (it == recursive_key_iterator()) break;
 
         ++elements;
-        EXPECT_TRUE(expected_keys.find(it->key()) != expected_keys.end());
+        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
         
     }
     EXPECT_TRUE(elements == 3);
 
     elements = 0;
     std::error_code ec;
-    for (auto it = recursive_key_iterator(k); ; ++it)
+    for (auto it = recursive_key_iterator(p); ; ++it)
     {
         if (it.depth()) it.pop(ec);
         if (it == recursive_key_iterator()) break;
 
         ++elements;
-        EXPECT_TRUE(!ec && expected_keys.find(it->key()) != expected_keys.end());
+        EXPECT_TRUE(!ec && expected_keys.find(it->path()) != expected_keys.end());
         
     }
     EXPECT_TRUE(elements == 3);

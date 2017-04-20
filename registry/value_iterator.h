@@ -5,7 +5,7 @@
 #include <memory>
 #include <system_error>
 
-#include <registry/key.h>
+#include <registry/key_path.h>
 #include <registry/key_handle.h>
 #include <registry/types.h>
 #include <registry/value.h>
@@ -25,7 +25,7 @@ namespace registry
     public:
         //! Default constructor.
         /*!
-        @post `key() == registry::key()`.
+        @post `path() == key_path()`.
         @post `value_name().empty()`.
         */
         value_entry() noexcept = default;
@@ -46,10 +46,10 @@ namespace registry
 
         //! TODO: ...
         /*!
-        @post `this->key() == key`.
+        @post `this->path() == path`.
         @post `this->value_name() == value_name`.
         */
-        value_entry(const key& key, string_view_type value_name);
+        value_entry(const key_path& path, string_view_type value_name);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -68,8 +68,8 @@ namespace registry
         value_entry& operator=(value_entry&& other) noexcept = default;
 
     public:
-        //! Returns the key this object was initializes with.
-        const key& key() const noexcept;
+        //! Returns the key path this object was initializes with.
+        const key_path& path() const noexcept;
 
         //! Returns the value name this object was initializes with.
         const string_type& value_name() const noexcept;
@@ -80,15 +80,15 @@ namespace registry
     public:
         //! Replaces the contents of the entry.
         /*!
-        @post `*this == key_entry(key, value_name)`.
+        @post `*this == key_entry(path, value_name)`.
         */
-        value_entry& assign(const registry::key& key, string_view_type value_name);
+        value_entry& assign(const key_path& path, string_view_type value_name);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(value_entry& other) noexcept;
 
     private:
-        registry::key              m_key;
+        key_path                   m_path;
         string_type                m_value_name;
         std::weak_ptr<key_handle>  m_key_handle;
     };
@@ -133,20 +133,20 @@ namespace registry
         */
         value_iterator(value_iterator&& other) noexcept = default;
 
-        //! Constructs a iterator that refers to the first value of a key specified by `key`.
+        //! Constructs a iterator that refers to the first value of a key specified by `path`.
         /*!
-        If `key` refers to an non-existing registry key, returns the end iterator and does not report an error. 
+        If `path` refers to an non-existing registry key, returns the end iterator and does not report an error. 
         The overload that takes `std::error_code&` parameter constructs an end iterator on error.
-        @param[in] key - an absolute key specifying the registry key that this iterator iterates on.
+        @param[in] path - an absolute key path specifying the registry key that this iterator iterates on.
         @param[out] ec - out-parameter for error reporting.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `key` and the OS error code as the error code
+               API errors, constructed with the first key path set to `path` and the OS error code as the error code
                argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        explicit value_iterator(const key& key, std::error_code& ec = throws());
+        explicit value_iterator(const key_path& path, std::error_code& ec = throws());
 
         //! Constructs a iterator that refers to the first value of a key specified by `handle`.
         /*!
@@ -155,8 +155,8 @@ namespace registry
                             `access_rights::query_value` access right.
         @param[out] ec - out-parameter for error reporting.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key set to `handle.key()` and the OS error code as the error code
-               argument. \n
+               API errors, constructed with the first key path set to `handle.path()` and the OS error code as the error
+               code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
@@ -219,9 +219,10 @@ namespace registry
 
         //! Advances the iterator to the next entry.
         /*!
+        If an error occured, `*this` is set to an end iterator, regardless of whether any error is reported by 
+        exception or error code.
         @pre `*this != value_iterator()`.
         */
-        // TODO: document forward progress guarantee 
         value_iterator& increment(std::error_code& ec);
 
         //! Swaps the contents of `*this` and `other`.
@@ -272,15 +273,15 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     inline bool operator==(const value_entry& lhs, const value_entry& rhs) noexcept 
-    { return lhs.key() == rhs.key() && lhs.value_name() == rhs.value_name(); }
+    { return lhs.path() == rhs.path() && lhs.value_name() == rhs.value_name(); }
 
     inline bool operator!=(const value_entry& lhs, const value_entry& rhs) noexcept { return !(lhs == rhs); }
 
     inline bool operator<(const value_entry& lhs, const value_entry& rhs) noexcept 
-    { return lhs.key() < rhs.key() || (lhs.key() == rhs.key() && lhs.value_name() < rhs.value_name()); }
+    { return lhs.path() < rhs.path() || (lhs.path() == rhs.path() && lhs.value_name() < rhs.value_name()); }
 
     inline bool operator>(const value_entry& lhs, const value_entry& rhs) noexcept 
-    { return lhs.key() > rhs.key() || (lhs.key() == rhs.key() && lhs.value_name() > rhs.value_name()); }
+    { return lhs.path() > rhs.path() || (lhs.path() == rhs.path() && lhs.value_name() > rhs.value_name()); }
 
     inline bool operator<=(const value_entry& lhs, const value_entry& rhs) noexcept { return !(lhs > rhs); }
 
