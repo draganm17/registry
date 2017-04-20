@@ -74,27 +74,27 @@ key_path& key_path::append_impl(string_view_type subkey)
 
 key_path key_path::from_key_id(key_id id) { return key_pool::instance().get(id); }
 
-key_path::key_path(string_view_type name, registry::view view)
+key_path::key_path(string_view_type name, view view)
     : m_view(view)
     , m_name(static_cast<string_type>(name))
 { }
 
-const string_type& key_path::name() const noexcept { return m_name; }
+const string_type& key_path::key_name() const noexcept { return m_name; }
 
-view key_path::view() const noexcept { return m_view; }
+view key_path::key_view() const noexcept { return m_view; }
 
 key_path key_path::root_key() const 
-{ return has_root_key() ? key_path(*begin(), view()) : key_path(string_view_type(), view()); }
+{ return has_root_key() ? key_path(*begin(), key_view()) : key_path(string_view_type(), key_view()); }
 
 key_id key_path::root_key_id() const { return details::key_id_from_string(*begin()); }
 
 key_path key_path::leaf_key() const 
-{ return has_leaf_key() ? key_path(*--end(), view()) : key_path(string_view_type(), view()); }
+{ return has_leaf_key() ? key_path(*--end(), key_view()) : key_path(string_view_type(), key_view()); }
 
 key_path key_path::parent_key() const
 {
     auto first = begin(), last = end();
-    key_path path(string_view_type(), view());
+    key_path path(string_view_type(), key_view());
 
     if (first != last && first != --last) {
         for (; first != last; ++first) path.append(*first);
@@ -123,8 +123,8 @@ bool key_path::is_relative() const noexcept { return !is_absolute(); }
 
 int key_path::compare(const key_path& other) const noexcept
 {
-    if (view() != other.view()) {
-        return view() < other.view() ? -1 : 1;
+    if (key_view() != other.key_view()) {
+        return key_view() < other.key_view() ? -1 : 1;
     }
 
     iterator beg_1 = begin(), end_1 = end();
@@ -152,7 +152,7 @@ key_path::iterator key_path::end() const noexcept
     return it;
 }
 
-key_path& key_path::assign(string_view_type name, registry::view view)
+key_path& key_path::assign(string_view_type name, view view)
 {
     m_name.assign(name.data(), name.size());
     m_view = view;
@@ -161,7 +161,7 @@ key_path& key_path::assign(string_view_type name, registry::view view)
 
 key_path& key_path::append(const key_path& subkey)
 {
-    m_view = subkey.view();
+    m_view = subkey.key_view();
     for (auto it = subkey.begin(); it != subkey.end(); ++it) append(*it);
     return *this;
 }
@@ -270,7 +270,7 @@ void key_path::iterator::swap(iterator& other) noexcept
 size_t hash_value(const key_path& path) noexcept
 {
     const auto locale = std::locale();
-    size_t hash = std::hash<view>()(path.view());
+    size_t hash = std::hash<view>()(path.key_view());
     for (auto it = path.begin(); it != path.end(); ++it) {
         std::for_each(it->begin(), it->end(), [&](auto c) { boost::hash_combine(hash, std::tolower(c, locale)); });
     }

@@ -82,8 +82,8 @@ namespace registry
     public:
         //! Default constructor.
         /*!
-        @post `name().empty()`.
-        @post `view() == default_view`.
+        @post `key_name().empty()`.
+        @post `key_view() == default_view`.
         */
         key_path() noexcept = default;
 
@@ -103,8 +103,8 @@ namespace registry
 
         //! Constructs the path from a key name string and a registry view.
         /*!
-        @post `this->name() == static_cast<string_type>(name)`.
-        @post `this->view() == view`.
+        @post `key_name() == static_cast<string_type>(name)`.
+        @post `key_view() == view`.
         @param[in] name - a key name string.
         @param[in] view - a registry view.
         */
@@ -134,14 +134,14 @@ namespace registry
 
     public:
         //! Returns the name of the key.
-        const string_type& name() const noexcept;
+        const string_type& key_name() const noexcept;
 
         //! Returns the registry view of the key.
-        view view() const noexcept;
+        view key_view() const noexcept;
 
         //! Returns the root component of the key.
         /*!
-        Equivalent to `has_root_key() ? key_path(*begin(), view()) : key_path(string_type(), view())`.
+        Equivalent to `has_root_key() ? key_path(*begin(), key_view()) : key_path(string_type(), key_view())`.
         */
         key_path root_key() const;
 
@@ -153,14 +153,15 @@ namespace registry
 
         //! Returns the leaf component of the path.
         /*!
-        Equivalent to `has_leaf_key() ? key_path(*--end(), view()) : key_path(string_type(), view())`.
+        Equivalent to `has_leaf_key() ? key_path(*--end(), key_view()) : key_path(string_type(), key_view())`.
         */
         key_path leaf_key() const;
 
         //! Returns the parent of the path.
         /*!
-        Returns `key_path(string_type(), view())` if `!has_parent_key()`. The resulting path is constructed by appending
-        all  elements in a range `[begin(), --end())` to an path constructed as `key_path(string_type(), view())`.
+        Returns `key_path(string_type(), key_view())` if `!has_parent_key()`. The resulting path is 
+        constructed by appending all  elements in a range `[begin(), --end())` to an path constructed as 
+        `key_path(string_type(), key_view())`.
         */
         key_path parent_key() const;
 
@@ -198,8 +199,8 @@ namespace registry
 
         //! Compares paths objects.
         /*!
-        - if `view() < other.view()`, `*this` is less than `other`;
-        - otherwise if `view() > other.view()`, `*this` is greater than `other`;
+        - if `key_view() < other.key_view()`, `*this` is less than `other`;
+        - otherwise if `key_view() > other.key_view()`, `*this` is greater than `other`;
         - otherwise keys name components are compared lexicographically. The comparison is case-insensitive.
 
         @return
@@ -248,14 +249,15 @@ namespace registry
 
         //! Appends elements to the key name.
         /*!
-        First, appends each component of `subkey` name to the key name. Then, assigns the key view to `subkey.view()`.
+        First, appends each component of `subkey` name to the key name. Then, assigns the key view to 
+        `subkey.key_view()`.
         @return `*this`.
         */
         key_path& append(const key_path& subkey);
 
         //! Concatenates the key name with `str` without introducing a key separator.
         /*!
-        Equivalent to `*this = key_path(name() + static_cast<string_type>(str)), view())`.
+        Equivalent to `*this = key_path(key_name() + static_cast<string_type>(str)), key_view())`.
         @return `*this`.
         */
         key_path& concat(string_view_type str);

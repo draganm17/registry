@@ -13,18 +13,18 @@ TEST(KeyPath, Construct)
 {
     // default constructor
     key_path p1;
-    ASSERT_TRUE(p1.name().empty());
-    ASSERT_TRUE(p1.view() == key_path::default_view);
+    ASSERT_TRUE(p1.key_name().empty());
+    ASSERT_TRUE(p1.key_view() == key_path::default_view);
 
     // construct from name an view
     key_path p2(TEXT("HKEY_CURRENT_user\\Test"), view::view_32bit);
-    EXPECT_TRUE(p2.name() == TEXT("HKEY_CURRENT_user\\Test"));
-    EXPECT_TRUE(p2.view() == view::view_32bit);
+    EXPECT_TRUE(p2.key_name() == TEXT("HKEY_CURRENT_user\\Test"));
+    EXPECT_TRUE(p2.key_view() == view::view_32bit);
 
     // test implicit from-string construction
     key_path p3 = TEXT("HKEY_CURRENT_user\\Test");
-    EXPECT_TRUE(p2.name() == TEXT("HKEY_CURRENT_user\\Test"));
-    EXPECT_TRUE(p2.view() == key_path::default_view);
+    EXPECT_TRUE(p2.key_name() == TEXT("HKEY_CURRENT_user\\Test"));
+    EXPECT_TRUE(p2.key_view() == key_path::default_view);
 }
 
 TEST(KeyPath, Assign)
@@ -32,7 +32,7 @@ TEST(KeyPath, Assign)
     key_path p1(TEXT("Test1"), view::view_32bit);
     key_path p2(TEXT("Test1\\Test2\\Test3"), view::view_64bit);
 
-    ASSERT_TRUE(p1.assign(p2.name(), p2.view()) == p2);
+    ASSERT_TRUE(p1.assign(p2.key_name(), p2.key_view()) == p2);
 }
 
 TEST(KeyPath, FromKeyId)
@@ -40,8 +40,8 @@ TEST(KeyPath, FromKeyId)
     static const auto test = [](key_id id, string_view_type expected_name)
     {
         const key_path p = key_path::from_key_id(id);
-        ASSERT_TRUE(p.name() == expected_name);
-        ASSERT_TRUE(p.view() == key_path::default_view);
+        ASSERT_TRUE(p.key_name() == expected_name);
+        ASSERT_TRUE(p.key_view() == key_path::default_view);
         ASSERT_TRUE(p.root_key_id() == id);
     };
 
@@ -225,37 +225,37 @@ TEST(KeyPath, Decomposition)
     // key_path::root_key()
     {
         key_path p1;
-        ASSERT_TRUE(p1.root_key() == (p1.has_root_key() ? key_path(*p1.begin(), p1.view()) : key_path(string_type(), p1.view())));
+        ASSERT_TRUE(p1.root_key() == (p1.has_root_key() ? key_path(*p1.begin(), p1.key_view()) : key_path(string_type(), p1.key_view())));
 
         key_path p2 = TEXT("Test");
-        ASSERT_TRUE(p2.root_key() == (p2.has_root_key() ? key_path(*p2.begin(), p2.view()) : key_path(string_type(), p2.view())));
+        ASSERT_TRUE(p2.root_key() == (p2.has_root_key() ? key_path(*p2.begin(), p2.key_view()) : key_path(string_type(), p2.key_view())));
 
         key_path p3 = TEXT("Test1\\Test2\\Test3");
-        ASSERT_TRUE(p3.root_key() == (p3.has_root_key() ? key_path(*p3.begin(), p3.view()) : key_path(string_type(), p3.view())));
+        ASSERT_TRUE(p3.root_key() == (p3.has_root_key() ? key_path(*p3.begin(), p3.key_view()) : key_path(string_type(), p3.key_view())));
     }
 
     // key_path::leaf_key()
     {
         key_path p1;
-        ASSERT_TRUE(p1.leaf_key() == (p1.has_leaf_key() ? key_path(*--p1.end(), p1.view()) : key_path(string_type(), p1.view())));
+        ASSERT_TRUE(p1.leaf_key() == (p1.has_leaf_key() ? key_path(*--p1.end(), p1.key_view()) : key_path(string_type(), p1.key_view())));
 
         key_path p2 = TEXT("Test");
-        ASSERT_TRUE(p2.leaf_key() == (p2.has_leaf_key() ? key_path(*--p2.end(), p2.view()) : key_path(string_type(), p2.view())));
+        ASSERT_TRUE(p2.leaf_key() == (p2.has_leaf_key() ? key_path(*--p2.end(), p2.key_view()) : key_path(string_type(), p2.key_view())));
 
         key_path p3 = TEXT("Test1\\Test2\\Test3");
-        ASSERT_TRUE(p3.leaf_key() == (p3.has_leaf_key() ? key_path(*--p3.end(), p3.view()) : key_path(string_type(), p3.view())));
+        ASSERT_TRUE(p3.leaf_key() == (p3.has_leaf_key() ? key_path(*--p3.end(), p3.key_view()) : key_path(string_type(), p3.key_view())));
     }
 
     // key_path::parent_key()
     {
         key_path p1;
-        ASSERT_TRUE(p1.parent_key() == key_path(string_type(), p1.view()));
+        ASSERT_TRUE(p1.parent_key() == key_path(string_type(), p1.key_view()));
 
         key_path p2 = TEXT("Test");
-        ASSERT_TRUE(p2.parent_key() == key_path(string_type(), p2.view()));
+        ASSERT_TRUE(p2.parent_key() == key_path(string_type(), p2.key_view()));
 
         key_path p3 = TEXT("Test1\\Test2\\\\Test3\\");
-        ASSERT_TRUE(p3.parent_key() == key_path(TEXT("Test1\\Test2"), p3.view()));
+        ASSERT_TRUE(p3.parent_key() == key_path(TEXT("Test1\\Test2"), p3.key_view()));
     }
 }
 
@@ -265,25 +265,25 @@ TEST(KeyPath, Modifiers)
     {
         // redundant separator case 1
         key_path p1 = TEXT("HKEY_CURRENT_USER\\");
-        ASSERT_TRUE(p1.append(TEXT("Test")).name() == TEXT("HKEY_CURRENT_USER\\Test"));
+        ASSERT_TRUE(p1.append(TEXT("Test")).key_name() == TEXT("HKEY_CURRENT_USER\\Test"));
 
         // redundant separator case 2
         key_path p2 = TEXT("");
         key_path p3 = TEXT("\\\\");
-        ASSERT_TRUE(p2.append(TEXT("Test")).name() == TEXT("Test"));
-        ASSERT_TRUE(p3.append(TEXT("Test")).name() == TEXT("\\\\Test"));
+        ASSERT_TRUE(p2.append(TEXT("Test")).key_name() == TEXT("Test"));
+        ASSERT_TRUE(p3.append(TEXT("Test")).key_name() == TEXT("\\\\Test"));
 
         // redundant separator case 3
         key_path p4 = TEXT("HKEY_CURRENT_USER");
-        ASSERT_TRUE(p4.append(TEXT("")).name() == TEXT("HKEY_CURRENT_USER"));
+        ASSERT_TRUE(p4.append(TEXT("")).key_name() == TEXT("HKEY_CURRENT_USER"));
 
         // redundant separator case 4
         key_path p5 = TEXT("HKEY_CURRENT_USER");
-        ASSERT_TRUE(p5.append(TEXT("\\Test")).name() == TEXT("HKEY_CURRENT_USER\\Test"));
+        ASSERT_TRUE(p5.append(TEXT("\\Test")).key_name() == TEXT("HKEY_CURRENT_USER\\Test"));
 
         // adds a separator
         key_path p6 = TEXT("HKEY_CURRENT_USER");
-        ASSERT_TRUE(p6.append(TEXT("Test")).name() == TEXT("HKEY_CURRENT_USER\\Test"));
+        ASSERT_TRUE(p6.append(TEXT("Test")).key_name() == TEXT("HKEY_CURRENT_USER\\Test"));
     }
 
     // key_path::append(const key_path&)
@@ -292,37 +292,37 @@ TEST(KeyPath, Modifiers)
         key_path p2(TEXT("Test1\\Test2\\\\"), view::view_64bit);
 
         p1.append(p2);
-        ASSERT_TRUE(p1.name() == TEXT("HKEY_CURRENT_USER\\Test1\\Test2") && p1.view() == view::view_64bit);
+        ASSERT_TRUE(p1.key_name() == TEXT("HKEY_CURRENT_USER\\Test1\\Test2") && p1.key_view() == view::view_64bit);
     }
 
     // key_path::concat(string_view_type)
     {
         key_path p1, p1_copy = p1;
-        ASSERT_TRUE(p1.concat(TEXT("Test")) == key_path(p1_copy.name() + TEXT("Test"), p1_copy.view()));
+        ASSERT_TRUE(p1.concat(TEXT("Test")) == key_path(p1_copy.key_name() + TEXT("Test"), p1_copy.key_view()));
 
         key_path p2 = TEXT("HKEY_CURRENT_USER"), p2_copy = p2;
-        ASSERT_TRUE(p2.concat(TEXT("Test")) == key_path(p2_copy.name() + TEXT("Test"), p2_copy.view()));
+        ASSERT_TRUE(p2.concat(TEXT("Test")) == key_path(p2_copy.key_name() + TEXT("Test"), p2_copy.key_view()));
 
         key_path p3 = TEXT("HKEY_CURRENT_USER\\"), p3_copy = p3;
-        ASSERT_TRUE(p3.concat(TEXT("Test")) == key_path(p3_copy.name() + TEXT("Test"), p3_copy.view()));
+        ASSERT_TRUE(p3.concat(TEXT("Test")) == key_path(p3_copy.key_name() + TEXT("Test"), p3_copy.key_view()));
     }
 
     // key_path::remove_leaf_key()
     {
         key_path p1 = TEXT("HKEY_CURRENT_USER");
-        ASSERT_TRUE(p1.remove_leaf_key().name() == TEXT(""));
+        ASSERT_TRUE(p1.remove_leaf_key().key_name() == TEXT(""));
 
         key_path p2 = TEXT("HKEY_CURRENT_USER\\");
-        ASSERT_TRUE(p2.remove_leaf_key().name() == TEXT(""));
+        ASSERT_TRUE(p2.remove_leaf_key().key_name() == TEXT(""));
 
         key_path p3 = TEXT("\\HKEY_CURRENT_USER\\");
-        ASSERT_TRUE(p3.remove_leaf_key().name() == TEXT(""));
+        ASSERT_TRUE(p3.remove_leaf_key().key_name() == TEXT(""));
 
         key_path p4 = TEXT("HKEY_CURRENT_USER\\Test");
-        ASSERT_TRUE(p4.remove_leaf_key().name() == TEXT("HKEY_CURRENT_USER"));
+        ASSERT_TRUE(p4.remove_leaf_key().key_name() == TEXT("HKEY_CURRENT_USER"));
 
         key_path p5 = TEXT("HKEY_CURRENT_USER\\Test\\\\");
-        ASSERT_TRUE(p5.remove_leaf_key().name() == TEXT("HKEY_CURRENT_USER"));
+        ASSERT_TRUE(p5.remove_leaf_key().key_name() == TEXT("HKEY_CURRENT_USER"));
     }
 
     // key_path::replace_leaf_key(string_view_type)

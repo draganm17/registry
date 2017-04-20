@@ -129,7 +129,7 @@ key_handle::key_handle(const key_path& path, access_rights rights, std::error_co
         HKEY hkey;
         const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(path.root_key_id()),
                                         path.has_parent_key() ? (++path.begin())->data() : TEXT(""), 0,
-                                        static_cast<DWORD>(rights) | static_cast<DWORD>(path.view()), &hkey);
+                                        static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
 
         if (rc == ERROR_SUCCESS) {
             m_handle = std::unique_ptr<void, close_handle_t>(reinterpret_cast<void*>(hkey), close_handle_t{});
@@ -158,8 +158,8 @@ std::pair<key_handle, bool> key_handle::create_key(const key_path& path,
     key_handle handle;
     handle.m_rights = rights;
     handle.m_path = this->path().append(path);
-    const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(path.view());
-    const LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), path.name().data(),
+    const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view());
+    const LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), path.key_name().data(),
                                       0, nullptr, REG_OPTION_NON_VOLATILE, sam_desired, nullptr, &hkey, &disp);
     
     if (rc == ERROR_SUCCESS) {
@@ -240,8 +240,8 @@ key_handle key_handle::open(const key_path& path, access_rights rights, std::err
     key_handle handle;
     handle.m_rights = rights;
     handle.m_path = this->path().append(path);
-    const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(native_handle()), path.name().data(), 0,
-                                    static_cast<DWORD>(rights) | static_cast<DWORD>(path.view()), &hkey);
+    const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(native_handle()), path.key_name().data(), 0,
+                                    static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
 
     if (rc == ERROR_SUCCESS) {
         handle.m_handle = std::unique_ptr<void, close_handle_t>(reinterpret_cast<void*>(hkey), close_handle_t{});
@@ -276,14 +276,14 @@ bool key_handle::remove(const key_path& path, std::error_code& ec) const
     LSTATUS rc;
 #if REGISTRY_USE_WINAPI_VERSION < REGISTRY_WINAPI_VERSION_VISTA
     if (!RegDeleteKeyEx_) {
-        rc = RegDeleteKey(reinterpret_cast<HKEY>(native_handle()), subkey.name().data());
+        rc = RegDeleteKey(reinterpret_cast<HKEY>(native_handle()), subkey.key_name().data());
     } else {
         rc = RegDeleteKeyEx_(reinterpret_cast<HKEY>(native_handle()),
-                             subkey.name().data(), static_cast<DWORD>(subkey.view()), 0);
+                             subkey.key_name().data(), static_cast<DWORD>(subkey.key_view()), 0);
     }
 #else
     rc = RegDeleteKeyEx(reinterpret_cast<HKEY>(native_handle()),
-                        path.name().data(), static_cast<DWORD>(path.view()), 0);
+                        path.key_name().data(), static_cast<DWORD>(path.key_view()), 0);
 #endif
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);

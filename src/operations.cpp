@@ -22,7 +22,7 @@ bool create_key(const key_path& path, std::error_code& ec)
 
     if (!ec2) RETURN_RESULT(ec, false);
     while (ec2.value() == ERROR_FILE_NOT_FOUND && base_path.has_parent_key()) {
-        subkey_path = base_path.leaf_key().append(subkey_path.name());
+        subkey_path = base_path.leaf_key().append(subkey_path.key_name());
         handle = key_handle(base_path.remove_leaf_key(), access_rights::create_sub_key, ec2);
     }
 
