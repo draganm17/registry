@@ -350,8 +350,8 @@ TEST(KeyHandle, OperationsOnRegistry)
         EXPECT_TRUE(h.read_value(TEXT("val_09")) == v09 && h.read_value(TEXT("val_09a")) == v09);  
     }
 
-    // key_handle::remove(string_view_type)
-    // key_handle::remove(string_view_type, std::error_code&)
+    // key_handle::remove_key(string_view_type)
+    // key_handle::remove_key(string_view_type, std::error_code&)
     {
         // TODO: ...
 
@@ -370,8 +370,8 @@ TEST(KeyHandle, OperationsOnRegistry)
         //EXPECT_TRUE(h.remove(TEXT("val_02"), ec) == true && !ec && !h.exists(TEXT("val_02")));
     }
 
-    // key_handle::remove_all(string_view_type)
-    // key_handle::remove_all(string_view_type, std::error_code&)
+    // key_handle::remove_keys(string_view_type)
+    // key_handle::remove_keys(string_view_type, std::error_code&)
     {
         std::error_code ec;
         const key_path p0 = TEXT("non_existing");
@@ -384,14 +384,14 @@ TEST(KeyHandle, OperationsOnRegistry)
         EXPECT_TRUE(key_exists(h.path().append(p2)) && info(h.path().append(p2)).subkeys > 0);
 
         // remove an non-existing key
-        EXPECT_TRUE(h.remove_all(p0) == 0);
-        EXPECT_TRUE(h.remove_all(p0, ec) == 0 && !ec);
+        EXPECT_TRUE(h.remove_keys(p0) == 0);
+        EXPECT_TRUE(h.remove_keys(p0, ec) == 0 && !ec);
 
         // remove an non-empty key (which have subkeys)
-        EXPECT_TRUE(h.remove_all(p1) == 3 && !key_exists(h.path().append(p1)));
-        EXPECT_TRUE(h.remove_all(p2, ec) == 3 && !ec && !key_exists(h.path().append(p2)));
+        EXPECT_TRUE(h.remove_keys(p1) == 3 && !key_exists(h.path().append(p1)));
+        EXPECT_TRUE(h.remove_keys(p2, ec) == 3 && !ec && !key_exists(h.path().append(p2)));
 
         // some clean-up
-        remove_all(h.path());
+        remove_keys(h.path());
     }
 }

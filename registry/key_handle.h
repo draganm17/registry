@@ -294,7 +294,7 @@ namespace registry
 
         //! Deletes an subkey from the registry key specified by this handle.
         /*!
-        The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_all` function. \n
+        The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_keys` function. \n
         The access rights of this key do not affect the delete operation. \n
         Note that a deleted key is not removed until the last handle to it is closed.
         @param[in] path - an key path specifying the subkey that this function deletes.
@@ -308,7 +308,7 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        bool remove(const key_path& path, std::error_code& ec = throws()) const;
+        bool remove_key(const key_path& path, std::error_code& ec = throws()) const;
 
         //! Deletes an registry value from the registry key specified by this handle.
         /*!
@@ -324,7 +324,7 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur. 
         */
-        bool remove(string_view_type value_name, std::error_code& ec = throws()) const;
+        bool remove_value(string_view_type value_name, std::error_code& ec = throws()) const;
 
         //! Deletes an subkey and all its subkeys, recursively, from the registry key specified by this handle.
         /*!
@@ -342,7 +342,7 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        uint32_t remove_all(const key_path& path, std::error_code& ec = throws()) const;
+        uint32_t remove_keys(const key_path& path, std::error_code& ec = throws()) const;
 
         //! Sets the data and type of a specified value under the registry key specified by this handle.
         /*!

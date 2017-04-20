@@ -73,7 +73,7 @@ uint32_t remove_all_inside(const key_handle& handle, const key_path& path, std::
     }
 
     for (auto it = rm_list.begin(); !ec && it != rm_list.end(); ++it) {
-        keys_deleted += subkey_handle.remove(*it, ec);
+        keys_deleted += subkey_handle.remove_key(*it, ec);
     }
 
     return !ec ? keys_deleted : static_cast<uint32_t>(-1);
@@ -271,7 +271,7 @@ value key_handle::read_value(string_view_type value_name, std::error_code& ec) c
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), value();
 }
 
-bool key_handle::remove(const key_path& path, std::error_code& ec) const
+bool key_handle::remove_key(const key_path& path, std::error_code& ec) const
 {
     LSTATUS rc;
 #if REGISTRY_USE_WINAPI_VERSION < REGISTRY_WINAPI_VERSION_VISTA
@@ -293,7 +293,7 @@ bool key_handle::remove(const key_path& path, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
 }
 
-bool key_handle::remove(string_view_type value_name, std::error_code& ec) const
+bool key_handle::remove_value(string_view_type value_name, std::error_code& ec) const
 {
     const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), value_name.data());
 
@@ -304,12 +304,12 @@ bool key_handle::remove(string_view_type value_name, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), false;
 }
 
-uint32_t key_handle::remove_all(const key_path& path, std::error_code& ec) const
+uint32_t key_handle::remove_keys(const key_path& path, std::error_code& ec) const
 {
     std::error_code ec2;
     uint32_t keys_deleted = 0;
     if ((keys_deleted += remove_all_inside(*this, path, ec2), !ec2) &&
-        (keys_deleted += static_cast<uint32_t>(remove(path, ec2)), !ec2))
+        (keys_deleted += static_cast<uint32_t>(remove_key(path, ec2)), !ec2))
     {
         RETURN_RESULT(ec, keys_deleted);
     }

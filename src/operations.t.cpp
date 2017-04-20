@@ -242,8 +242,8 @@ TEST(Operations, All)
         EXPECT_TRUE(read_value(p, TEXT("val_09")) == v09 && read_value(p, TEXT("val_09a")) == v09);  
     }
 
-    // remove(const key_path&, string_view_type)
-    // remove(const key_path&, string_view_type, std::error_code&)
+    // remove_value(const key_path&, string_view_type)
+    // remove_value(const key_path&, string_view_type, std::error_code&)
     {
         std::error_code ec;
         const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
@@ -252,16 +252,16 @@ TEST(Operations, All)
         EXPECT_TRUE(value_exists(p, TEXT("val_01")) && value_exists(p, TEXT("val_02")));
 
         // remove an non-existing value
-        EXPECT_TRUE(remove(p, TEXT("non_existing")) == false);
-        EXPECT_TRUE(remove(p, TEXT("non_existing"), ec) == false && !ec);
+        EXPECT_TRUE(remove_value(p, TEXT("non_existing")) == false);
+        EXPECT_TRUE(remove_value(p, TEXT("non_existing"), ec) == false && !ec);
 
         // remove an existing value
-        EXPECT_TRUE(remove(p, TEXT("val_01")) == true && !value_exists(p, TEXT("val_01")));
-        EXPECT_TRUE(remove(p, TEXT("val_02"), ec) == true && !ec && !value_exists(p, TEXT("val_02")));
+        EXPECT_TRUE(remove_value(p, TEXT("val_01")) == true && !value_exists(p, TEXT("val_01")));
+        EXPECT_TRUE(remove_value(p, TEXT("val_02"), ec) == true && !ec && !value_exists(p, TEXT("val_02")));
     }
 
-    // remove(const key_path&)
-    // remove(const key_path&, std::error_code&)
+    // remove_key(const key_path&)
+    // remove_key(const key_path&, std::error_code&)
     {
         std::error_code ec;
         const key_path p0 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write\\non_existing");
@@ -273,18 +273,18 @@ TEST(Operations, All)
         EXPECT_TRUE(key_exists(key_path(p3).append(TEXT("Inner1\\Inner2"))));
 
         // remove an non-existing key
-        EXPECT_TRUE(remove(p0) == false);
-        EXPECT_TRUE(remove(p0, ec) == false && !ec);
+        EXPECT_TRUE(remove_key(p0) == false);
+        EXPECT_TRUE(remove_key(p0, ec) == false && !ec);
 
         // remove an empty key (with no subkeys)
-        EXPECT_TRUE(remove(p1) == true && !key_exists(p1));
-        EXPECT_TRUE(remove(p2, ec) == true && !ec && !key_exists(p2));
+        EXPECT_TRUE(remove_key(p1) == true && !key_exists(p1));
+        EXPECT_TRUE(remove_key(p2, ec) == true && !ec && !key_exists(p2));
 
         // try remove an non-empty key (which have subkeys)
         int exception = 0;
-        EXPECT_TRUE(remove(p3, ec) == false && ec && key_exists(p3));
+        EXPECT_TRUE(remove_key(p3, ec) == false && ec && key_exists(p3));
         try {
-            remove(p3);
+            remove_key(p3);
         } catch (const registry_error& e) {
             ++exception;
             key_exists(p3);
@@ -292,8 +292,8 @@ TEST(Operations, All)
         EXPECT_TRUE(exception == 1);
     }
 
-    // remove_all(const key_path&)
-    // remove_all(const key_path&, std::error_code&)
+    // remove_keys(const key_path&)
+    // remove_keys(const key_path&, std::error_code&)
     {
         std::error_code ec;
         const key_path p0 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existing");
@@ -305,15 +305,15 @@ TEST(Operations, All)
         EXPECT_TRUE(key_exists(p2) && info(p2).subkeys > 0);
 
         // remove an non-existing key
-        EXPECT_TRUE(remove_all(p0) == 0);
-        EXPECT_TRUE(remove_all(p0, ec) == 0 && !ec);
+        EXPECT_TRUE(remove_keys(p0) == 0);
+        EXPECT_TRUE(remove_keys(p0, ec) == 0 && !ec);
 
         // remove an non-empty key (which have subkeys)
-        EXPECT_TRUE(remove_all(p1) == 3 && !key_exists(p1));
-        EXPECT_TRUE(remove_all(p2, ec) == 3 && !ec && !key_exists(p2));
+        EXPECT_TRUE(remove_keys(p1) == 3 && !key_exists(p1));
+        EXPECT_TRUE(remove_keys(p2, ec) == 3 && !ec && !key_exists(p2));
 
         // some clean-up
-        remove_all(key_path(p1).remove_leaf_key());
+        remove_keys(key_path(p1).remove_leaf_key());
     }
 
 

@@ -122,7 +122,7 @@ namespace registry
 
     //! Deletes an registry key.
     /*!
-    The key to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_all` function. \n
+    The key to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_keys` function. \n
     Note that a deleted key is not removed until the last handle to it is closed.
     @param[in] path - an absolute key path specifying the registry key that this function deletes.
     @param[out] ec - out-parameter for error reporting.
@@ -135,7 +135,7 @@ namespace registry
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
-    bool remove(const key_path& path, std::error_code& ec = throws());
+    bool remove_key(const key_path& path, std::error_code& ec = throws());
 
     //! Deletes an registry value.
     /*!
@@ -151,7 +151,7 @@ namespace registry
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
-    bool remove(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
+    bool remove_value(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
 
     //! Deletes an registry key and all its subkeys, recursively.
     /*!
@@ -166,7 +166,7 @@ namespace registry
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
-    uint32_t remove_all(const key_path& path, std::error_code& ec = throws());
+    uint32_t remove_keys(const key_path& path, std::error_code& ec = throws());
 
     //! Retrieves the information about the size of the registry on the system.
     /*!
