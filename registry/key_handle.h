@@ -162,9 +162,9 @@ namespace registry
         If the key already exists, the function opens it. The function creates all missing keys in the specified path. \n
         The calling process must have `access_rights::create_sub_key` access to the key specified by this handle. The 
         access rights the key was opened with does not affect the operation.
-        @param[in] path - an relative key path specifying the subkey that this function opens or creates. If the subkey
-                          name is an empty string the function will return a new handle to the key specified by this
-                          handle.
+        @param[in] path - an key path specifying the subkey that this function opens or creates. If the subkey name
+                          is an empty string the function will return a new handle to the key specified by this handle.
+
         @param[in] rights - the access rights for the key to be created.
         @param[out] ec - out-parameter for error reporting.
         @return A pair consisting of an handle to the opened or created key and a `bool` denoting whether the key was
@@ -258,7 +258,7 @@ namespace registry
 
         //! Opens a subkey of a registry key specified by this handle.
         /*!
-        @param[in] path - an relative key path specifying the subkey that this function opens.
+        @param[in] path - an key path specifying the subkey that this function opens.
         @param[in] rights - the access rights for the key to be opened.
         @param[out] ec - out-parameter for error reporting.
         @return An `key_handle` object constructed as if by `key_handle(this->path().append(path), rights)`.
@@ -297,7 +297,7 @@ namespace registry
         The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_all` function. \n
         The access rights of this key do not affect the delete operation. \n
         Note that a deleted key is not removed until the last handle to it is closed.
-        @param[in] path - an relative key path specifying the subkey that this function deletes.
+        @param[in] path - an key path specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
         @return `true` if the subkey was deleted, `false` if it did not exist. The overload  that takes 
                 `std::error_code&` parameter returns `false` on error.
@@ -331,7 +331,7 @@ namespace registry
         The key must have been opened with the `access_rights::enumerate_sub_keys` and `access_rights::query_value` 
         access right. \n
         Note that a deleted key is not removed until the last handle to it is closed.
-        @param[in] path - an relative key path specifying the subkey that this function deletes.
+        @param[in] path - an key path specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
         @return The number of keys that were deleted (which may be zero if `path` did not exist to begin with). 
                 The overload that takes `std::error_code&` parameter returns `static_cast<uint32_t>(-1)` on error.
