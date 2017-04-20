@@ -222,6 +222,16 @@ key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path()), invalid_info;
 }
 
+bool key_handle::key_exists(const key_path& path, std::error_code& ec = throws()) const
+{
+    std::error_code ec2;
+    open(path, access_rights::query_value, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, true);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
+}
+
 key_handle key_handle::open(const key_path& path, access_rights rights, std::error_code& ec) const
 {
     HKEY hkey;

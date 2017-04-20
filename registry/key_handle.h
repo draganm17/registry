@@ -237,7 +237,20 @@ namespace registry
         */
         key_info info(key_info_mask mask = key_info_mask::all, std::error_code& ec = throws()) const;
 
-        // TODO: key_exists()
+        //! Check whether the registry key specified by this handle contains the given subkey.
+        /*!
+        @param[in] path - an key path specifying the subkey that this function checks the existence of.
+        @param[out] ec - out-parameter for error reporting.
+        @return `true` if the given path corresponds to an existing registry key, `false` otherwise. The overload that
+                takes `std::error_code&` parameter returns `false` on error.
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key path set to `this->path()`, the second key path set to `path`
+               and the OS error code as the error code argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur. 
+        */
+        bool key_exists(const key_path& path, std::error_code& ec = throws()) const;
 
         //! Opens a subkey of a registry key specified by this handle.
         /*!
@@ -254,7 +267,7 @@ namespace registry
                `ec.clear()` if no errors occur.
         */
         // TODO: describe what happens if subkey name is empty ...
-        key_handle open(const key_path& path, access_rights rights, std::error_code& ec = throws()) const;
+        key_handle open(const key_path& path, access_rights rights, std::error_code& ec = throws()) const; // rename to open_key ???
 
         /*! \brief
         Retrieves the type and data for the specified value name associated with the registry key specified by this 
