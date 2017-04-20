@@ -6,8 +6,8 @@
 #include <system_error>
 #include <vector>
 
-#include <registry/key_path.h>
 #include <registry/key_handle.h>
+#include <registry/key_path.h>
 #include <registry/types.h>
 
 
