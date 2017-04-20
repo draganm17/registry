@@ -2,7 +2,6 @@
 #include <Windows.h>
 
 #include <registry/details/utils.impl.h>
-#include <registry/key.h>
 #include <registry/key_event.h>
 #include <registry/key_handle.h>
 
@@ -39,16 +38,16 @@ key_event_status key_event::wait_impl(const char* caller, std::chrono::milliseco
     if (rc == WAIT_OBJECT_0) RETURN_RESULT(ec, key_event_status::signalled);
 
     const std::error_code ec2(GetLastError(), std::system_category());
-    return details::set_or_throw(&ec, ec2, caller, m_key_handle.key()), key_event_status::failed;
+    return details::set_or_throw(&ec, ec2, caller, m_key_handle.path()), key_event_status::failed;
 }
 
-key_event::key_event(const registry::key& key, key_event_filter filter, bool watch_subtree, std::error_code& ec)
+key_event::key_event(const key_path& path, key_event_filter filter, bool watch_subtree, std::error_code& ec)
 {
     std::error_code ec2;
-    key_handle handle(key, access_rights::notify, ec2);
+    key_handle handle(path, access_rights::notify, ec2);
     if (!ec2 && (swap(key_event(std::move(handle), filter, watch_subtree, ec2)), !ec2)) RETURN_RESULT(ec, VOID);
 
-    details::set_or_throw(&ec, ec2, __FUNCTION__, key);
+    details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
 key_event::key_event(key_handle handle, key_event_filter filter, bool watch_subtree, std::error_code& ec)
@@ -74,10 +73,10 @@ key_event::key_event(key_handle handle, key_event_filter filter, bool watch_subt
 
     const std::error_code ec2(rc ? rc : GetLastError(), std::system_category());
     key_event tmp(std::move(*this));
-    details::set_or_throw(&ec, ec2, __FUNCTION__, tmp.key());
+    details::set_or_throw(&ec, ec2, __FUNCTION__, tmp.path());
 }
 
-key key_event::key() const { return valid() ? m_key_handle.key() : registry::key(); }
+key_path key_event::path() const { return valid() ? m_key_handle.path() : key_path(); }
 
 key_event_filter key_event::filter() const noexcept
 { return valid() ? m_filter : key_event_filter::notify_none; }

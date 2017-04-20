@@ -6,7 +6,7 @@
 #include <memory>
 #include <system_error>
 
-#include <registry/key.h>
+#include <registry/key_path.h>
 #include <registry/key_handle.h>
 #include <registry/types.h>
 
@@ -88,7 +88,7 @@ namespace registry
         key_event& operator=(key_event&&) noexcept = default;
 
         // TODO: ...
-        key_event(const key& key, key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
+        key_event(const key_path& path, key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
 
         // TODO: ...
         key_event(key_handle handle, key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
@@ -98,7 +98,7 @@ namespace registry
 
     public:
         // TODO: ...
-        key key() const;
+        key_path path() const;
 
         // TODO: ...
         key_event_filter filter() const noexcept;
