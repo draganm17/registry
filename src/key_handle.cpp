@@ -186,18 +186,6 @@ bool key_handle::equivalent(const key_handle& handle, std::error_code& ec) const
     RETURN_RESULT(ec, nt_name(native_handle()) == nt_name(handle.native_handle()));
 }
 
-bool key_handle::value_exists(string_view_type value_name, std::error_code& ec) const
-{
-    const LSTATUS rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), 
-                                       value_name.data(), nullptr, nullptr, nullptr, nullptr);
-
-    if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
-    if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
-
-    const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), false;
-}
-
 key_info key_handle::info(key_info_mask mask, std::error_code& ec) const
 {
     constexpr key_info invalid_info{ uint32_t(-1), uint32_t(-1), uint32_t(-1), 
@@ -293,6 +281,18 @@ bool key_handle::remove_key(const key_path& path, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
 }
 
+uint32_t key_handle::remove_keys(const key_path& path, std::error_code& ec) const
+{
+    std::error_code ec2;
+    uint32_t keys_deleted = 0;
+    if ((keys_deleted += remove_all_inside(*this, path, ec2), !ec2) &&
+        (keys_deleted += static_cast<uint32_t>(remove_key(path, ec2)), !ec2))
+    {
+        RETURN_RESULT(ec, keys_deleted);
+    }
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), static_cast<uint32_t>(-1);
+}
+
 bool key_handle::remove_value(string_view_type value_name, std::error_code& ec) const
 {
     const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), value_name.data());
@@ -304,16 +304,16 @@ bool key_handle::remove_value(string_view_type value_name, std::error_code& ec) 
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), false;
 }
 
-uint32_t key_handle::remove_keys(const key_path& path, std::error_code& ec) const
+bool key_handle::value_exists(string_view_type value_name, std::error_code& ec) const
 {
-    std::error_code ec2;
-    uint32_t keys_deleted = 0;
-    if ((keys_deleted += remove_all_inside(*this, path, ec2), !ec2) &&
-        (keys_deleted += static_cast<uint32_t>(remove_key(path, ec2)), !ec2))
-    {
-        RETURN_RESULT(ec, keys_deleted);
-    }
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), static_cast<uint32_t>(-1);
+    const LSTATUS rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), 
+                                       value_name.data(), nullptr, nullptr, nullptr, nullptr);
+
+    if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
+    if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
+
+    const std::error_code ec2(rc, std::system_category());
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), false;
 }
 
 void key_handle::write_value(string_view_type value_name, const value& value, std::error_code& ec) const

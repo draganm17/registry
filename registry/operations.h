@@ -50,38 +50,6 @@ namespace registry
     // TODO: write something about redirection and reflection ???
     bool equivalent(const key_path& path1, const key_path& path2, std::error_code& ec = throws());
 
-    //! Check whether a registry key exist. 
-    /*!
-    @param[in] path - an absolute key path specifying the registry key that this function checks the existence of.
-    @param[out] ec - out-parameter for error reporting.
-    @return `true` if the given path corresponds to an existing registry key, `false` otherwise. The overload that
-            takes `std::error_code&` parameter returns `false` on error.
-    @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-           API errors, constructed with the first key path set to `path` and the OS error code as the error code 
-           argument. \n
-           `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
-           `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-           `ec.clear()` if no errors occur. 
-    */
-    bool key_exists(const key_path& path, std::error_code& ec = throws());
-
-    //! Check whether a registry value exists.
-    /*!
-    @param[in] path - an absolute key path specifying the location of the value.
-    @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
-                            default value.
-    @param[out] ec - out-parameter for error reporting.
-    @return `true` if the given name corresponds to an existing registry value, `false` otherwise. The overload that
-            takes `std::error_code&` parameter returns `false` on error.
-    @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-           API errors, constructed with the first key path set to `path`, the value name set to `value_name` and the OS
-           error code as the error code argument. \n
-           `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
-           `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-           `ec.clear()` if no errors occur. 
-    */
-    bool value_exists(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
-
     //! Retrieves information about a registry key.
     /*!
     @param[in] path - an absolute key path specifying the registry key that this function queries the information about.
@@ -102,6 +70,21 @@ namespace registry
     key_info info(const key_path& path, key_info_mask mask = key_info_mask::all, std::error_code& ec = throws());
 
     // TODO: info() for values ???
+
+    //! Check whether a registry key exist. 
+    /*!
+    @param[in] path - an absolute key path specifying the registry key that this function checks the existence of.
+    @param[out] ec - out-parameter for error reporting.
+    @return `true` if the given path corresponds to an existing registry key, `false` otherwise. The overload that
+            takes `std::error_code&` parameter returns `false` on error.
+    @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+           API errors, constructed with the first key path set to `path` and the OS error code as the error code 
+           argument. \n
+           `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+           `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+           `ec.clear()` if no errors occur. 
+    */
+    bool key_exists(const key_path& path, std::error_code& ec = throws());
 
     //! Retrieves the type and data for the specified value name associated with an registry key.
     /*!
@@ -137,6 +120,21 @@ namespace registry
     */
     bool remove_key(const key_path& path, std::error_code& ec = throws());
 
+    //! Deletes an registry key and all its subkeys, recursively.
+    /*!
+    @param[in] path - an absolute key path specifying the registry key that this function deletes.
+    @param[out] ec - out-parameter for error reporting.
+    @return The number of keys that were deleted (which may be zero if `path` did not exist to begin with). The 
+            overload that takes `std::error_code&` parameter returns `static_cast<uint32_t>(-1)` on error.
+    @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+           API errors, constructed with the first key path set to `path` and the OS error code as the error code 
+           argument. \n
+           `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+           `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+           `ec.clear()` if no errors occur. 
+    */
+    uint32_t remove_keys(const key_path& path, std::error_code& ec = throws());
+
     //! Deletes an registry value.
     /*!
     @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
@@ -153,21 +151,6 @@ namespace registry
     */
     bool remove_value(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
 
-    //! Deletes an registry key and all its subkeys, recursively.
-    /*!
-    @param[in] path - an absolute key path specifying the registry key that this function deletes.
-    @param[out] ec - out-parameter for error reporting.
-    @return The number of keys that were deleted (which may be zero if `path` did not exist to begin with). The 
-            overload that takes `std::error_code&` parameter returns `static_cast<uint32_t>(-1)` on error.
-    @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-           API errors, constructed with the first key path set to `path` and the OS error code as the error code 
-           argument. \n
-           `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
-           `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-           `ec.clear()` if no errors occur. 
-    */
-    uint32_t remove_keys(const key_path& path, std::error_code& ec = throws());
-
     //! Retrieves the information about the size of the registry on the system.
     /*!
     @param[out] ec - out-parameter for error reporting.
@@ -180,6 +163,23 @@ namespace registry
            `ec.clear()` if no errors occur. 
     */
     space_info space(std::error_code& ec = throws());
+
+    //! Check whether a registry value exists.
+    /*!
+    @param[in] path - an absolute key path specifying the location of the value.
+    @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
+                            default value.
+    @param[out] ec - out-parameter for error reporting.
+    @return `true` if the given name corresponds to an existing registry value, `false` otherwise. The overload that
+            takes `std::error_code&` parameter returns `false` on error.
+    @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+           API errors, constructed with the first key path set to `path`, the value name set to `value_name` and the OS
+           error code as the error code argument. \n
+           `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+           `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+           `ec.clear()` if no errors occur. 
+    */
+    bool value_exists(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
 
     //! Sets the data and type of a specified value under a registry key.
     /*!

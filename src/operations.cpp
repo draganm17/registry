@@ -47,27 +47,6 @@ bool equivalent(const key_path& path1, const key_path& path2, std::error_code& e
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path1, path2), false;
 }
 
-bool key_exists(const key_path& path, std::error_code& ec)
-{
-    std::error_code ec2;
-    key_handle(path, access_rights::query_value, ec2);
-
-    if (!ec2) RETURN_RESULT(ec, true);
-    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
-}
-
-bool value_exists(const key_path& path, string_view_type value_name, std::error_code& ec)
-{
-    std::error_code ec2;
-    const key_handle handle(path, access_rights::query_value, ec2);
-    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
-
-    bool result;
-    if (!ec2 && (result = handle.value_exists(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name), false;
-}
-
 key_info info(const key_path& path, key_info_mask mask, std::error_code& ec)
 {
     constexpr key_info invalid_info{ uint32_t(-1), uint32_t(-1), uint32_t(-1), 
@@ -79,6 +58,16 @@ key_info info(const key_path& path, key_info_mask mask, std::error_code& ec)
     key_info info;
     if (!ec2 && (info = handle.info(mask, ec2), !ec2)) RETURN_RESULT(ec, info);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), invalid_info;
+}
+
+bool key_exists(const key_path& path, std::error_code& ec)
+{
+    std::error_code ec2;
+    key_handle(path, access_rights::query_value, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, true);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
 value read_value(const key_path& path, string_view_type value_name, std::error_code& ec)
@@ -103,17 +92,6 @@ bool remove_key(const key_path& path, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
-bool remove_value(const key_path& path, string_view_type value_name, std::error_code& ec)
-{
-    std::error_code ec2;
-    const key_handle handle(path, access_rights::set_value, ec2);
-    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
-
-    bool result;
-    if (!ec2 && (result = handle.remove_value(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name), false;
-}
-
 uint32_t remove_keys(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
@@ -124,6 +102,17 @@ uint32_t remove_keys(const key_path& path, std::error_code& ec)
     uint32_t result;
     if (!ec2 && (result = handle.remove_keys(path.leaf_key(), ec2), !ec2)) RETURN_RESULT(ec, result);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), static_cast<uint32_t>(-1);
+}
+
+bool remove_value(const key_path& path, string_view_type value_name, std::error_code& ec)
+{
+    std::error_code ec2;
+    const key_handle handle(path, access_rights::set_value, ec2);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
+
+    bool result;
+    if (!ec2 && (result = handle.remove_value(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name), false;
 }
 
 space_info space(std::error_code& ec)
@@ -137,6 +126,17 @@ space_info space(std::error_code& ec)
     if (success) RETURN_RESULT(ec, info);
     const std::error_code ec2(GetLastError(), std::system_category());
     return details::set_or_throw(&ec, ec2, __FUNCTION__), invalid_info;
+}
+
+bool value_exists(const key_path& path, string_view_type value_name, std::error_code& ec)
+{
+    std::error_code ec2;
+    const key_handle handle(path, access_rights::query_value, ec2);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
+
+    bool result;
+    if (!ec2 && (result = handle.value_exists(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name), false;
 }
 
 void write_value(const key_path& path, string_view_type value_name, const value& value, std::error_code& ec)

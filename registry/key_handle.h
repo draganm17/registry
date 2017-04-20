@@ -218,25 +218,6 @@ namespace registry
         */
         bool equivalent(const key_handle& handle, std::error_code& ec = throws()) const;
 
-        // TODO: key_exists()
-
-        //! Check whether the registry key specified by this handle contains the given value.
-        /*!
-        The key must have been opened with the `access_rights::query_value` access right.
-        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
-                                default value.
-        @param[out] ec - out-parameter for error reporting.
-        @return `true` if the given name corresponds to an existing registry value, `false` otherwise. The overload  
-                that takes `std::error_code&` parameter returns `false` on error.
-        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key path set to `this->path()`, the value name set to `value_name` 
-               and the OS error code as the error code argument. \n
-               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
-               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-               `ec.clear()` if no errors occur. 
-        */
-        bool value_exists(string_view_type value_name, std::error_code& ec = throws()) const;
-
         //! Retrieves information about the registry key specified by this handle.
         /*!
         The key must have been opened with the `access_rights::query_value` access right.
@@ -255,6 +236,8 @@ namespace registry
                `ec.clear()` if no errors occur.
         */
         key_info info(key_info_mask mask = key_info_mask::all, std::error_code& ec = throws()) const;
+
+        // TODO: key_exists()
 
         //! Opens a subkey of a registry key specified by this handle.
         /*!
@@ -310,22 +293,6 @@ namespace registry
         */
         bool remove_key(const key_path& path, std::error_code& ec = throws()) const;
 
-        //! Deletes an registry value from the registry key specified by this handle.
-        /*!
-        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
-                                default value.
-        @param[out] ec - out-parameter for error reporting.
-        @return `true` if the value was deleted, `false` if it did not exist. The overload  that takes 
-                `std::error_code&` parameter returns `false` on error.
-        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key path set to `this->path()`, the value name set to `value_name`
-               and the OS error code as the error code argument. \n
-               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
-               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-               `ec.clear()` if no errors occur. 
-        */
-        bool remove_value(string_view_type value_name, std::error_code& ec = throws()) const;
-
         //! Deletes an subkey and all its subkeys, recursively, from the registry key specified by this handle.
         /*!
         The key must have been opened with the `access_rights::enumerate_sub_keys` and `access_rights::query_value` 
@@ -343,6 +310,39 @@ namespace registry
                `ec.clear()` if no errors occur.
         */
         uint32_t remove_keys(const key_path& path, std::error_code& ec = throws()) const;
+
+        //! Deletes an registry value from the registry key specified by this handle.
+        /*!
+        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
+                                default value.
+        @param[out] ec - out-parameter for error reporting.
+        @return `true` if the value was deleted, `false` if it did not exist. The overload  that takes 
+                `std::error_code&` parameter returns `false` on error.
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key path set to `this->path()`, the value name set to `value_name`
+               and the OS error code as the error code argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur. 
+        */
+        bool remove_value(string_view_type value_name, std::error_code& ec = throws()) const;
+
+        //! Check whether the registry key specified by this handle contains the given value.
+        /*!
+        The key must have been opened with the `access_rights::query_value` access right.
+        @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
+                                default value.
+        @param[out] ec - out-parameter for error reporting.
+        @return `true` if the given name corresponds to an existing registry value, `false` otherwise. The overload  
+                that takes `std::error_code&` parameter returns `false` on error.
+        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+               API errors, constructed with the first key path set to `this->path()`, the value name set to `value_name` 
+               and the OS error code as the error code argument. \n
+               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
+               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
+               `ec.clear()` if no errors occur. 
+        */
+        bool value_exists(string_view_type value_name, std::error_code& ec = throws()) const;
 
         //! Sets the data and type of a specified value under the registry key specified by this handle.
         /*!
