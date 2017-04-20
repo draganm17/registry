@@ -55,10 +55,10 @@ namespace registry
     };
 
     //------------------------------------------------------------------------------------//
-    //                                class key_handle                                    //
+    //                                   class key                                        //
     //------------------------------------------------------------------------------------//
 
-    //! Represents a handle to an registry key.
+    //! Represents a registry key.
     /*!
     `registry::key_handle` is a wrapper around a native registry key handle that retains exclusive ownership of that 
     handle. The managed handle is closed when either of the following happens:
@@ -67,7 +67,7 @@ namespace registry
 
     A `key_handle` may alternatively own no handle, in which case it is called `empty`.
     */
-    class key_handle
+    class key
     {
     public:
         using native_handle_type = void*;
@@ -76,34 +76,34 @@ namespace registry
         struct close_handle_t { void operator()(void*) const noexcept; };
 
     public:
-        //! Constructs an empty handle.
+        //! Constructs an `key` object which does not represent a registry key.
         /*!
         @post `!is_open()`.
         */
-        key_handle() noexcept = default;
+        key() noexcept = default;
 
-        key_handle(const key_handle& other) = delete;
+        key(const key& other) = delete;
 
-        //! Constructs the handle with the contents of `other` using move semantics.
+        //! Constructs the key with the contents of `other` using move semantics.
         /*!
         @post `!other.is_open()`.
         @post `*this` has the original value of `other`.
         */
-        key_handle(key_handle&& other) noexcept = default;
+        key(key&& other) noexcept = default;
 
-        // Constructs a handle to an predefined registry key.
+        //! Constructs a `key` object and associates it with a predefined registry key.
         /*!
         Unless `id == key_id::unknown` the postconditions are the following:
         - `is_open()`.
         - `path() == key_path::from_key_id(id)`.
         - `rights() == access_rights::unknown`.
-        - `native_handle() == reinterpret_cast<native_handle_type>(id)`.
+        - `native_handle() == reinterpret_cast<native_handle_type>(id)`. // TODO: expose this ???
 
         Otherwise: `!is_open()`.
         */
-        key_handle(key_id id);
+        key(key_id id);
 
-        // Constructs a handle to a registry key specified by `path`.
+        //! Constructs a `key` object and associates it with a registry key identified by `path.
         /*!
         The overload that takes `std::error_code&` parameter constructs an empty handle on error.
         @post `is_open()`.
@@ -119,12 +119,12 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        key_handle(const key_path& path, access_rights rights, std::error_code& ec = throws());
+        key(const key_path& path, access_rights rights, std::error_code& ec = throws());
 
         // TODO: ...
-        ~key_handle() noexcept = default;
+        ~key() noexcept = default;
 
-        key_handle& operator=(const key_handle& other) = delete;
+        key& operator=(const key& other) = delete;
 
         //! Replaces the contents of `*this` with those of `other` using move semantics.
         /*!
@@ -132,35 +132,32 @@ namespace registry
         @post `*this` has the original value of `other`.
         @return `*this`.
         */
-        key_handle& operator=(key_handle&& other) noexcept = default;
+        key& operator=(key&& other) noexcept = default;
 
     public:
-        //! Returns the path to the key this handle is to.
+        //! Returns the path of the registry key identified by `*this`.
         /*!
-        If this handle is empty (i.e. `!is_open`), returns `key_path()`.
+        If there is no registry key associated, default constructed `registry::key_path` is returned.
         */
         key_path path() const;
 
-        //! Returns the access rights this handle was opened with.
+        //! Returns the access rights the key was opened with.
         /*!
-        If this handle is empty (i.e. `!is_open`), returns `access_rights::unknown`.
+        If there is no registry key associated, `registry::access_rights::unknown` is returned.
         */
         access_rights rights() const noexcept;
 
-        //! Returns the underlying implementation-defined native handle object suitable for use with WinAPI.
-        /*!
-        If this handle is empty (i.e. `!is_open`), returns `native_handle_type{}`.
-        */
+        //! Returns the underlying implementation-defined native key handle object suitable for use with WinAPI.
         native_handle_type native_handle() const noexcept;
 
-        //! Returns `true` if this handle is open (i.e. not empty) and `false` otherwise.
+        //! Returns `true` if this key is open (i.e. not empty) and `false` otherwise.
         bool is_open() const noexcept;
 
     public:
-        //! Creates a subkey inside the registry key specified by this handle.
+        //! Creates a subkey inside the registry key identified by `*this`.
         /*!
         If the key already exists, the function opens it. The function creates all missing keys in the specified path. \n
-        The calling process must have `access_rights::create_sub_key` access to the key specified by this handle. The 
+        The calling process must have `access_rights::create_sub_key` access to the key identified by `*this`. The 
         access rights the key was opened with does not affect the operation.
         @param[in] path - an key path specifying the subkey that this function opens or creates. If the subkey name
                           is an empty string the function will return a new handle to the key specified by this handle.
@@ -178,13 +175,13 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        std::pair<key_handle, bool> create_key(const key_path& path,
-                                               access_rights rights = access_rights::all_access, 
-                                               std::error_code& ec = throws()) const;
+        std::pair<key, bool> create_key(const key_path& path,
+                                        access_rights rights = access_rights::all_access, 
+                                        std::error_code& ec = throws()) const;
 
         /*! \brief 
-        Checks whether the registry key specified by this handle and the registry key specified by `path` refer to
-        the same registry key. */
+        Checks whether the registry key identified by `*this` and the registry key identified by `path` refer to the
+        same registry key. */
         /*!
         The key must have been opened with the `access_rights::query_value` access right.
         @param[in] path - an absolute registry key path.
@@ -201,24 +198,24 @@ namespace registry
         bool equivalent(const key_path& path, std::error_code& ec = throws()) const;
 
         /*! \brief 
-        Checks whether the registry key specified by this handle and the registry key specified by 
-        `handle` refer to the same registry key. */
+        Checks whether the registry key identified by `*this` and the registry key identified by `key` refer to
+        the same registry key. */
         /*!
         Both keys must have been opened with the `access_rights::query_value` access right.
-        @param[in] handle - a handle to an opened registry key.
+        @param[in] key - an opened registry key.
         @param[out] ec - out-parameter for error reporting.
-        @return `true` if `*this` and `handle` resolve to the same registry key, `false` otherwise. The overload that 
+        @return `true` if `*this` and `key` identify the same registry key, `false` otherwise. The overload that 
                 takes `std::error_code&` parameter returns `false` on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying
                OS API errors, constructed with the first key path set to `this->path()`, the second key path set to 
-               `handle.path()` and the OS  error code as the error code argument. \n
+               `key.path()` and the OS  error code as the error code argument. \n
                `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur.
         */
-        bool equivalent(const key_handle& handle, std::error_code& ec = throws()) const;
+        bool equivalent(const key& key, std::error_code& ec = throws()) const;
 
-        //! Retrieves information about the registry key specified by this handle.
+        //! Retrieves information about the registry key identified by `*this`.
         /*!
         The key must have been opened with the `access_rights::query_value` access right.
         @param[in] mask - a mask specifying which members of key_id are filled out and which aren't. The members which
@@ -237,7 +234,7 @@ namespace registry
         */
         key_info info(key_info_mask mask = key_info_mask::all, std::error_code& ec = throws()) const;
 
-        //! Check whether the registry key specified by this handle contains the given subkey.
+        //! Check whether the registry key identified by `*this` contains the given subkey.
         /*!
         @param[in] path - an key path specifying the subkey that this function checks the existence of.
         @param[out] ec - out-parameter for error reporting.
@@ -252,13 +249,13 @@ namespace registry
         */
         bool key_exists(const key_path& path, std::error_code& ec = throws()) const;
 
-        //! Opens a subkey of a registry key specified by this handle.
+        //! Opens a subkey of a registry key identified by `*this`.
         /*!
         @param[in] path - an key path specifying the subkey that this function opens.
         @param[in] rights - the access rights for the key to be opened.
         @param[out] ec - out-parameter for error reporting.
-        @return An `key_handle` object constructed as if by `key_handle(this->path().append(path), rights)`.
-                The overload  that takes `std::error_code&` parameter returns an empty handle on error.
+        @return An `registry::key` object constructed as if by `key(this->path().append(path), rights)`.
+                The overload  that takes `std::error_code&` parameter returns an default-constructed value on error.
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
                API errors, constructed with the first key path set to `this->path()`, the second key path set to `path`
                and the OS error code as the error code argument. \n
@@ -267,11 +264,11 @@ namespace registry
                `ec.clear()` if no errors occur.
         */
         // TODO: describe what happens if subkey name is empty ...
-        key_handle open(const key_path& path, access_rights rights, std::error_code& ec = throws()) const; // rename to open_key ???
+        key open(const key_path& path, access_rights rights, std::error_code& ec = throws()) const; // rename to open_key ???
 
         /*! \brief
-        Retrieves the type and data for the specified value name associated with the registry key specified by this 
-        handle. /*
+        // TODO: rewrite that bit ...
+        Retrieves the type and data for the specified value name associated with the registry key identified by `*this`. /*
         /*!
         The key must have been opened with the `access_rights::query_value` access right.
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the 
@@ -288,11 +285,11 @@ namespace registry
         */
         value read_value(string_view_type value_name, std::error_code& ec = throws()) const;
 
-        //! Deletes an subkey from the registry key specified by this handle.
+        //! Deletes an subkey from the registry key identified by `*this`.
         /*!
         The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_keys` function. \n
         The access rights of this key do not affect the delete operation. \n
-        Note that a deleted key is not removed until the last handle to it is closed.
+        Note that a deleted key is not removed until the last handle to it is closed. //TODO: remove or rewrite that line
         @param[in] path - an key path specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
         @return `true` if the subkey was deleted, `false` if it did not exist. The overload  that takes 
@@ -306,11 +303,11 @@ namespace registry
         */
         bool remove_key(const key_path& path, std::error_code& ec = throws()) const;
 
-        //! Deletes an subkey and all its subkeys, recursively, from the registry key specified by this handle.
+        //! Deletes an subkey and all its subkeys, recursively, from the registry key identified by `*this`.
         /*!
         The key must have been opened with the `access_rights::enumerate_sub_keys` and `access_rights::query_value` 
         access right. \n
-        Note that a deleted key is not removed until the last handle to it is closed.
+        Note that a deleted key is not removed until the last handle to it is closed. //TODO: remove or rewrite that line
         @param[in] path - an key path specifying the subkey that this function deletes.
         @param[out] ec - out-parameter for error reporting.
         @return The number of keys that were deleted (which may be zero if `path` did not exist to begin with). 
@@ -324,7 +321,7 @@ namespace registry
         */
         uint32_t remove_keys(const key_path& path, std::error_code& ec = throws()) const;
 
-        //! Deletes an registry value from the registry key specified by this handle.
+        //! Deletes an registry value from the registry key identified by `*this`.
         /*!
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
                                 default value.
@@ -340,7 +337,7 @@ namespace registry
         */
         bool remove_value(string_view_type value_name, std::error_code& ec = throws()) const;
 
-        //! Check whether the registry key specified by this handle contains the given value.
+        //! Check whether the registry key identified by `*this` contains the given value.
         /*!
         The key must have been opened with the `access_rights::query_value` access right.
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
@@ -357,7 +354,7 @@ namespace registry
         */
         bool value_exists(string_view_type value_name, std::error_code& ec = throws()) const;
 
-        //! Sets the data and type of a specified value under the registry key specified by this handle.
+        //! Sets the data and type of a specified value under the registry key identified by `*this`.
         /*!
         The key must have been opened with the `access_rights::set_value` access right.
         @param[in] value_name - a null-terminated string containing the value name. An empty string correspond to the
@@ -374,12 +371,12 @@ namespace registry
         void write_value(string_view_type value_name, const value& value, std::error_code& ec = throws()) const;
 
     public:
-        //! Closes this handle.
+        //! Closes the key.
         /*!
-        If `*this` is an empty handle (i.e. `is_open() == false`), does nothing and does not report an error. \n
-        If `*this` is not an empty handle (i.e. `is_open() == true`) and is not a handle to one of the predefined
-        registry keys, establishes the postcondition as if by WinAPI `RegCloseKey(native_handle())`. \n
-        If an error occurred, the handle is left in an empty state.
+        If there is no registry key associated, does nothing and does not report an error. Otherwise, closes the
+        registry key identified by `*this`. \n
+        If an error occured, the associated registry key is closed, regardless of whether any error is reported by
+        exception or error code.
         @post `!is_open()`.
         @param[out] ec - out-parameter for error reporting.`
         @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
@@ -392,7 +389,7 @@ namespace registry
         void close(std::error_code& ec = throws());
 
         //! Swaps the contents of `*this` and `other`.
-        void swap(key_handle& other) noexcept;
+        void swap(key& other) noexcept;
 
     private:
         key_path                               m_path;
@@ -418,32 +415,8 @@ namespace registry
 
     access_rights& operator^=(access_rights& lhs, access_rights rhs) noexcept;
 
-    //! Checks whether `lhs` is equal to `rhs`.
-    bool operator==(const key_handle& lhs, const key_handle& rhs) noexcept;
-
-    //! Checks whether `lhs` is not equal to `rhs`.
-    bool operator!=(const key_handle& lhs, const key_handle& rhs) noexcept;
-
-    //! Checks whether `lhs` is less than `rhs`.
-    bool operator<(const key_handle& lhs, const key_handle& rhs) noexcept;
-
-    //! Checks whether `lhs` is greater than `rhs`.
-    bool operator>(const key_handle& lhs, const key_handle& rhs) noexcept;
-
-    //! Checks whether `lhs` is less than or equal to `rhs`.
-    bool operator<=(const key_handle& lhs, const key_handle& rhs) noexcept;
-
-    //! Checks whether `lhs` is greater than or equal to `rhs`.
-    bool operator>=(const key_handle& lhs, const key_handle& rhs) noexcept;
-
-    //! Calculates a hash value for a `key_handle` object.
-    /*!
-    @return A hash value such that if for two handles, `h1 == h2` then `hash_value(h1) == hash_value(h2)`.
-    */
-    size_t hash_value(const key_handle& handle) noexcept;
-
     //! Swaps the contents of `lhs` and `rhs`.
-    void swap(key_handle& lhs, key_handle& rhs) noexcept;
+    void swap(key& lhs, key& rhs) noexcept;
 
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //
@@ -467,21 +440,6 @@ namespace registry
 
     inline access_rights& operator^=(access_rights& lhs, access_rights rhs) noexcept { return lhs = lhs ^ rhs; }
 
-    inline bool operator==(const key_handle& lhs, const key_handle& rhs) noexcept 
-    { return lhs.native_handle() == rhs.native_handle(); }
-
-    inline bool operator!=(const key_handle& lhs, const key_handle& rhs) noexcept { return !(lhs == rhs); }
-
-    inline bool operator<(const key_handle& lhs, const key_handle& rhs) noexcept
-    { return lhs.native_handle() < rhs.native_handle(); }
-
-    inline bool operator>(const key_handle& lhs, const key_handle& rhs) noexcept
-    { return lhs.native_handle() > rhs.native_handle(); }
-
-    inline bool operator<=(const key_handle& lhs, const key_handle& rhs) noexcept { return !(lhs > rhs); }
-
-    inline bool operator>=(const key_handle& lhs, const key_handle& rhs) noexcept { return !(lhs < rhs); }
-
-    inline void swap(key_handle& lhs, key_handle& rhs) noexcept { lhs.swap(rhs); }
+    inline void swap(key& lhs, key& rhs) noexcept { lhs.swap(rhs); }
 
 } // namespace registry
