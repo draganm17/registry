@@ -307,40 +307,40 @@ TEST(KeyPath, Modifiers)
         ASSERT_TRUE(p3.concat(TEXT("Test")) == key_path(p3_copy.name() + TEXT("Test"), p3_copy.view()));
     }
 
-    // key_path::remove_leaf()
+    // key_path::remove_leaf_key()
     {
         key_path p1 = TEXT("HKEY_CURRENT_USER");
-        ASSERT_TRUE(p1.remove_leaf().name() == TEXT(""));
+        ASSERT_TRUE(p1.remove_leaf_key().name() == TEXT(""));
 
         key_path p2 = TEXT("HKEY_CURRENT_USER\\");
-        ASSERT_TRUE(p2.remove_leaf().name() == TEXT(""));
+        ASSERT_TRUE(p2.remove_leaf_key().name() == TEXT(""));
 
         key_path p3 = TEXT("\\HKEY_CURRENT_USER\\");
-        ASSERT_TRUE(p3.remove_leaf().name() == TEXT(""));
+        ASSERT_TRUE(p3.remove_leaf_key().name() == TEXT(""));
 
         key_path p4 = TEXT("HKEY_CURRENT_USER\\Test");
-        ASSERT_TRUE(p4.remove_leaf().name() == TEXT("HKEY_CURRENT_USER"));
+        ASSERT_TRUE(p4.remove_leaf_key().name() == TEXT("HKEY_CURRENT_USER"));
 
         key_path p5 = TEXT("HKEY_CURRENT_USER\\Test\\\\");
-        ASSERT_TRUE(p5.remove_leaf().name() == TEXT("HKEY_CURRENT_USER"));
+        ASSERT_TRUE(p5.remove_leaf_key().name() == TEXT("HKEY_CURRENT_USER"));
     }
 
-    // key_path::replace_leaf(string_view_type)
+    // key_path::replace_leaf_key(string_view_type)
     {
         key_path p1 = TEXT("HKEY_CURRENT_USER"), p1_copy = p1;
-        ASSERT_TRUE(p1.replace_leaf(TEXT("replacement")) == p1_copy.remove_leaf().append(TEXT("replacement")));
+        ASSERT_TRUE(p1.replace_leaf_key(TEXT("replacement")) == p1_copy.remove_leaf_key().append(TEXT("replacement")));
 
         key_path p2 = TEXT("HKEY_CURRENT_USER\\"), p2_copy = p2;
-        ASSERT_TRUE(p2.replace_leaf(TEXT("replacement")) == p2_copy.remove_leaf().append(TEXT("replacement")));
+        ASSERT_TRUE(p2.replace_leaf_key(TEXT("replacement")) == p2_copy.remove_leaf_key().append(TEXT("replacement")));
 
         key_path p3 = TEXT("\\HKEY_CURRENT_USER\\"), p3_copy = p3;
-        ASSERT_TRUE(p3.replace_leaf(TEXT("replacement")) == p3_copy.remove_leaf().append(TEXT("replacement")));
+        ASSERT_TRUE(p3.replace_leaf_key(TEXT("replacement")) == p3_copy.remove_leaf_key().append(TEXT("replacement")));
 
         key_path p4 = TEXT("HKEY_CURRENT_USER\\Test"), p4_copy = p4;
-        ASSERT_TRUE(p4.replace_leaf(TEXT("replacement")) == p4_copy.remove_leaf().append(TEXT("replacement")));
+        ASSERT_TRUE(p4.replace_leaf_key(TEXT("replacement")) == p4_copy.remove_leaf_key().append(TEXT("replacement")));
 
         key_path p5 = TEXT("HKEY_CURRENT_USER\\Test\\\\"), p5_copy = p5;
-        ASSERT_TRUE(p5.replace_leaf(TEXT("replacement")) == p5_copy.remove_leaf().append(TEXT("replacement")));
+        ASSERT_TRUE(p5.replace_leaf_key(TEXT("replacement")) == p5_copy.remove_leaf_key().append(TEXT("replacement")));
     }
 }
 

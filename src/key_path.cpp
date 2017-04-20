@@ -166,13 +166,13 @@ key_path& key_path::append(const key_path& subkey)
     return *this;
 }
 
-key_path& key_path::concat(string_view_type subkey)
+key_path& key_path::concat(string_view_type str)
 {
-    m_name.append(subkey.data(), subkey.size());
+    m_name.append(str.data(), str.size());
     return *this;
 }
 
-key_path& key_path::remove_leaf()
+key_path& key_path::remove_leaf_key()
 {
     assert(has_leaf_key());
 
@@ -181,10 +181,10 @@ key_path& key_path::remove_leaf()
     return *this;
 }
 
-key_path& key_path::replace_leaf(string_view_type replacement)
+key_path& key_path::replace_leaf_key(string_view_type replacement)
 {
     assert(has_leaf_key());
-    return remove_leaf().append(replacement);
+    return remove_leaf_key().append(replacement);
 }
 
 void key_path::swap(key_path& other) noexcept

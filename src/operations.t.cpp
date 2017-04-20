@@ -313,7 +313,7 @@ TEST(Operations, All)
         EXPECT_TRUE(remove_all(p2, ec) == 3 && !ec && !exists(p2));
 
         // some clean-up
-        remove_all(key_path(p1).remove_leaf());
+        remove_all(key_path(p1).remove_leaf_key());
     }
 
 

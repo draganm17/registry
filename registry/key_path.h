@@ -253,27 +253,27 @@ namespace registry
         */
         key_path& append(const key_path& subkey);
 
-        //! Concatenates the key name with `subkey` without introducing a key separator.
+        //! Concatenates the key name with `str` without introducing a key separator.
         /*!
-        Equivalent to `*this = key_path(name() + static_cast<string_type>(subkey)), view())`.
+        Equivalent to `*this = key_path(name() + static_cast<string_type>(str)), view())`.
         @return `*this`.
         */
-        key_path& concat(string_view_type subkey);
+        key_path& concat(string_view_type str);
 
         //! Removes a single leaf component.
         /*!
         @pre `has_leaf_key()`.
         @return `*this`.
         */
-        key_path& remove_leaf(); // TODO: rename to 'remove_leaf_key' ???
+        key_path& remove_leaf_key();
 
         //! Replaces a single leaf component with `replacement`.
         /*!
-        Equivalent to `remove_leaf().append(replacement)`.
+        Equivalent to `remove_leaf_key().append(replacement)`.
         @pre `has_leaf_key()`.
         @return `*this`.
         */
-        key_path& replace_leaf(string_view_type replacement);  // TODO: rename to 'replace_leaf_key' ???
+        key_path& replace_leaf_key(string_view_type replacement);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;

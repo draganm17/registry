@@ -127,7 +127,7 @@ key_iterator& key_iterator::increment(std::error_code& ec)
                           m_state->buffer.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
         if (rc == ERROR_SUCCESS) {
-            m_state->entry.m_path.replace_leaf({ m_state->buffer.data(), buffer_size });
+            m_state->entry.m_path.replace_leaf_key({ m_state->buffer.data(), buffer_size });
         } else if (rc == ERROR_NO_MORE_ITEMS) {
             key_iterator tmp(std::move(*this)); // *this becomes the end iterator
         } else {
@@ -171,7 +171,7 @@ recursive_key_iterator::recursive_key_iterator(key_handle handle, key_options op
     if (m_stack.emplace_back(std::move(handle), ec2), !ec2) RETURN_RESULT(ec, VOID);
 
     m_stack.clear();
-    details::set_or_throw(&ec, ec2, __FUNCTION__, handle.path());
+    details::set_or_throw(&ec, ec2, __FUNCTION__, handle.path()); // TODO: handle is in moved-from state here !!!
 }
 
 bool recursive_key_iterator::operator==(const recursive_key_iterator& rhs) const noexcept
