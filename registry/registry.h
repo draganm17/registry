@@ -15,9 +15,9 @@ library and tries to mimic its design whenever possible.
 
 #include <registry/config.h>
 #include <registry/exception.h>
-#include <registry/key_path.h>
 #include <registry/key_handle.h>
 #include <registry/key_iterator.h>
+#include <registry/key_path.h>
 #include <registry/operations.h>
 #include <registry/types.h>
 #include <registry/value.h>
