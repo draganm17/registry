@@ -218,7 +218,7 @@ namespace registry
         */
         bool equivalent(const key_handle& handle, std::error_code& ec = throws()) const;
 
-        // TODO: exists() for subkeys ???
+        // TODO: key_exists()
 
         //! Check whether the registry key specified by this handle contains the given value.
         /*!
@@ -235,7 +235,7 @@ namespace registry
                `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
                `ec.clear()` if no errors occur. 
         */
-        bool exists(string_view_type value_name, std::error_code& ec = throws()) const;
+        bool value_exists(string_view_type value_name, std::error_code& ec = throws()) const;
 
         //! Retrieves information about the registry key specified by this handle.
         /*!

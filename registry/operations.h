@@ -63,7 +63,7 @@ namespace registry
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
-    bool exists(const key_path& path, std::error_code& ec = throws());
+    bool key_exists(const key_path& path, std::error_code& ec = throws());
 
     //! Check whether a registry value exists.
     /*!
@@ -80,7 +80,7 @@ namespace registry
            `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
            `ec.clear()` if no errors occur. 
     */
-    bool exists(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
+    bool value_exists(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
 
     //! Retrieves information about a registry key.
     /*!
@@ -100,6 +100,8 @@ namespace registry
            `ec.clear()` if no errors occur. 
     */
     key_info info(const key_path& path, key_info_mask mask = key_info_mask::all, std::error_code& ec = throws());
+
+    // TODO: info() for values ???
 
     //! Retrieves the type and data for the specified value name associated with an registry key.
     /*!

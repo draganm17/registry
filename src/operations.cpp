@@ -47,7 +47,7 @@ bool equivalent(const key_path& path1, const key_path& path2, std::error_code& e
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path1, path2), false;
 }
 
-bool exists(const key_path& path, std::error_code& ec)
+bool key_exists(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
     key_handle(path, access_rights::query_value, ec2);
@@ -57,14 +57,14 @@ bool exists(const key_path& path, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
-bool exists(const key_path& path, string_view_type value_name, std::error_code& ec)
+bool value_exists(const key_path& path, string_view_type value_name, std::error_code& ec)
 {
     std::error_code ec2;
     const key_handle handle(path, access_rights::query_value, ec2);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     bool result;
-    if (!ec2 && (result = handle.exists(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    if (!ec2 && (result = handle.value_exists(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name), false;
 }
 

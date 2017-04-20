@@ -107,17 +107,17 @@ TEST(KeyHandle, GettersAndQueries)
 
 TEST(KeyHandle, OperationsOnRegistry)
 {
-    // key_handle::exists(string_view_type)
-    // key_handle::exists(string_view_type, std::error_code&)
+    // key_handle::value_exists(string_view_type)
+    // key_handle::value_exists(string_view_type, std::error_code&)
     {
         std::error_code ec;
         const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), access_rights::query_value);
 
-        EXPECT_TRUE(h.exists(TEXT("val_01")) == true);
-        EXPECT_TRUE(h.exists(TEXT("val_01"), ec) == true && !ec);
+        EXPECT_TRUE(h.value_exists(TEXT("val_01")) == true);
+        EXPECT_TRUE(h.value_exists(TEXT("val_01"), ec) == true && !ec);
 
-        EXPECT_TRUE(h.exists(TEXT("non_existent")) == false);
-        EXPECT_TRUE(h.exists(TEXT("non_existent"), ec) == false && !ec);
+        EXPECT_TRUE(h.value_exists(TEXT("non_existent")) == false);
+        EXPECT_TRUE(h.value_exists(TEXT("non_existent"), ec) == false && !ec);
     }
 
     // key_handle::info()
@@ -233,7 +233,7 @@ TEST(KeyHandle, OperationsOnRegistry)
     {
         // create the parent key
         const key_path pk = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
-        EXPECT_TRUE(!exists(pk) && create_key(pk) && exists(pk));
+        EXPECT_TRUE(!key_exists(pk) && create_key(pk) && key_exists(pk));
 
         std::error_code ec;
         const key_path sk1 = TEXT("new_key_1");
@@ -245,30 +245,30 @@ TEST(KeyHandle, OperationsOnRegistry)
         // create new keys (without subkeys)
         const key_path new_key1 = h.path().append(sk1);
         const key_path new_key2 = h.path().append(sk2);
-        EXPECT_TRUE(!exists(new_key1) && !exists(new_key2));           // check that the keys does not exist
-        auto ret1 = h.create_key(sk1, access_rights::all_access);      // create the first key
-        EXPECT_TRUE(ret1.second == true && exists(new_key1));          // the key was created
+        EXPECT_TRUE(!key_exists(new_key1) && !key_exists(new_key2));      // check that the keys does not exist
+        auto ret1 = h.create_key(sk1, access_rights::all_access);         // create the first key
+        EXPECT_TRUE(ret1.second == true && key_exists(new_key1));         // the key was created
         EXPECT_TRUE(ret1.first.is_open()          && 
                     ret1.first.path() == new_key1 && 
-                    ret1.first.rights() == access_rights::all_access); // and we have a valid result
+                    ret1.first.rights() == access_rights::all_access);    // and we have a valid result
         //
-        auto ret2 = h.create_key(sk2, access_rights::all_access, ec);  // create the second key
-        EXPECT_TRUE(!ec && ret2.second == true && exists(new_key2));   // the key was created
+        auto ret2 = h.create_key(sk2, access_rights::all_access, ec);     // create the second key
+        EXPECT_TRUE(!ec && ret2.second == true && key_exists(new_key2));  // the key was created
         EXPECT_TRUE(ret2.first.is_open()          && 
                     ret2.first.path() == new_key2 && 
-                    ret2.first.rights() == access_rights::all_access); // and we have a valid result
+                    ret2.first.rights() == access_rights::all_access);    // and we have a valid result
 
         // create new keys (with subkeys)
         const key_path new_key3 = h.path().append(sk3);
         const key_path new_key4 = h.path().append(sk4);
-        EXPECT_TRUE(!exists(new_key3) && !exists(new_key4));           // check that the keys does not exist
-        auto ret3 = h.create_key(sk3, access_rights::all_access);      // create the first key
-        EXPECT_TRUE(ret3.second == true && exists(new_key3));          // the key was created
+        EXPECT_TRUE(!key_exists(new_key3) && !key_exists(new_key4));      // check that the keys does not exist
+        auto ret3 = h.create_key(sk3, access_rights::all_access);         // create the first key
+        EXPECT_TRUE(ret3.second == true && key_exists(new_key3));         // the key was created
         EXPECT_TRUE(ret3.first.is_open()          &&
                     ret3.first.path() == new_key3 &&
-                    ret3.first.rights() == access_rights::all_access); // and we have a valid result
+                    ret3.first.rights() == access_rights::all_access);    // and we have a valid result
         auto ret4 = h.create_key(sk4, access_rights::all_access, ec);
-        EXPECT_TRUE(!ec && ret4.second == true && exists(new_key4));   // the key was created
+        EXPECT_TRUE(!ec && ret4.second == true && key_exists(new_key4));  // the key was created
         EXPECT_TRUE(ret4.first.is_open()          &&
                     ret4.first.path() == new_key4 && 
                     ret4.first.rights() == access_rights::all_access); // and we have a valid result
@@ -379,17 +379,17 @@ TEST(KeyHandle, OperationsOnRegistry)
         const key_path p2 = TEXT("new_key_4");
         const key_handle h(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::query_value);
 
-        EXPECT_TRUE(!exists(h.path().append(p0)));
-        EXPECT_TRUE(exists(h.path().append(p1)) && info(h.path().append(p1)).subkeys > 0);
-        EXPECT_TRUE(exists(h.path().append(p2)) && info(h.path().append(p2)).subkeys > 0);
+        EXPECT_TRUE(!key_exists(h.path().append(p0)));
+        EXPECT_TRUE(key_exists(h.path().append(p1)) && info(h.path().append(p1)).subkeys > 0);
+        EXPECT_TRUE(key_exists(h.path().append(p2)) && info(h.path().append(p2)).subkeys > 0);
 
         // remove an non-existing key
         EXPECT_TRUE(h.remove_all(p0) == 0);
         EXPECT_TRUE(h.remove_all(p0, ec) == 0 && !ec);
 
         // remove an non-empty key (which have subkeys)
-        EXPECT_TRUE(h.remove_all(p1) == 3 && !exists(h.path().append(p1)));
-        EXPECT_TRUE(h.remove_all(p2, ec) == 3 && !ec && !exists(h.path().append(p2)));
+        EXPECT_TRUE(h.remove_all(p1) == 3 && !key_exists(h.path().append(p1)));
+        EXPECT_TRUE(h.remove_all(p2, ec) == 3 && !ec && !key_exists(h.path().append(p2)));
 
         // some clean-up
         remove_all(h.path());

@@ -186,7 +186,7 @@ bool key_handle::equivalent(const key_handle& handle, std::error_code& ec) const
     RETURN_RESULT(ec, nt_name(native_handle()) == nt_name(handle.native_handle()));
 }
 
-bool key_handle::exists(string_view_type value_name, std::error_code& ec) const
+bool key_handle::value_exists(string_view_type value_name, std::error_code& ec) const
 {
     const LSTATUS rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), 
                                        value_name.data(), nullptr, nullptr, nullptr, nullptr);
