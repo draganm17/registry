@@ -5,7 +5,7 @@
 #include <memory>
 #include <system_error>
 
-#include <registry/key_handle.h>
+#include <registry/key.h>
 #include <registry/key_path.h>
 #include <registry/types.h>
 #include <registry/value.h>
