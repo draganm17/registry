@@ -6,7 +6,7 @@
 #include <registry/exception.h>
 #include <registry/details/utils.impl.h>
 #include <registry/key.h>
-#include <registry/key_iterator.h>
+//#include <registry/key_iterator.h> // TODO: ...
 
 
 namespace  {
@@ -55,8 +55,12 @@ void close_handle(key::native_handle_type handle, std::error_code& ec) noexcept
 
 uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code& ec)
 {
+    // TODO: ...
+    return 0;
+
+    /*
     ec.clear();
-    const auto subkey = key.open(path, access_rights::query_value, ec);
+    const auto subkey = key.open(path, access_rights::read, ec);
     
     if (ec) {
         return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), 0)
@@ -77,6 +81,7 @@ uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code
     }
 
     return !ec ? keys_deleted : static_cast<uint32_t>(-1);
+    */
 }
 
 std::wstring nt_name(key::native_handle_type handle)
@@ -118,7 +123,7 @@ key::key(key_id id)
     , m_handle(reinterpret_cast<void*>(id), close_handle_t{})
 { }
 
-key::key(const key_path& path, access_rights rights, std::error_code& ec)
+key::key(open_only_tag, const key_path& path, access_rights rights, std::error_code& ec)
     : m_path(path)
     , m_rights(rights)
 {
@@ -139,6 +144,60 @@ key::key(const key_path& path, access_rights rights, std::error_code& ec)
 
     swap(key()); // close this key
     details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__, path);
+}
+
+key::key(open_or_create_tag, const key_path& path, access_rights rights, std::error_code& ec)
+    //: key(open_or_create_tag{}, path, rights, XXX, ec)
+{
+    // TODO: ...
+}
+
+key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& was_created, std::error_code& ec)
+    : m_path(path)
+    , m_rights(rights)
+{
+    // TODO:
+
+/*
+    std::error_code ec2;
+    was_created = false;
+    key_path base_path = path, subkey_path;
+    key key(open_only_tag{}, base_path, access_rights::create_sub_key, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, false);
+    while (ec2.value() == ERROR_FILE_NOT_FOUND && base_path.has_parent_key()) {
+        subkey_path = base_path.leaf_key().append(subkey_path.key_name());
+        key = registry::key(open_only_tag{}, base_path.remove_leaf_key(), access_rights::create_sub_key, ec2);
+    }
+
+    bool result;
+    if (!ec2 && (result = key.create_key(subkey_path, rights, ec2).second, !ec2)) {
+        RETURN_RESULT(ec, result);
+    }
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
+
+
+    
+
+    LRESULT rc = ERROR_FILE_NOT_FOUND;
+
+    if (path.is_absolute())
+    {
+        HKEY hkey;
+        const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(path.root_key_id()),
+                                        path.has_parent_key() ? (++path.begin())->data() : TEXT(""), 0,
+                                        static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
+
+        if (rc == ERROR_SUCCESS) {
+            m_handle = std::unique_ptr<void, close_handle_t>(reinterpret_cast<void*>(hkey), close_handle_t{});
+            RETURN_RESULT(ec, VOID);
+        }
+    }
+
+    swap(key()); // close this key
+    details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__, path);
+
+    */
 }
 
 key_path key::path() const { return is_open() ? m_path : key_path(); }
@@ -167,14 +226,14 @@ std::pair<key, bool> key::create_key(const key_path& path, access_rights rights,
     }
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), std::make_pair(key(), false);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), std::make_pair(registry::key(), false);
 }
 
 bool key::equivalent(const key_path& path, std::error_code& ec) const
 {
     std::error_code ec2;
     bool result = false;
-    const auto key = open(path, access_rights::query_value, ec2);
+    const auto key = open_key(path, access_rights::query_value, ec2);
 
     if (!ec2 && (result = equivalent(key, ec2), !ec2)) RETURN_RESULT(ec, result);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), result;
@@ -221,17 +280,17 @@ key_info key::info(key_info_mask mask, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path()), invalid_info;
 }
 
-bool key::key_exists(const key_path& path, std::error_code& ec = throws()) const
+bool key::key_exists(const key_path& path, std::error_code& ec) const
 {
     std::error_code ec2;
-    open(path, access_rights::query_value, ec2);
+    open_key(path, access_rights::read, ec2);
 
     if (!ec2) RETURN_RESULT(ec, true);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
 }
 
-key key::open(const key_path& path, access_rights rights, std::error_code& ec) const
+key key::open_key(const key_path& path, access_rights rights, std::error_code& ec) const
 {
     key key;
     HKEY hkey;

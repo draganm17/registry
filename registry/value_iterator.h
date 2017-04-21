@@ -137,29 +137,34 @@ namespace registry
         /*!
         If `path` refers to an non-existing registry key, returns the end iterator and does not report an error. 
         The overload that takes `std::error_code&` parameter constructs an end iterator on error.
+
         @param[in] path - an absolute key path specifying the registry key that this iterator iterates on.
-        @param[out] ec - out-parameter for error reporting.
-        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key path set to `path` and the OS error code as the error code
-               argument. \n
-               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
-               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-               `ec.clear()` if no errors occur.
+        @param[out] ec  - out-parameter for error reporting.
+
+        @throw 
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
+            errors, constructed with the first key path set to `path` and the OS error code as the error code argument. \n
+            The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
+            and executes `ec.clear()` if no errors occur. \n
+            `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
         explicit value_iterator(const key_path& path, std::error_code& ec = throws());
 
         //! Constructs a iterator that refers to the first value of a key specified by `handle`.
         /*!
         The overload that takes `std::error_code&` parameter constructs an end iterator on error.
-        @param[in] handle - a handle to an opened key. The key must have been opened with the 
+
+        @param[in]  handle - a handle to an opened key. The key must have been opened with the 
                             `access_rights::query_value` access right.
-        @param[out] ec - out-parameter for error reporting.
-        @throw The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-               API errors, constructed with the first key path set to `handle.path()` and the OS error code as the error
-               code argument. \n
-               `std::bad_alloc` may be thrown by both overloads if memory allocation fails. The overload taking a 
-               `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, and executes 
-               `ec.clear()` if no errors occur.
+        @param[out] ec     - out-parameter for error reporting.
+
+        @throw 
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
+            errors, constructed with the first key path set to `handle.path()` and the OS error code as the error code
+            argument. \n
+            The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
+            and executes `ec.clear()` if no errors occur. \n
+            `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
         explicit value_iterator(key_handle handle, std::error_code& ec = throws());
 
@@ -204,16 +209,14 @@ namespace registry
         //! Calls `increment()`, then returns `*this`.
         /*!
         @pre `*this != value_iterator()`.
-        @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
-                argument. `std::bad_alloc` may be thrown if memory allocation fails.
+        @throws Any exception thrown by `increment()`.
         */
         value_iterator& operator++();
 
         //! Makes a copy of `*this`, calls `increment()`, then returns the copy.
         /*!
         @pre `*this != value_iterator()`.
-        @throws `registry_error` on underlying OS API errors, constructed with the OS error code as the error code
-                argument. `std::bad_alloc` may be thrown if memory allocation fails.
+        @throws Any exception thrown by `increment()`.
         */
         value_iterator operator++(int);
 
@@ -221,6 +224,7 @@ namespace registry
         /*!
         If an error occured, `*this` is set to an end iterator, regardless of whether any error is reported by 
         exception or error code.
+
         @pre `*this != value_iterator()`.
         */
         value_iterator& increment(std::error_code& ec);
