@@ -8,6 +8,10 @@
 #include <registry/key.h>
 //#include <registry/key_iterator.h> // TODO: ...
 
+// TODO: the current implementation pass the subkey name to WINAPI as 'path.key_name().data()'.
+//       Subkey wich name begins with a key separator (like "\Some\Subkey") are not process correctly -
+//       WINAPI returns ERROR_BAD_PATHNAME. Maybe I should pass the names as 'path.begin()->data()' ?
+
 
 namespace  {
 

@@ -137,7 +137,10 @@ namespace registry
         key(open_only_tag tag, const key_path& path, access_rights rights, std::error_code& ec = throws());
 
 
-        // TODO: ...
+        //! Opens or creates a registry key and associates it with `*his`.
+        /*!
+        Identical to the overload that takes `bool&` parameter, except does not report if the key was created or not.
+        */
         key(open_or_create_tag tag, const key_path& path, access_rights rights, std::error_code& ec = throws());
 
         //! Opens or creates a registry key and associates it with `*his`.
@@ -207,14 +210,15 @@ namespace registry
         The calling process must have `access_rights::create_sub_key` access to the key identified by `*this`. The access
         rights the key was opened with does not affect the operation.
 
-        @param[in]  path   - an key path specifying the subkey that this function opens or creates. If the subkey name
-                             is an empty string the function will return a new handle to the key specified by this handle.
+        @param[in]  path   - an key path specifying the subkey that this function opens or creates.
         @param[in]  rights - the access rights for the key to be created.
         @param[out] ec     - out-parameter for error reporting.
 
         @return 
-            A pair consisting of a `key` object identifying the opened or created registry key and a `bool` denoting
-            whether the key was created. The `key` is constructed as if by `key(this->path().append(path), rights)`. \n
+            A pair consisting of a `key` identifying a registry key and a `bool` denoting whether the  key was created.
+            The `key` object is constructed as if by `key(open_or_create_tag{}, this->path().append(path), rights)`. \n
+            if the subkey name is empty (i.e. `path.key_name().empty()`), the returned `key` object will identify the
+            same registry key as `*this` does, except for the case when `!this->equivalent(this->path().append(path))`. \n
             The overload that takes `std::error_code&` parameter returns `std::make_pair(key(), false)` on error.
 
         @throw 
@@ -285,7 +289,7 @@ namespace registry
         @param[out] ec   - out-parameter for error reporting.
 
         @return 
-            An instance of key_info. \n
+            An instance of registry::key_info. \n
             The overload that takes `std::error_code&` parameter sets all members but `last_write_time`
             to `static_cast<uint32_t>(-1)` on error, `last_write_time` is set to `key_time_type::min()`.
 
@@ -325,8 +329,10 @@ namespace registry
         @param[out] ec     - out-parameter for error reporting.
 
         @return 
-            An `registry::key` object constructed as if by `key(this->path().append(path), rights)`. \n
-            The overload  that takes `std::error_code&` parameter returns an default-constructed value on error.
+            An `key` object constructed as if by `key(open_only_tag{}, this->path().append(path), rights)`. \n
+            if the subkey name is empty (i.e. `path.key_name().empty()`), the returned `key` object will identify the
+            same registry key as `*this` does, except for the case when `!this->equivalent(this->path().append(path))`. \n
+            The overload that takes `std::error_code&` parameter returns an default-constructed value on error.
 
         @throw 
             The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
@@ -336,7 +342,6 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        // TODO: describe what happens if subkey name is empty ...
         key open_key(const key_path& path, access_rights rights, std::error_code& ec = throws()) const;
 
         /*! \brief
@@ -366,8 +371,8 @@ namespace registry
         //! Deletes an subkey from the registry key identified by `*this`.
         /*!
         The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use `remove_keys` function. \n
-        The access rights of this key do not affect the delete operation. \n
-        Note that a deleted key is not removed until the last handle to it is closed. //TODO: remove or rewrite that line
+        The access rights the key was opened with does not affect the operation.
+        Note that a deleted key is not removed until the last handle to it is closed. //TODO: remove or rewrite that line ???
 
         @param[in]  path - an key path specifying the subkey that this function deletes.
         @param[out] ec   - out-parameter for error reporting.
@@ -390,7 +395,7 @@ namespace registry
         /*!
         The key must have been opened with the `access_rights::enumerate_sub_keys` and `access_rights::query_value` 
         access right. \n
-        Note that a deleted key is not removed until the last handle to it is closed. //TODO: remove or rewrite that line
+        Note that a deleted key is not removed until the last handle to it is closed. //TODO: remove or rewrite that line ???
 
         @param[in]  path - an key path specifying the subkey that this function deletes.
         @param[out] ec   - out-parameter for error reporting.
