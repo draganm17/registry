@@ -74,7 +74,6 @@ namespace registry
 
     A `key_handle` may alternatively own no handle, in which case it is called `empty`.
     */
-    // TODO: remove 'const' modifier from some methods ???
     class key
     {
     public:
@@ -176,6 +175,7 @@ namespace registry
 
         //! Replaces the contents of `*this` with those of `other` using move semantics.
         /*!
+        TODO: if *this is open ...
         @post `!other.is_open()`.
         @post `*this` has the original value of `other`.
         @return `*this`.
@@ -231,8 +231,7 @@ namespace registry
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
         std::pair<key, bool> create_key(const key_path& path,
-                                        access_rights rights = access_rights::all_access, 
-                                        std::error_code& ec = throws()) const;
+                                        access_rights rights = access_rights::all_access, std::error_code& ec = throws());
 
         /*! \brief 
         Checks whether the registry key identified by `*this` and the registry key identified by `path` refer to the
@@ -390,7 +389,7 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        bool remove_key(const key_path& path, std::error_code& ec = throws()) const;
+        bool remove_key(const key_path& path, std::error_code& ec = throws());
 
         //! Deletes an subkey and all its subkeys, recursively, from the registry key identified by `*this`.
         /*!
@@ -413,7 +412,7 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        uint32_t remove_keys(const key_path& path, std::error_code& ec = throws()) const;
+        uint32_t remove_keys(const key_path& path, std::error_code& ec = throws());
 
         //! Deletes an registry value from the registry key identified by `*this`.
         /*!
@@ -433,7 +432,7 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        bool remove_value(string_view_type value_name, std::error_code& ec = throws()) const;
+        bool remove_value(string_view_type value_name, std::error_code& ec = throws());
 
         //! Check whether the registry key identified by `*this` contains the given value.
         /*!
@@ -474,13 +473,12 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        void write_value(string_view_type value_name, const value& value, std::error_code& ec = throws()) const;
+        void write_value(string_view_type value_name, const value& value, std::error_code& ec = throws());
 
     public:
-        //! Closes the key.
+        //! Closes the registry key identified by `*this`.
         /*!
-        If there is no registry key associated, does nothing and does not report an error. Otherwise, closes the
-        registry key identified by `*this`. \n
+        If there is no registry key associated, does nothing and does not report an error. \n
         If an error occured, the associated registry key is closed, regardless of whether any error is reported by
         exception or error code.
 
@@ -496,7 +494,6 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        // TODO: maybe closing an key that is not open should report an error ???
         void close(std::error_code& ec = throws());
 
         //! Swaps the contents of `*this` and `other`.

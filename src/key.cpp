@@ -88,7 +88,7 @@ uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code
     */
 }
 
-std::wstring nt_name(key::native_handle_type handle)
+std::wstring nt_key_name(key::native_handle_type handle)
 {
     static constexpr int   KEY_NAME_INFORMATION =    3;
     static constexpr DWORD STATUS_BUFFER_TOO_SMALL = 0xC0000023L;
@@ -99,9 +99,11 @@ std::wstring nt_name(key::native_handle_type handle)
 
     do {
         rc = NtQueryKey_(hkey, KEY_NAME_INFORMATION, buffer.data(), size, &size);
-        if (rc == STATUS_BUFFER_TOO_SMALL) buffer.resize(size += sizeof(wchar_t) * 2);
+        if (rc == STATUS_BUFFER_TOO_SMALL) buffer.resize(size += sizeof(ULONG));
     } while (rc == STATUS_BUFFER_TOO_SMALL);
-    return rc ? std::wstring() : std::wstring(reinterpret_cast<const wchar_t*>(buffer.data()) + 2);
+
+    return rc ? std::wstring() 
+              : std::wstring(reinterpret_cast<const wchar_t*>(buffer.data() + sizeof(ULONG)));
 
     //TODO: this implementation assumes that no errors will occure in NtQueryKey
 };
@@ -160,48 +162,26 @@ key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& w
     : m_path(path)
     , m_rights(rights)
 {
-    // TODO:
-
-/*
     std::error_code ec2;
     was_created = false;
-    key_path base_path = path, subkey_path;
-    key key(open_only_tag{}, base_path, access_rights::create_sub_key, ec2);
+    key_path lpath = path, rpath({}, path.key_view());
+    key lkey(open_only_tag{}, lpath, access_rights::create_sub_key, ec2);
 
-    if (!ec2) RETURN_RESULT(ec, false);
-    while (ec2.value() == ERROR_FILE_NOT_FOUND && base_path.has_parent_key()) {
-        subkey_path = base_path.leaf_key().append(subkey_path.key_name());
-        key = registry::key(open_only_tag{}, base_path.remove_leaf_key(), access_rights::create_sub_key, ec2);
+    while (ec2.value() == ERROR_FILE_NOT_FOUND && lpath.has_parent_key()) {
+        rpath = lpath.leaf_key().append(rpath);
+        lkey = key(open_only_tag{}, lpath.remove_leaf_key(), access_rights::create_sub_key, ec2);
     }
 
-    bool result;
-    if (!ec2 && (result = key.create_key(subkey_path, rights, ec2).second, !ec2)) {
-        RETURN_RESULT(ec, result);
-    }
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
-
-
-    
-
-    LRESULT rc = ERROR_FILE_NOT_FOUND;
-
-    if (path.is_absolute())
+    std::pair<key, bool> create_key_result;
+    if (!ec2 && (create_key_result = lkey.create_key(rpath, rights, ec2), !ec2))
     {
-        HKEY hkey;
-        const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(path.root_key_id()),
-                                        path.has_parent_key() ? (++path.begin())->data() : TEXT(""), 0,
-                                        static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
-
-        if (rc == ERROR_SUCCESS) {
-            m_handle = handle_t(reinterpret_cast<void*>(hkey));
-            RETURN_RESULT(ec, VOID);
-        }
+        was_created = create_key_result.second;
+        m_handle.swap(create_key_result.first.m_handle);
+        RETURN_RESULT(ec, VOID);
     }
 
     swap(key()); // close this key
-    details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__, path);
-
-    */
+    details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
 key_path key::path() const { return is_open() ? m_path : key_path(); }
@@ -213,7 +193,7 @@ key::native_handle_type key::native_handle() const noexcept
 
 bool key::is_open() const noexcept { return static_cast<bool>(m_handle); }
 
-std::pair<key, bool> key::create_key(const key_path& path, access_rights rights, std::error_code& ec) const
+std::pair<key, bool> key::create_key(const key_path& path, access_rights rights, std::error_code& ec)
 {
     key key;
     HKEY hkey;
@@ -244,7 +224,7 @@ bool key::equivalent(const key_path& path, std::error_code& ec) const
 }
 
 bool key::equivalent(const key& key, std::error_code& ec) const
-{ RETURN_RESULT(ec, nt_name(native_handle()) == nt_name(key.native_handle())); }
+{ RETURN_RESULT(ec, nt_key_name(native_handle()) == nt_key_name(key.native_handle())); }
 
 key_info key::info(key_info_mask mask, std::error_code& ec) const
 {
@@ -329,7 +309,7 @@ value key::read_value(string_view_type value_name, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), value();
 }
 
-bool key::remove_key(const key_path& path, std::error_code& ec) const
+bool key::remove_key(const key_path& path, std::error_code& ec)
 {
     LSTATUS rc;
 #if REGISTRY_USE_WINAPI_VERSION < REGISTRY_WINAPI_VERSION_VISTA
@@ -351,7 +331,7 @@ bool key::remove_key(const key_path& path, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
 }
 
-uint32_t key::remove_keys(const key_path& path, std::error_code& ec) const
+uint32_t key::remove_keys(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
     uint32_t keys_deleted = 0;
@@ -363,7 +343,7 @@ uint32_t key::remove_keys(const key_path& path, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), static_cast<uint32_t>(-1);
 }
 
-bool key::remove_value(string_view_type value_name, std::error_code& ec) const
+bool key::remove_value(string_view_type value_name, std::error_code& ec)
 {
     const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), value_name.data());
 
@@ -386,7 +366,7 @@ bool key::value_exists(string_view_type value_name, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), false;
 }
 
-void key::write_value(string_view_type value_name, const value& value, std::error_code& ec) const
+void key::write_value(string_view_type value_name, const value& value, std::error_code& ec)
 {
     const LSTATUS rc = RegSetValueEx(reinterpret_cast<HKEY>(native_handle()), 
                                      value_name.data(), 0, static_cast<DWORD>(value.type()), 

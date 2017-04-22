@@ -75,7 +75,7 @@ bool remove_key(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
     // NOTE: key open rights does not affect the delete operation.
-    const key key(open_only_tag{}, path.parent_key(), access_rights::read, ec2);
+    key key(open_only_tag{}, path.parent_key(), access_rights::read, ec2);
 
     bool result;
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
@@ -87,7 +87,7 @@ uint32_t remove_keys(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
     // NOTE: key open rights does not affect the delete operation.
-    const key key(open_only_tag{}, path.parent_key(), access_rights::read, ec2);
+    key key(open_only_tag{}, path.parent_key(), access_rights::read, ec2);
 
     uint32_t result;
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, 0);
@@ -98,7 +98,7 @@ uint32_t remove_keys(const key_path& path, std::error_code& ec)
 bool remove_value(const key_path& path, string_view_type value_name, std::error_code& ec)
 {
     std::error_code ec2;
-    const key key(open_only_tag{}, path, access_rights::set_value, ec2);
+    key key(open_only_tag{}, path, access_rights::set_value, ec2);
 
     bool result;
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
@@ -133,7 +133,7 @@ bool value_exists(const key_path& path, string_view_type value_name, std::error_
 void write_value(const key_path& path, string_view_type value_name, const value& value, std::error_code& ec)
 {
     std::error_code ec2;
-    const key key(open_only_tag{}, path, access_rights::set_value, ec2);
+    key key(open_only_tag{}, path, access_rights::set_value, ec2);
 
     if (!ec2 && (key.write_value(value_name, value), !ec2)) RETURN_RESULT(ec, VOID);
     details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name);
