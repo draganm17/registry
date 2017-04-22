@@ -124,7 +124,7 @@ void key::close_handle_t::operator()(void* hkey) const noexcept
 key::key(key_id id)
     : m_path(key_path::from_key_id(id))
     , m_rights(access_rights::unknown)
-    , m_handle(reinterpret_cast<void*>(id), close_handle_t{})
+    , m_handle(reinterpret_cast<void*>(id))
 { }
 
 key::key(open_only_tag, const key_path& path, access_rights rights, std::error_code& ec)
@@ -136,12 +136,12 @@ key::key(open_only_tag, const key_path& path, access_rights rights, std::error_c
     if (path.is_absolute())
     {
         HKEY hkey;
-        const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(path.root_key_id()),
-                                        path.has_parent_key() ? (++path.begin())->data() : TEXT(""), 0,
-                                        static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
+        rc = RegOpenKeyEx(reinterpret_cast<HKEY>(path.root_key_id()),
+                          path.has_parent_key() ? (++path.begin())->data() : TEXT(""), 0,
+                          static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
 
         if (rc == ERROR_SUCCESS) {
-            m_handle = std::unique_ptr<void, close_handle_t>(reinterpret_cast<void*>(hkey), close_handle_t{});
+            m_handle = handle_t(reinterpret_cast<void*>(hkey));
             RETURN_RESULT(ec, VOID);
         }
     }
@@ -193,7 +193,7 @@ key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& w
                                         static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
 
         if (rc == ERROR_SUCCESS) {
-            m_handle = std::unique_ptr<void, close_handle_t>(reinterpret_cast<void*>(hkey), close_handle_t{});
+            m_handle = handle_t(reinterpret_cast<void*>(hkey));
             RETURN_RESULT(ec, VOID);
         }
     }
@@ -225,7 +225,7 @@ std::pair<key, bool> key::create_key(const key_path& path, access_rights rights,
                                       0, nullptr, REG_OPTION_NON_VOLATILE, sam_desired, nullptr, &hkey, &disp);
     
     if (rc == ERROR_SUCCESS) {
-        key.m_handle = std::unique_ptr<void, close_handle_t>(reinterpret_cast<void*>(hkey), close_handle_t{});
+        key.m_handle = handle_t(reinterpret_cast<void*>(hkey));
         RETURN_RESULT(ec, std::make_pair(std::move(key), disp == REG_CREATED_NEW_KEY));
     }
 
@@ -236,17 +236,15 @@ std::pair<key, bool> key::create_key(const key_path& path, access_rights rights,
 bool key::equivalent(const key_path& path, std::error_code& ec) const
 {
     std::error_code ec2;
-    bool result = false;
     const auto key = open_key(path, access_rights::query_value, ec2);
 
+    bool result;
     if (!ec2 && (result = equivalent(key, ec2), !ec2)) RETURN_RESULT(ec, result);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), result;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
 }
 
 bool key::equivalent(const key& key, std::error_code& ec) const
-{
-    RETURN_RESULT(ec, nt_name(native_handle()) == nt_name(key.native_handle()));
-}
+{ RETURN_RESULT(ec, nt_name(native_handle()) == nt_name(key.native_handle())); }
 
 key_info key::info(key_info_mask mask, std::error_code& ec) const
 {
@@ -304,7 +302,7 @@ key key::open_key(const key_path& path, access_rights rights, std::error_code& e
                                     static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
 
     if (rc == ERROR_SUCCESS) {
-        key.m_handle = std::unique_ptr<void, close_handle_t>(reinterpret_cast<void*>(hkey), close_handle_t{});
+        key.m_handle = handle_t(reinterpret_cast<void*>(hkey));
         RETURN_RESULT(ec, key);
     }
 

@@ -82,6 +82,7 @@ namespace registry
 
     private:
         struct close_handle_t { void operator()(void*) const noexcept; };
+        using handle_t = std::unique_ptr<void, close_handle_t>;
 
     public:
         //! Constructs an `key` object which does not represent a registry key.
@@ -495,15 +496,16 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
+        // TODO: maybe closing an key that is not open should report an error ???
         void close(std::error_code& ec = throws());
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key& other) noexcept;
 
     private:
-        key_path                               m_path;
-        access_rights                          m_rights;
-        std::unique_ptr<void, close_handle_t>  m_handle;
+        key_path       m_path;
+        access_rights  m_rights;
+        handle_t       m_handle;
     };
 
     //------------------------------------------------------------------------------------//
