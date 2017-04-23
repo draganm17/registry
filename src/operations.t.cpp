@@ -307,7 +307,6 @@ TEST(Operations, All)
         remove_keys(key_path(p1).remove_leaf_key());
     }
 
-
     //equivalent
     {
 #if defined(_WIN_64)
