@@ -105,6 +105,7 @@ namespace registry
         /*!
         @post `key_name() == static_cast<string_type>(name)`.
         @post `key_view() == view`.
+
         @param[in] name - a key name string.
         @param[in] view - a registry view.
         */
@@ -224,8 +225,10 @@ namespace registry
         //! Replaces the contents of the path.
         /*!
         @post `*this == key_path(name, view)`.
+
         @param[in] name - a key name string.
         @param[in] view - a registry view.
+
         @return `*this`.
         */
         key_path& assign(string_view_type name, registry::view view = default_view);
@@ -239,7 +242,9 @@ namespace registry
         - `subkey` begins with a key separator.
 
         Then, appends `subkey` to the key name.
+
         @param[in] subkey - a string, such as `Source` should be explicitly convertible to `registry::string_view_type`.
+
         @return `*this`.
         */
         template <typename Source, 
@@ -249,8 +254,8 @@ namespace registry
 
         //! Appends elements to the key name.
         /*!
-        First, appends each component of `subkey` name to the key name. Then, assigns the key view to 
-        `subkey.key_view()`.
+        First, appends each component of `subkey` name to the key name. Then, assigns the key view to `subkey.key_view()`.
+
         @return `*this`.
         */
         key_path& append(const key_path& subkey);
@@ -258,6 +263,7 @@ namespace registry
         //! Concatenates the key name with `str` without introducing a key separator.
         /*!
         Equivalent to `*this = key_path(key_name() + static_cast<string_type>(str)), key_view())`.
+
         @return `*this`.
         */
         key_path& concat(string_view_type str);
@@ -272,6 +278,7 @@ namespace registry
         //! Replaces a single leaf component with `replacement`.
         /*!
         Equivalent to `remove_leaf_key().append(replacement)`.
+
         @pre `has_leaf_key()`.
         @return `*this`.
         */

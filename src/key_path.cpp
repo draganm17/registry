@@ -10,51 +10,6 @@
 #include <registry/key_path.h>
 
 
-namespace
-{
-using namespace registry;
-
-class key_pool
-{
-private:
-    key_pool() = default;
-
-public:
-    static const key_pool& instance() { static const key_pool pool; return pool; }
-
-public:
-    const key_path& get(key_id id) const noexcept
-    {
-        switch (id) {
-            case key_id::classes_root:                 return m_classes_root;
-            case key_id::current_user:                 return m_current_user;
-            case key_id::local_machine:                return m_local_machine;
-            case key_id::users:                        return m_users;
-            case key_id::performance_data:             return m_performance_data;
-            case key_id::performance_text:             return m_performance_text;
-            case key_id::performance_nlstext:          return m_performance_nlstext;
-            case key_id::current_config:               return m_current_config;
-            case key_id::current_user_local_settings:  return m_current_user_local_settings;
-        }
-        return m_unknown;
-    }
-
-private:
-    const key_path m_classes_root =                key_path(details::key_id_to_string(key_id::classes_root));
-    const key_path m_current_user =                key_path(details::key_id_to_string(key_id::current_user));
-    const key_path m_local_machine =               key_path(details::key_id_to_string(key_id::local_machine));
-    const key_path m_users =                       key_path(details::key_id_to_string(key_id::users));
-    const key_path m_performance_data =            key_path(details::key_id_to_string(key_id::performance_data));
-    const key_path m_performance_text =            key_path(details::key_id_to_string(key_id::performance_text));
-    const key_path m_performance_nlstext =         key_path(details::key_id_to_string(key_id::performance_nlstext));
-    const key_path m_current_config =              key_path(details::key_id_to_string(key_id::current_config));
-    const key_path m_current_user_local_settings = key_path(details::key_id_to_string(key_id::current_user_local_settings));
-    const key_path m_unknown =                     key_path();
-};
-
-}
-
-
 namespace registry {
 
 //------------------------------------------------------------------------------------//
@@ -72,7 +27,7 @@ key_path& key_path::append_impl(string_view_type subkey)
     return *this;
 }
 
-key_path key_path::from_key_id(key_id id) { return key_pool::instance().get(id); }
+key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_string(id)); }
 
 key_path::key_path(string_view_type name, view view)
     : m_view(view)
