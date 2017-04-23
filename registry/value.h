@@ -137,6 +137,7 @@ namespace registry
         /*!
         @post `type() == value_type::none`.
         @post `data().empty()`.
+
         @param[in] tag - value type tag.
         */
         explicit value(none_value_tag tag) noexcept;
@@ -145,7 +146,8 @@ namespace registry
         /*!
         @post `type() == value_type::sz`.
         @post `to_string() == value`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag   - value type tag.
         @param[in] value - a string to be stored in this value.
         */
         value(sz_value_tag tag, string_view_type value);
@@ -154,7 +156,8 @@ namespace registry
         /*!
         @post `type() == value_type::expand_sz`.
         @post `to_string() == value`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag   - value type tag.
         @param[in] value - a string to be stored in this value.
         */
         value(expand_sz_value_tag tag, string_view_type value);
@@ -163,7 +166,8 @@ namespace registry
         /*!
         @post `type() == value_type::binary`.
         @post `to_byte_array() == value`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag   - value type tag.
         @param[in] value - binary data to be stored in this value.
         */
         // TODO: replace 'byte_array_view_type' by 'const uint8_t*' and 'size_t' ???
@@ -173,7 +177,8 @@ namespace registry
         /*!
         @post `type() == value_type::dword`.
         @post `to_uint32() == value && to_uint64() == value`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag   - value type tag.
         @param[in] value - an unsigned 32-bit integer to be stored in this value.
         */
         value(dword_value_tag tag, uint32_t value);
@@ -182,7 +187,8 @@ namespace registry
         /*!
         @post `type() == value_type::dword_big_endian`.
         @post `to_uint32() == value && to_uint64() == value`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag   - value type tag.
         @param[in] value - an unsigned 32-bit integer to be stored in this value.
         */
         value(dword_big_endian_value_tag tag, uint32_t value);
@@ -191,7 +197,8 @@ namespace registry
         /*!
         @post `type() == value_type::link`.
         @post `to_string() == value`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag   - value type tag.
         @param[in] value - a string to be stored in this value.
         */
         value(link_value_tag tag, string_view_type value);
@@ -200,7 +207,8 @@ namespace registry
         /*!
         @post `type() == value_type::multi_sz`.
         @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), BEGIN(value), END(value))`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag   - value type tag.
         @param[in] value - a container, such as `Sequence::value_type` should be explicitly convertible to 
                            `registry::string_view_type`.
         */
@@ -213,7 +221,8 @@ namespace registry
         /*!
         @post `type() == value_type::multi_sz`.
         @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), first, last)`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag         - value type tag.
         @param[in] first, last - input iterators, such as `std::iterator_traits<InputIt>::value_type` should be 
                                  explicitly convertible to `registry::string_view_type`.
         */
@@ -227,7 +236,8 @@ namespace registry
         /*!
         @post `type() == value_type::multi_sz`.
         @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), init.begin(), init.end())`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag  - value type tag.
         @param[in] init - an object of type `std::initializer_list<T>`, such as `T` should be explicitly convertible
                           to `registry::string_view_type`.
         */
@@ -240,7 +250,8 @@ namespace registry
         /*!
         @post `type() == value_type::qword`.
         @post `to_uint64() == value`.
-        @param[in] tag - value type tag.
+
+        @param[in] tag   - value type tag.
         @param[in] value - an unsigned 64-bit integer to be stored in this value.
         */
         value(qword_value_tag tag, uint64_t value);
@@ -252,8 +263,10 @@ namespace registry
         produce a valid but undefined result. \n
         If the value type is one of value_type::sz, value_type::expand_sz, value_type::link or value_type::multi_sz, 
         providing the null terminator character is desirable but not necessary.
+
         @post `this->type() == type`.
         @post `this->data() == data`.
+
         @param[in] type - a value type identifier.
         @param[in] data - the binary data to be stored in this value.
         */
@@ -327,7 +340,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
-        @param[in] tag - value type tag.
+        @param[in] tag   - value type tag.
         @param[in] value - a string to be stored in this value.
         @return `*this`.
         */
@@ -336,7 +349,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
-        @param[in] tag - value type tag.
+        @param[in] tag   - value type tag.
         @param[in] value - a string to be stored in this value.
         @return `*this`.
         */
@@ -345,7 +358,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
-        @param[in] tag - value type tag.
+        @param[in] tag   - value type tag.
         @param[in] value - binary data to be stored in this value.
         @return `*this`.
         */
@@ -354,7 +367,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
-        @param[in] tag - value type tag.
+        @param[in] tag   - value type tag.
         @param[in] value - an unsigned 32-bit integer to be stored in this value.
         @return `*this`.
         */
@@ -363,7 +376,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
-        @param[in] tag - value type tag.
+        @param[in] tag   - value type tag.
         @param[in] value - an unsigned 32-bit integer to be stored in this value.
         @return `*this`.
         */
@@ -372,7 +385,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
-        @param[in] tag - value type tag.
+        @param[in] tag   - value type tag.
         @param[in] value - a string to be stored in this value.
         @return `*this`.
         */
@@ -381,7 +394,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
-        @param[in] tag - value type tag.
+        @param[in] tag   - value type tag.
         @param[in] value - a container, such as `Sequence::value_type` should be explicitly convertible to 
                            `registry::string_view_type`.
         @return `*this`.
@@ -394,7 +407,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, first, last)`.
-        @param[in] tag - value type tag.
+        @param[in] tag         - value type tag.
         @param[in] first, last - input iterators, such as `std::iterator_traits<InputIt>::value_type` should be 
                                  explicitly convertible to `registry::string_view_type`.
         @return `*this`.
@@ -408,7 +421,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, init)`.
-        @param[in] tag - value type tag.
+        @param[in] tag  - value type tag.
         @param[in] init - an object of type `std::initializer_list<T>`, such as `T` should be explicitly convertible
                           to `registry::string_view_type`.
         @return `*this`.
@@ -424,7 +437,7 @@ namespace registry
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
-        @param[in] tag - value type tag.
+        @param[in] tag   - value type tag.
         @param[in] value - an unsigned 64-bit integer to be stored in this value.
         @return `*this`.
         */
