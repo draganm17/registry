@@ -6,13 +6,14 @@
 #include <system_error>
 #include <vector>
 
-#include <registry/key.h>
 #include <registry/key_path.h>
 #include <registry/types.h>
 
 
 namespace registry
 {
+    class key;
+
     /*! This type represents available options that control the behavior of the `recursive_key_iterator`. \n
     key_options satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
     `operator|`, `operator^`, `operator~`, `operator&=`, `operator|=`, and `operator^=` are defined for this type) */
@@ -96,8 +97,8 @@ namespace registry
         void swap(key_entry& other) noexcept;
 
     private:
-        key_path                   m_path;
-        std::weak_ptr<key_handle>  m_key_handle;
+        key_path            m_path;
+        std::weak_ptr<key>  m_key_weak_ptr;
     };
 
     //------------------------------------------------------------------------------------//
@@ -157,23 +158,11 @@ namespace registry
         */
         explicit key_iterator(const key_path& path, std::error_code& ec = throws());
 
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `handle`.
+        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
         /*!
-        The overload that takes `std::error_code&` parameter constructs an end iterator on error.
-
-        @param[in]  handle - a handle to an opened key. The key must have been opened with the 
-                            `access_rights::enumerate_sub_keys` and `access_rights::query_value` access right.
-        @param[out] ec     - out-parameter for error reporting.
-
-        @throw 
-            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `handle.path()` and the OS error code as the error code
-            argument. \n
-            The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails,
-            and executes `ec.clear()` if no errors occur. \n
-            `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
+        Calls `key_iterator(key.path(), ec)`.
         */
-        explicit key_iterator(key_handle handle, std::error_code& ec = throws());
+        explicit key_iterator(const key& key, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -285,8 +274,7 @@ namespace registry
         /*!
         Calls `recursive_key_iterator(path, key_options::none, ec)`.
         */
-        explicit recursive_key_iterator(const key_path& path, std::error_code& ec = throws())
-        : recursive_key_iterator(path, key_options::none, ec) { }
+        explicit recursive_key_iterator(const key_path& path, std::error_code& ec = throws());
 
         //! Constructs a iterator that refers to the first subkey of a registry key specified by `path`. 
         /*!
@@ -310,33 +298,17 @@ namespace registry
         */
         recursive_key_iterator(const key_path& path, key_options options, std::error_code& ec = throws());
 
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `handle`.
+        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
         /*!
-        Calls `recursive_key_iterator(std::move(handle), key_options::none, ec)`.
+        Calls `recursive_key_iterator(key.path(), key_options::none, ec)`.
         */
-        explicit recursive_key_iterator(key_handle handle, std::error_code& ec = throws())
-        : recursive_key_iterator(std::move(handle), key_options::none, ec) { }
+        explicit recursive_key_iterator(const key& key, std::error_code& ec = throws());
 
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `handle`. 
+        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
         /*!
-        The overload that takes `std::error_code&` parameter constructs an end iterator on error.
-
-        @post `this->options() == options`.
-
-        @param[in]  handle  - a handle to an opened key. The key must have been opened with the 
-                              `access_rights::enumerate_sub_keys` and `access_rights::query_value` access right.
-        @param[in]  options - specify iteration options.
-        @param[out] ec      - out-parameter for error reporting.
-
-        @throw 
-            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `handle.path()` and the OS error code as the error code
-            argument. \n
-            The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
-            and executes `ec.clear()` if no errors occur. \n
-            `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
+        Calls `recursive_key_iterator(key.path(), options, ec)`.
         */
-        recursive_key_iterator(key_handle handle, key_options options, std::error_code& ec = throws());
+        recursive_key_iterator(const key& key, key_options options, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
