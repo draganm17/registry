@@ -6,7 +6,7 @@
 #include <registry/exception.h>
 #include <registry/details/utils.impl.h>
 #include <registry/key.h>
-//#include <registry/key_iterator.h> // TODO: ...
+#include <registry/key_iterator.h>
 
 // TODO: the current implementation pass the subkey name to WINAPI as 'path.key_name().data()'.
 //       Subkey wich name begins with a key separator (like "\Some\Subkey") are not process correctly -
@@ -29,12 +29,14 @@ const auto RegDeleteKeyEx_ = []() noexcept
     using F = LONG(WINAPI*)(HKEY, LPCTSTR, REGSAM, DWORD);
     const auto osv = (DWORD)(LOBYTE(LOWORD(GetVersion())));
 #if defined(_UNICODE)
-    return osv > 5 ? (F)GetProcAddress(LoadLibrary(TEXT("Advapi32.dll")), "RegDeleteKeyExW") : nullptr;
+    return osv >= 6 ? (F)GetProcAddress(LoadLibrary(TEXT("Advapi32.dll")), "RegDeleteKeyExW") : nullptr;
 #else
-    return osv > 5 ? (F)GetProcAddress(LoadLibrary(TEXT("Advapi32.dll")), "RegDeleteKeyExA") : nullptr;
+    return osv >= 6 ? (F)GetProcAddress(LoadLibrary(TEXT("Advapi32.dll")), "RegDeleteKeyExA") : nullptr;
 #endif
 }();
 #endif
+
+inline constexpr bool& dont_care() noexcept { return (bool&)(*((bool*)nullptr)); }
 
 void close_handle(key::native_handle_type handle, std::error_code& ec) noexcept
 {
@@ -59,12 +61,8 @@ void close_handle(key::native_handle_type handle, std::error_code& ec) noexcept
 
 uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code& ec)
 {
-    // TODO: ...
-    return 0;
-
-    /*
     ec.clear();
-    const auto subkey = key.open(path, access_rights::read, ec);
+    auto subkey = key.open_key(path, access_rights::read, ec);
     
     if (ec) {
         return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), 0)
@@ -73,7 +71,7 @@ uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code
 
     uint32_t keys_deleted = 0;
     std::vector<key_path> rm_list;
-    for (auto it = key_iterator(subkey.path(), ec); !ec && it != key_iterator(); it.increment(ec))
+    for (auto it = key_iterator(subkey, ec); !ec && it != key_iterator(); it.increment(ec))
     {
         if (ec) break;
         rm_list.push_back(it->path().leaf_key());
@@ -85,7 +83,6 @@ uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code
     }
 
     return !ec ? keys_deleted : static_cast<uint32_t>(-1);
-    */
 }
 
 std::wstring nt_key_name(key::native_handle_type handle)
@@ -153,18 +150,16 @@ key::key(open_only_tag, const key_path& path, access_rights rights, std::error_c
 }
 
 key::key(open_or_create_tag, const key_path& path, access_rights rights, std::error_code& ec)
-    //: key(open_or_create_tag{}, path, rights, XXX, ec)
-{
-    // TODO: ...
-}
+    : key(open_or_create_tag{}, path, rights, dont_care(), ec)
+{ }
 
 key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& was_created, std::error_code& ec)
     : m_path(path)
     , m_rights(rights)
 {
     std::error_code ec2;
-    was_created = false;
     key_path lpath = path, rpath({}, path.key_view());
+    if (&was_created != &dont_care()) was_created = false;
     key lkey(open_only_tag{}, lpath, access_rights::create_sub_key, ec2);
 
     while (ec2.value() == ERROR_FILE_NOT_FOUND && lpath.has_parent_key()) {
@@ -175,8 +170,8 @@ key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& w
     std::pair<key, bool> create_key_result;
     if (!ec2 && (create_key_result = lkey.create_key(rpath, rights, ec2), !ec2))
     {
-        was_created = create_key_result.second;
         m_handle.swap(create_key_result.first.m_handle);
+        if (&was_created != &dont_care()) was_created = create_key_result.second;
         RETURN_RESULT(ec, VOID);
     }
 

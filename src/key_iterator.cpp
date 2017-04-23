@@ -71,7 +71,7 @@ key_iterator::key_iterator(const key_path& path, std::error_code& ec)
     std::error_code ec2;
     key k(open_only_tag{}, path, access_rights::enumerate_sub_keys | access_rights::query_value, ec2);
 
-    if (!ec) {
+    if (!ec2) {
         m_state = std::make_shared<state>(state{ uint32_t(-1),
                                                  std::move(k),
                                                  key_entry(key_path(path).append(TEXT("PLACEHOLDER"))) });
@@ -156,9 +156,10 @@ recursive_key_iterator::recursive_key_iterator(const key_path& path, key_options
 {
     std::error_code ec2;
     m_stack.emplace_back(path, ec2);
-    if (!ec2) RETURN_RESULT(ec, VOID);
+    if (!ec2 && m_stack.back() != key_iterator()) RETURN_RESULT(ec, VOID);
     
     swap(recursive_key_iterator());
+    if (!ec2) RETURN_RESULT(ec, VOID);
     if ((ec2.value() == ERROR_ACCESS_DENIED) &&
         (options & key_options::skip_permission_denied) != key_options::none)
     {
