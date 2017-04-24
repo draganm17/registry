@@ -61,6 +61,10 @@ void close_handle(key::native_handle_type handle, std::error_code& ec) noexcept
 
 uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code& ec)
 {
+    // TODO: ...
+    return 0;
+
+    /*
     ec.clear();
     auto subkey = key.open_key(path, access_rights::read, ec);
     
@@ -83,6 +87,7 @@ uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code
     }
 
     return !ec ? keys_deleted : static_cast<uint32_t>(-1);
+    */
 }
 
 std::wstring nt_key_name(key::native_handle_type handle)
@@ -121,14 +126,12 @@ void key::close_handle_t::operator()(void* hkey) const noexcept
 }
 
 key::key(key_id id)
-    : m_path(key_path::from_key_id(id))
-    , m_rights(access_rights::unknown)
+    : m_rights(access_rights::unknown)
     , m_handle(reinterpret_cast<void*>(id))
 { }
 
 key::key(open_only_tag, const key_path& path, access_rights rights, std::error_code& ec)
-    : m_path(path)
-    , m_rights(rights)
+    : m_rights(rights)
 {
     LRESULT rc = ERROR_FILE_NOT_FOUND;
 
@@ -154,8 +157,7 @@ key::key(open_or_create_tag, const key_path& path, access_rights rights, std::er
 { }
 
 key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& was_created, std::error_code& ec)
-    : m_path(path)
-    , m_rights(rights)
+    : m_rights(rights)
 {
     std::error_code ec2;
     key_path lpath = path, rpath({}, path.key_view());
@@ -179,8 +181,6 @@ key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& w
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
-key_path key::path() const { return is_open() ? m_path : key_path(); }
-
 access_rights key::rights() const noexcept { return is_open() ? m_rights : access_rights::unknown; }
 
 key::native_handle_type key::native_handle() const noexcept
@@ -194,7 +194,6 @@ std::pair<key, bool> key::create_key(const key_path& path, access_rights rights,
     HKEY hkey;
     DWORD disp;
     key.m_rights = rights;
-    key.m_path = this->path().append(path);
     const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view());
     const LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), path.key_name().data(),
                                       0, nullptr, REG_OPTION_NON_VOLATILE, sam_desired, nullptr, &hkey, &disp);
@@ -205,7 +204,7 @@ std::pair<key, bool> key::create_key(const key_path& path, access_rights rights,
     }
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), std::make_pair(registry::key(), false);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), std::make_pair(registry::key(), false);
 }
 
 bool key::equivalent(const key_path& path, std::error_code& ec) const
@@ -215,7 +214,7 @@ bool key::equivalent(const key_path& path, std::error_code& ec) const
 
     bool result;
     if (!ec2 && (result = equivalent(key, ec2), !ec2)) RETURN_RESULT(ec, result);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
 bool key::equivalent(const key& key, std::error_code& ec) const
@@ -254,7 +253,7 @@ key_info key::info(key_info_mask mask, std::error_code& ec) const
     }
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path()), invalid_info;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__), invalid_info;
 }
 
 bool key::key_exists(const key_path& path, std::error_code& ec) const
@@ -264,7 +263,7 @@ bool key::key_exists(const key_path& path, std::error_code& ec) const
 
     if (!ec2) RETURN_RESULT(ec, true);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
 key key::open_key(const key_path& path, access_rights rights, std::error_code& ec) const
@@ -272,7 +271,6 @@ key key::open_key(const key_path& path, access_rights rights, std::error_code& e
     key key;
     HKEY hkey;
     key.m_rights = rights;
-    key.m_path = this->path().append(path);
     const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(native_handle()), path.key_name().data(), 0,
                                     static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
 
@@ -282,7 +280,7 @@ key key::open_key(const key_path& path, access_rights rights, std::error_code& e
     }
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), registry::key();
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), registry::key();
 }
 
 value key::read_value(string_view_type value_name, std::error_code& ec) const
@@ -301,7 +299,7 @@ value key::read_value(string_view_type value_name, std::error_code& ec) const
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, reinterpret_cast<value&&>(state));
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), value();
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), value_name), value();
 }
 
 bool key::remove_key(const key_path& path, std::error_code& ec)
@@ -323,7 +321,7 @@ bool key::remove_key(const key_path& path, std::error_code& ec)
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), false;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
 uint32_t key::remove_keys(const key_path& path, std::error_code& ec)
@@ -335,7 +333,7 @@ uint32_t key::remove_keys(const key_path& path, std::error_code& ec)
     {
         RETURN_RESULT(ec, keys_deleted);
     }
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, this->path(), path), static_cast<uint32_t>(-1);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path), static_cast<uint32_t>(-1);
 }
 
 bool key::remove_value(string_view_type value_name, std::error_code& ec)
@@ -346,7 +344,7 @@ bool key::remove_value(string_view_type value_name, std::error_code& ec)
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), false;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), value_name), false;
 }
 
 bool key::value_exists(string_view_type value_name, std::error_code& ec) const
@@ -358,7 +356,7 @@ bool key::value_exists(string_view_type value_name, std::error_code& ec) const
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name), false;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), value_name), false;
 }
 
 void key::write_value(string_view_type value_name, const value& value, std::error_code& ec)
@@ -369,7 +367,7 @@ void key::write_value(string_view_type value_name, const value& value, std::erro
     
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, VOID);
     const std::error_code ec2(rc, std::system_category());
-    details::set_or_throw(&ec, ec2, __FUNCTION__, path(), key_path(), value_name);
+    details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), value_name);
 }
 
 void key::close(std::error_code& ec)
@@ -378,13 +376,12 @@ void key::close(std::error_code& ec)
     key tmp(std::move(*this));
     if (close_handle(tmp.m_handle.release(), ec2), !ec2) RETURN_RESULT(ec, VOID);
 
-    details::set_or_throw(&ec, ec2, __FUNCTION__, tmp.m_path);
+    details::set_or_throw(&ec, ec2, __FUNCTION__);
 }
 
 void key::swap(key& other) noexcept
 { 
     using std::swap;
-    swap(m_path, other.m_path);
     swap(m_rights, other.m_rights);
     swap(m_handle, other.m_handle);
 }

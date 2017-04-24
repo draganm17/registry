@@ -25,7 +25,6 @@ TEST(Key, Construct)
             const key k = id;
             if (id != key_id::unknown) {
                 EXPECT_TRUE(k.is_open());
-                EXPECT_TRUE(k.path() == key_path::from_key_id(id));
                 EXPECT_TRUE(k.rights() == access_rights::unknown);
                 EXPECT_TRUE(k.native_handle() == reinterpret_cast<key::native_handle_type>(id));
             } else {
@@ -54,14 +53,12 @@ TEST(Key, Construct)
         const key_path p1 = key_path::from_key_id(key_id::current_user);
         const key k1(open_only_tag{}, p1, access_rights::read);
         EXPECT_TRUE(k1.is_open()                       &&
-                    k1.path() == p1                    &&
                     k1.rights() == access_rights::read &&
                     k1.native_handle() != key::native_handle_type{});
         //
         const key k2(open_only_tag{}, p1, access_rights::read, ec);
         EXPECT_TRUE(!ec);
         EXPECT_TRUE(k2.is_open()                       &&
-                    k2.path() == p1                    &&
                     k2.rights() == access_rights::read &&
                     k2.native_handle() != key::native_handle_type{});
 
@@ -69,14 +66,12 @@ TEST(Key, Construct)
         const key_path p2 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry");
         const key k3(open_only_tag{}, p2, access_rights::read);
         EXPECT_TRUE(k3.is_open()                       &&
-                    k3.path() == p2                    &&
                     k3.rights() == access_rights::read &&
                     k3.native_handle() != key::native_handle_type{});
         //
         const key k4(open_only_tag{}, p2, access_rights::read, ec);
         EXPECT_TRUE(!ec);
         EXPECT_TRUE(k4.is_open()                       &&
-                    k4.path() == p2                    &&
                     k4.rights() == access_rights::read &&
                     k4.native_handle() != key::native_handle_type{});
 
@@ -234,7 +229,7 @@ TEST(Key, OperationsOnRegistry)
             k.read_value(TEXT("non_existent"));
         } catch(const registry_error& e) {
             ++exceptions;
-            EXPECT_TRUE(e.path1() == k.path());
+            EXPECT_TRUE(e.path1() == key_path(TEXT("non_existent")));
             EXPECT_TRUE(e.path2() == key_path());
             EXPECT_TRUE(e.value_name() == TEXT("non_existent"));
         }
@@ -257,7 +252,6 @@ TEST(Key, OperationsOnRegistry)
         EXPECT_TRUE(k.key_exists(p1));                                      // check operation success
         EXPECT_TRUE(ret1.second == true                      &&
                     ret1.first.is_open()                     && 
-                    ret1.first.path() == k.path().append(p1) && 
                     ret1.first.rights() == access_rights::read);            // check the result
         //
         const key_path p2 = TEXT("new_key_2");
@@ -266,7 +260,6 @@ TEST(Key, OperationsOnRegistry)
         EXPECT_TRUE(!ec && k.key_exists(p2));                               // check operation success
         EXPECT_TRUE(ret2.second == true                      &&
                     ret2.first.is_open()                     && 
-                    ret2.first.path() == k.path().append(p2) &&
                     ret2.first.rights() == access_rights::write);           // check the result
 
         // create new keys (with subkeys)
@@ -276,7 +269,6 @@ TEST(Key, OperationsOnRegistry)
         EXPECT_TRUE(k.key_exists(p3));                                      // check operation success
         EXPECT_TRUE(ret3.second == true                      &&
                     ret3.first.is_open()                     &&
-                    ret3.first.path() == k.path().append(p3) &&
                     ret3.first.rights() == access_rights::all_access);      // check the result
         //
         const key_path p4 = TEXT("new_key_4\\Inner1\\Inner2");
@@ -285,14 +277,12 @@ TEST(Key, OperationsOnRegistry)
         EXPECT_TRUE(!ec && k.key_exists(p4));                               // check operation success
         EXPECT_TRUE(ret4.second == true                      &&
                     ret4.first.is_open()                     &&
-                    ret4.first.path() == k.path().append(p4) &&
                     ret4.first.rights() == access_rights::all_access);      // check the result
 
         // open an existing key
         const auto ret5 = k.create_key(p1, access_rights::all_access);      // open the key
         EXPECT_TRUE(ret5.second == false                     &&
                     ret5.first.is_open()                     &&
-                    ret5.first.path() == k.path().append(p1) &&
                     ret5.first.rights() == access_rights::all_access);      // check the result
         //
         // open an existing key
@@ -300,21 +290,18 @@ TEST(Key, OperationsOnRegistry)
         EXPECT_TRUE(!ec);                                                   // check operation success
         EXPECT_TRUE(ret6.second == false                     &&
                     ret6.first.is_open()                     &&
-                    ret6.first.path() == k.path().append(p1) &&
                     ret6.first.rights() == access_rights::all_access);      // check the result
 
         // open the same key
         const auto ret7 = k.create_key({}, access_rights::all_access);      // open the key
         EXPECT_TRUE(ret7.second == false          &&
                     ret7.first.is_open()          &&
-                    ret7.first.path() == k.path() &&
                     ret7.first.rights() == access_rights::all_access);      // check the result
         //
         const auto ret8 = k.create_key({}, access_rights::all_access, ec);  // open the key
         EXPECT_TRUE(!ec);                                                   // check operation success
         EXPECT_TRUE(ret8.second == false          &&
                     ret8.first.is_open()          &&
-                    ret8.first.path() == k.path() &&
                     ret8.first.rights() == access_rights::all_access);      // check the result
     }
 
@@ -397,7 +384,8 @@ TEST(Key, OperationsOnRegistry)
     // key::remove_key(string_view_type, std::error_code&)
     {
         std::error_code ec;
-        key k(open_only_tag{}, TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::all_access);
+        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
+        key k(open_only_tag{}, p, access_rights::all_access);
 
         // remove an non-existing key
         const key_path p1 = TEXT("non_existing");
@@ -407,11 +395,11 @@ TEST(Key, OperationsOnRegistry)
 
         // remove an empty key (with no subkeys)
         const key_path p2 = TEXT("new_key_1");
-        ASSERT_TRUE(k.key_exists(p2) && info(k.path().append(p2)).subkeys == 0);
+        ASSERT_TRUE(k.key_exists(p2) && info(key_path(p).append(p2)).subkeys == 0);
         EXPECT_TRUE(k.remove_key(p2) == true && !k.key_exists(p2));
         //
         const key_path p3 = TEXT("new_key_2");
-        ASSERT_TRUE(k.key_exists(p3) && info(k.path().append(p3)).subkeys == 0);
+        ASSERT_TRUE(k.key_exists(p3) && info(key_path(p).append(p3)).subkeys == 0);
         EXPECT_TRUE(k.remove_key(p3, ec) == true && !ec && !k.key_exists(p3));
     }
 
@@ -419,28 +407,29 @@ TEST(Key, OperationsOnRegistry)
     // key::remove_keys(string_view_type, std::error_code&)
     {
         std::error_code ec;
-        key k(open_only_tag{}, TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"), access_rights::all_access);
+        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write");
+        key k(open_only_tag{}, p, access_rights::all_access);
 
         // remove an non-existing key
         const key_path p1 = TEXT("non_existing");
-        ASSERT_TRUE(!k.key_exists(p1));                                          // check that the key does not exist
-        EXPECT_TRUE(k.remove_keys(p1) == 0);                                     // remove the key and check the result
+        ASSERT_TRUE(!k.key_exists(p1));                                             // check that the key does not exist
+        EXPECT_TRUE(k.remove_keys(p1) == 0);                                        // remove the key and check the result
         //
         const key_path p2 = TEXT("non_existing");
-        ASSERT_TRUE(!k.key_exists(p2));                                          // check that the key does not exist
-        EXPECT_TRUE(k.remove_keys(p2, ec) == 0 && !ec);                          // remove the key and check the result
+        ASSERT_TRUE(!k.key_exists(p2));                                             // check that the key does not exist
+        EXPECT_TRUE(k.remove_keys(p2, ec) == 0 && !ec);                             // remove the key and check the result
 
         // remove an non-empty key (which have subkeys)
         const key_path p3 = TEXT("new_key_3");
-        ASSERT_TRUE(k.key_exists(p3) && info(k.path().append(p3)).subkeys > 0);  // check that the key exists and have subkeys
-        EXPECT_TRUE(k.remove_keys(p3) == 3 && !k.key_exists(p3));                // remove the key and check the result
+        ASSERT_TRUE(k.key_exists(p3) && info(key_path(p).append(p3)).subkeys > 0);  // check that the key exists and have subkeys
+        EXPECT_TRUE(k.remove_keys(p3) == 3 && !k.key_exists(p3));                   // remove the key and check the result
         //
         const key_path p4 = TEXT("new_key_4");
-        ASSERT_TRUE(k.key_exists(p4) && info(k.path().append(p4)).subkeys > 0);  // check that the key exists and have subkeys
-        EXPECT_TRUE(k.remove_keys(p4, ec) == 3 && !ec && !k.key_exists(p4));     // remove the key and check the result
+        ASSERT_TRUE(k.key_exists(p4) && info(key_path(p).append(p4)).subkeys > 0);  // check that the key exists and have subkeys
+        EXPECT_TRUE(k.remove_keys(p4, ec) == 3 && !ec && !k.key_exists(p4));        // remove the key and check the result
 
         // clean-up
-        registry::remove_keys(k.path());
+        registry::remove_keys(p);
     }
 
     // key::equivalent(const key_path&)

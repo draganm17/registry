@@ -87,7 +87,7 @@ key_iterator::key_iterator(const key_path& path, std::error_code& ec)
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
-key_iterator::key_iterator(const key& key, std::error_code& ec) : key_iterator(key.path(), ec) { }
+//key_iterator::key_iterator(const key& key, std::error_code& ec) : key_iterator(key.path(), ec) { }
 
 bool key_iterator::operator==(const key_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
 
@@ -168,11 +168,11 @@ recursive_key_iterator::recursive_key_iterator(const key_path& path, key_options
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
-recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& ec)
-    : recursive_key_iterator(key, key_options::none, ec) { }
+//recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& ec)
+//    : recursive_key_iterator(key, key_options::none, ec) { }
 
-recursive_key_iterator::recursive_key_iterator(const key& key, key_options options, std::error_code& ec)
-    : recursive_key_iterator(key, options, ec) { }
+//recursive_key_iterator::recursive_key_iterator(const key& key, key_options options, std::error_code& ec)
+//    : recursive_key_iterator(key, options, ec) { }
 
 bool recursive_key_iterator::operator==(const recursive_key_iterator& rhs) const noexcept
 {
