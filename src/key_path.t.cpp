@@ -14,7 +14,7 @@ TEST(KeyPath, Construct)
     // default constructor
     key_path p1;
     ASSERT_TRUE(p1.key_name().empty());
-    ASSERT_TRUE(p1.key_view() == key_path::default_view);
+    ASSERT_TRUE(p1.key_view() == view::view_default);
 
     // construct from name an view
     key_path p2(TEXT("HKEY_CURRENT_user\\Test"), view::view_32bit);
@@ -24,7 +24,7 @@ TEST(KeyPath, Construct)
     // test implicit from-string construction
     key_path p3 = TEXT("HKEY_CURRENT_user\\Test");
     EXPECT_TRUE(p2.key_name() == TEXT("HKEY_CURRENT_user\\Test"));
-    EXPECT_TRUE(p2.key_view() == key_path::default_view);
+    EXPECT_TRUE(p2.key_view() == view::view_default);
 }
 
 TEST(KeyPath, Assign)
@@ -41,7 +41,7 @@ TEST(KeyPath, FromKeyId)
     {
         const key_path p = key_path::from_key_id(id);
         ASSERT_TRUE(p.key_name() == expected_name);
-        ASSERT_TRUE(p.key_view() == key_path::default_view);
+        ASSERT_TRUE(p.key_view() == view::view_default);
         ASSERT_TRUE(p.root_key_id() == id);
     };
 

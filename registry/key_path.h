@@ -17,23 +17,16 @@ namespace registry
     information see: https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms724072 */
     enum class view : uint32_t
     {
-        /*! Access a 64-bit key from either a 32-bit or 64-bit application */
+        /*! Access a 32-bit key from a 32-bit application or a 64-bit key from a 64-bit application. */
+        view_default =  0x00000000,
+
+        /*! Access a 64-bit key from either a 32-bit or 64-bit application. */
         view_32bit =    0x00000200,
 
-        /*! Access a 32-bit key from either a 32-bit or 64-bit application.
+        /*! Access a 32-bit key from either a 32-bit or 64-bit application. \n
         Ignored on the 32-bit versions of Windows. */
         view_64bit =    0x00000100
     };
-
-    //\cond HIDDEN_SYMBOLS
-    namespace details
-    {
-#if defined(_WIN64)
-        static constexpr view default_view = view::view_64bit;
-#elif defined(_WIN32)
-        static constexpr view default_view = view::view_32bit;
-#endif
-    } //\endcond
 
     //------------------------------------------------------------------------------------//
     //                                 class key_path                                     //
@@ -61,11 +54,6 @@ namespace registry
         using const_iterator = iterator;
 
     public:
-        /*! \brief
-        The value of type `registry::view` which is passed to `registry::key_path` constructor by default. Is equal to
-        `registry::view::view_32bit` for 32-bit applications and `registry::view::view_64bit` for 64-bit applications. */
-        static constexpr view default_view = details::default_view;
-
         //! Key separator. Always a backslash.
         static constexpr string_type::value_type separator = string_type::value_type('\\');
 
@@ -75,7 +63,8 @@ namespace registry
     public:
         //! Constructs a path that corresponds to an predefined registry key.
         /*!
-        Returns `key_path()` if `id == key_id::unknown`. The view of the returned path is always equal to `default_view`.
+        Returns `key_path()` if `id == key_id::unknown`. \n
+        The view of the returned path is always equal to `view::view_default`.
         */
         static key_path from_key_id(key_id id);
 
@@ -83,7 +72,7 @@ namespace registry
         //! Default constructor.
         /*!
         @post `key_name().empty()`.
-        @post `key_view() == default_view`.
+        @post `key_view() == view::view_default`.
         */
         key_path() noexcept = default;
 
@@ -109,7 +98,10 @@ namespace registry
         @param[in] name - a key name string.
         @param[in] view - a registry view.
         */
-        key_path(string_view_type name, view view = default_view);
+        // TODO: construct the path in a generic format :
+        //       - remove all redundant separators
+        //       - upcase all characters ???
+        key_path(string_view_type name, view view = view::view_default);
 
         // TODO: ...
         template <typename Source, 
@@ -144,12 +136,15 @@ namespace registry
         /*!
         Equivalent to `has_root_key() ? key_path(*begin(), key_view()) : key_path(string_type(), key_view())`.
         */
+        // TODO: return not the first component of the path but the actual root (predefined) registry key, if present
         key_path root_key() const;
 
         //! Returns the identifier of the root key.
         /*!
         Returns `key_id::unknown` if `!has_root_key()` or if the root key is not one of the predefined keys.
         */
+        // TODO: since the key name will not be able to begin with a separator
+        //       rewrite the definition in terms of 'is_absolute()' or 'root_key()'
         key_id root_key_id() const; // TODO: noexcept ???
 
         //! Returns the leaf component of the path.
@@ -164,12 +159,18 @@ namespace registry
         constructed by appending all  elements in a range `[begin(), --end())` to an path constructed as 
         `key_path(string_type(), key_view())`.
         */
+        // TODO: investigate what should be the appropriate behaviour
         key_path parent_key() const;
+
+        // TODO: ...
+        // should return a key relative to the root key, if present
+        key_path relative_key() const;
 
         //! Checks if the path has a root key.
         /*!
         Equivalent to `begin() != end()`.
         */
+        // TODO: Rewrite definition in terms of 'is_absolute()' or 'root_key()'
         bool has_root_key() const noexcept;
 
         //! Checks if the path has a leaf key.
@@ -182,7 +183,11 @@ namespace registry
         /*!
         Equivalent to `has_root_key() && ++begin() != end()`.
         */
+        // TODO: investigate what should be the appropriate behaviour
         bool has_parent_key() const noexcept;
+
+        // TODO: ...
+        bool has_relative_key() const noexcept;
 
         //! Checks whether the path is absolute.
         /*!
@@ -190,6 +195,7 @@ namespace registry
         key should begin with a predefined key identifier. The path is absolute if `root_key_id() != key_id::unknown`
         and the key name does not begin with a key separator.
         */
+        // TODO: rewrite the definition ???
         bool is_absolute() const noexcept;
 
         //! Checks whether the path is relative.
@@ -231,7 +237,7 @@ namespace registry
 
         @return `*this`.
         */
-        key_path& assign(string_view_type name, registry::view view = default_view);
+        key_path& assign(string_view_type name, view view = view::view_default);
 
         //! Appends elements to the key name.
         /*!
@@ -254,7 +260,9 @@ namespace registry
 
         //! Appends elements to the key name.
         /*!
-        First, appends each component of `subkey` name to the key name. Then, assigns the key view to `subkey.key_view()`.
+        First, appends each component of `subkey` name to the key name as if by 
+        `for (auto it = subkey.begin(); it != subkey.end(); ++it) append(*it);`. \n
+        Then, assigns the key view to `subkey.key_view()`, except if `subkey.key_view() == view::view_default`.
 
         @return `*this`.
         */
@@ -266,6 +274,7 @@ namespace registry
 
         @return `*this`.
         */
+        // TODO: make shure to never introduce a separator, document that
         key_path& concat(string_view_type str);
 
         //! Removes a single leaf component.
@@ -284,12 +293,16 @@ namespace registry
         */
         key_path& replace_leaf_key(string_view_type replacement);
 
+        // TODO: ...
+        // same as prev. overload but additionally may replace the view
+        //key_path& replace_leaf_key(const key_path& replacement);
+
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;
 
     private:
-        registry::view  m_view = default_view;
-        string_type     m_name;
+        view         m_view = view::view_default;
+        string_type  m_name;
 
     };
 

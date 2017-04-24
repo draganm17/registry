@@ -39,17 +39,17 @@ const string_type& key_path::key_name() const noexcept { return m_name; }
 view key_path::key_view() const noexcept { return m_view; }
 
 key_path key_path::root_key() const 
-{ return has_root_key() ? key_path(*begin(), key_view()) : key_path(string_view_type(), key_view()); }
+{ return has_root_key() ? key_path(*begin(), m_view) : key_path(string_view_type(), m_view); }
 
 key_id key_path::root_key_id() const { return details::key_id_from_string(*begin()); }
 
 key_path key_path::leaf_key() const 
-{ return has_leaf_key() ? key_path(*--end(), key_view()) : key_path(string_view_type(), key_view()); }
+{ return has_leaf_key() ? key_path(*--end(), m_view) : key_path(string_view_type(), m_view); }
 
 key_path key_path::parent_key() const
 {
     auto first = begin(), last = end();
-    key_path path(string_view_type(), key_view());
+    key_path path(string_view_type(), m_view);
 
     if (first != last && first != --last) {
         for (; first != last; ++first) path.append(*first);
@@ -78,8 +78,8 @@ bool key_path::is_relative() const noexcept { return !is_absolute(); }
 
 int key_path::compare(const key_path& other) const noexcept
 {
-    if (key_view() != other.key_view()) {
-        return key_view() < other.key_view() ? -1 : 1;
+    if (m_view != other.m_view) {
+        return m_view < other.m_view ? -1 : 1;
     }
 
     iterator beg_1 = begin(), end_1 = end();
@@ -116,7 +116,7 @@ key_path& key_path::assign(string_view_type name, view view)
 
 key_path& key_path::append(const key_path& subkey)
 {
-    m_view = subkey.key_view();
+    if (subkey.m_view != view::view_default) m_view = subkey.m_view;
     for (auto it = subkey.begin(); it != subkey.end(); ++it) append(*it);
     return *this;
 }
