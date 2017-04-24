@@ -132,70 +132,59 @@ namespace registry
         //! Returns the registry view of the key.
         view key_view() const noexcept;
 
-        //! Returns the root component of the key.
+        //! Returns the root path of the path.
         /*!
-        Equivalent to `has_root_key() ? key_path(*begin(), key_view()) : key_path(string_type(), key_view())`.
+        If the key name is not empty and its first component identifies a predefined registry key,
+        returns `key_path(*begin(), key_view())`. Otherwise, returns `key_path(string_type(), key_view())`.
         */
-        // TODO: return not the first component of the path but the actual root (predefined) registry key, if present
-        key_path root_key() const;
+        key_path root_path() const;
 
         //! Returns the identifier of the root key.
         /*!
-        Returns `key_id::unknown` if `!has_root_key()` or if the root key is not one of the predefined keys.
+        if `!has_root_path()`, returns `key_id::unknown`.
         */
-        // TODO: since the key name will not be able to begin with a separator
-        //       rewrite the definition in terms of 'is_absolute()' or 'root_key()'
-        key_id root_key_id() const; // TODO: noexcept ???
+        key_id root_key_id() const noexcept;
 
         //! Returns the leaf component of the path.
         /*!
-        Equivalent to `has_leaf_key() ? key_path(*--end(), key_view()) : key_path(string_type(), key_view())`.
+        If the key name is not empty, returns `key_path(*--end(), key_view())`.
+        Otherwise, returns `key_path(string_type(), key_view())`.
         */
-        key_path leaf_key() const;
+        key_path leaf_path() const;
 
         //! Returns the parent of the path.
         /*!
-        Returns `key_path(string_type(), key_view())` if `!has_parent_key()`. The resulting path is 
+        Returns `key_path(string_type(), key_view())` if `!has_parent_path()`. The resulting path is 
         constructed by appending all  elements in a range `[begin(), --end())` to an path constructed as 
         `key_path(string_type(), key_view())`.
         */
         // TODO: investigate what should be the appropriate behaviour
-        key_path parent_key() const;
+        key_path parent_path() const;
 
-        // TODO: ...
-        // should return a key relative to the root key, if present
-        key_path relative_key() const;
-
-        //! Checks if the path has a root key.
+        //! Returns a path relative to the root path.
         /*!
-        Equivalent to `begin() != end()`.
+        The path is composed of every component of `*this` after the root-path. \n
+        If the key name is empty, returns `key_path(string_type(), key_view())`.
         */
-        // TODO: Rewrite definition in terms of 'is_absolute()' or 'root_key()'
-        bool has_root_key() const noexcept;
+        key_path relative_path() const;
 
-        //! Checks if the path has a leaf key.
-        /*!
-        Equivalent to `begin() != end()`.
-        */
-        bool has_leaf_key() const noexcept;
+        //! Checks whether `root_path()` key name is empty.
+        bool has_root_path() const noexcept;
 
-        //! Checks if the path has a parent path.
-        /*!
-        Equivalent to `has_root_key() && ++begin() != end()`.
-        */
-        // TODO: investigate what should be the appropriate behaviour
-        bool has_parent_key() const noexcept;
+        //! Checks whether `leaf_path()` key name is empty.
+        bool has_leaf_path() const noexcept;
 
-        // TODO: ...
-        bool has_relative_key() const noexcept;
+        //! Checks whether `parent_path()` key name is empty.
+        bool has_parent_path() const noexcept;
+
+        //! Checks whether `relative_path()` key name is empty.
+        bool has_relative_path() const noexcept;
 
         //! Checks whether the path is absolute.
         /*!
-        An absolute key path is a path that unambiguously identifies the location of a registry key. The name of such 
-        key should begin with a predefined key identifier. The path is absolute if `root_key_id() != key_id::unknown`
-        and the key name does not begin with a key separator.
+        An absolute path is a path that unambiguously identifies the location of a registry key without reference to
+        an additional starting location. The key name of an absolute path always begins with a predefined key identifier.
         */
-        // TODO: rewrite the definition ???
         bool is_absolute() const noexcept;
 
         //! Checks whether the path is relative.
@@ -208,7 +197,7 @@ namespace registry
         /*!
         - if `key_view() < other.key_view()`, `*this` is less than `other`;
         - otherwise if `key_view() > other.key_view()`, `*this` is greater than `other`;
-        - otherwise keys name components are compared lexicographically. The comparison is case-insensitive.
+        - otherwise the key name components are compared lexicographically. The comparison is case-insensitive.
 
         @return
             A value less than 0 if this path is less than the given path. \n
@@ -217,9 +206,10 @@ namespace registry
         */
         int compare(const key_path& other) const noexcept;
 
-        /*! \brief
-        Returns an iterator to the first component of the key name. If the key name has no components, the returned
-        iterator is equal to `end()`. */
+        //! Returns an iterator to the first component of the key name.
+        /*!
+        If the key name is empty, returns `end()`.
+        */
         iterator begin() const noexcept;
 
         /*! \brief
@@ -279,23 +269,23 @@ namespace registry
 
         //! Removes a single leaf component.
         /*!
-        @pre `has_leaf_key()`.
+        @pre `has_leaf_path()`.
         @return `*this`.
         */
-        key_path& remove_leaf_key();
+        key_path& remove_leaf_path();
 
         //! Replaces a single leaf component with `replacement`.
         /*!
-        Equivalent to `remove_leaf_key().append(replacement)`.
+        Equivalent to `remove_leaf_path().append(replacement)`.
 
-        @pre `has_leaf_key()`.
+        @pre `has_leaf_path()`.
         @return `*this`.
         */
-        key_path& replace_leaf_key(string_view_type replacement);
+        key_path& replace_leaf_path(string_view_type replacement);
 
         // TODO: ...
         // same as prev. overload but additionally may replace the view
-        //key_path& replace_leaf_key(const key_path& replacement);
+        //key_path& replace_leaf_path(const key_path& replacement);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;

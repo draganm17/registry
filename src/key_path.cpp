@@ -31,22 +31,27 @@ key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_s
 
 key_path::key_path(string_view_type name, view view)
     : m_view(view)
-    , m_name(static_cast<string_type>(name))
-{ }
+    //, m_name(static_cast<string_type>(name))
+{
+    // TODO: ...
+
+    m_name.reserve(name.size());
+    // ...
+}
 
 const string_type& key_path::key_name() const noexcept { return m_name; }
 
 view key_path::key_view() const noexcept { return m_view; }
 
-key_path key_path::root_key() const 
-{ return has_root_key() ? key_path(*begin(), m_view) : key_path(string_view_type(), m_view); }
+key_path key_path::root_path() const { return key_path(details::key_id_to_string(root_key_id()), m_view); }
 
-key_id key_path::root_key_id() const { return details::key_id_from_string(*begin()); }
+key_id key_path::root_key_id() const noexcept
+{ return !m_name.empty() ? details::key_id_from_string(*begin()) : key_id::unknown; }
 
-key_path key_path::leaf_key() const 
-{ return has_leaf_key() ? key_path(*--end(), m_view) : key_path(string_view_type(), m_view); }
+key_path key_path::leaf_path() const 
+{ return has_leaf_path() ? key_path(*--end(), m_view) : key_path(string_view_type(), m_view); }
 
-key_path key_path::parent_key() const
+key_path key_path::parent_path() const
 {
     auto first = begin(), last = end();
     key_path path(string_view_type(), m_view);
@@ -57,22 +62,17 @@ key_path key_path::parent_key() const
     return path;
 }
 
-bool key_path::has_root_key() const noexcept { return begin() != end(); }
+bool key_path::has_root_path() const noexcept { return root_key_id() != key_id::unknown; }
 
-bool key_path::has_leaf_key() const noexcept { return begin() != end(); }
+bool key_path::has_leaf_path() const noexcept { return begin() != end(); }
 
-bool key_path::has_parent_key() const noexcept
+bool key_path::has_parent_path() const noexcept
 {
     auto beg_it = begin(), end_it = end();
     return beg_it != end_it && ++beg_it != end_it;
 }
 
-bool key_path::is_absolute() const noexcept
-{
-    const auto beg_it = begin(), end_it = end();
-    return beg_it != end_it && beg_it->data() == m_name.data() && 
-           details::key_id_from_string(*beg_it) != key_id::unknown;
-}
+bool key_path::is_absolute() const noexcept { return has_root_path(); }
 
 bool key_path::is_relative() const noexcept { return !is_absolute(); }
 
@@ -127,19 +127,19 @@ key_path& key_path::concat(string_view_type str)
     return *this;
 }
 
-key_path& key_path::remove_leaf_key()
+key_path& key_path::remove_leaf_path()
 {
-    assert(has_leaf_key());
+    assert(has_leaf_path());
 
     auto it = --end();
     m_name.resize((it != begin()) ? (--it, it->data() - m_name.data() + it->size()) : 0);
     return *this;
 }
 
-key_path& key_path::replace_leaf_key(string_view_type replacement)
+key_path& key_path::replace_leaf_path(string_view_type replacement)
 {
-    assert(has_leaf_key());
-    return remove_leaf_key().append(replacement);
+    assert(has_leaf_path());
+    return remove_leaf_path().append(replacement);
 }
 
 void key_path::swap(key_path& other) noexcept
