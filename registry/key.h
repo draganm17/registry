@@ -307,11 +307,6 @@ namespace registry
         */
         bool key_exists(const key_path& path, std::error_code& ec = throws()) const;
 
-        // TODO: ...
-        //       This function should reopen the key identified by `*this`
-        //       To do that the class should probably keep a copy of the key path view it was initialized with.
-        key open_key(access_rights rights, std::error_code& ec = throws()) const;
-
         //! Opens a subkey of a registry key identified by `*this`.
         /*!
         @param[in]  path   - an key path specifying the subkey that this function opens.
