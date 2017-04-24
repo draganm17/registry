@@ -6,8 +6,8 @@
 #include <memory>
 #include <system_error>
 
+#include <registry/key.h>
 #include <registry/key_path.h>
-#include <registry/key_handle.h>
 #include <registry/types.h>
 
 
@@ -23,7 +23,7 @@ namespace registry
         timeout =    0x00000102,
 
         /*! TODO: ... */
-        failed =     0xFFFFFFFF
+        failed =     0xFFFFFFFF  // TOTO: rename to 'none' or 'unknown'  ???
     };
 
     // TODO: ...
@@ -71,6 +71,10 @@ namespace registry
             std::chrono::milliseconds rel_time, 
             std::error_code& ec = throws()) const;
 
+    private:
+        key_event(native_handle_type event_handle, const key_path& path, 
+                  key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
+
     public:
         // TODO: ...
         key_event() noexcept = default;
@@ -89,9 +93,6 @@ namespace registry
 
         // TODO: ...
         key_event(const key_path& path, key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
-
-        // TODO: ...
-        key_event(key_handle handle, key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
 
         // TODO: ...
         ~key_event() noexcept = default;
@@ -133,7 +134,7 @@ namespace registry
     private:
         bool                                   m_watch_subtree;
         key_event_filter                       m_filter;
-        key_handle                             m_key_handle;
+        key                                    m_key;
         std::unique_ptr<void, close_handle_t>  m_event_handle;
     };
 
