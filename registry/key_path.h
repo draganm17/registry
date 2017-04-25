@@ -58,10 +58,12 @@ namespace registry
         static constexpr string_type::value_type separator = string_type::value_type('\\');
 
     private:
-        key_path& append_impl(string_view_type subkey);
+        key_path& do_append(string_view_type src);
+
+        key_path& do_replace_leaf_path(string_view_type src);
 
     public:
-        //! Constructs a path that corresponds to an predefined registry key.
+        //! Constructs a path that identifies an predefined registry key.
         /*!
         Returns `key_path()` if `id == key_id::unknown`. \n
         The view of the returned path is always equal to `view::view_default`.
@@ -90,6 +92,15 @@ namespace registry
         */
         key_path(key_path&& other) noexcept = default;
 
+        //! Constructs the path from a registry view.
+        /*!
+        @post `key_name().empty()`.
+        @post `key_view() == view`.
+
+        @param[in] view - a registry view.
+        */
+        key_path(view view) noexcept;
+
         //! Constructs the path from a key name string and a registry view.
         /*!
         @post `key_name() == static_cast<string_type>(name)`.
@@ -102,6 +113,8 @@ namespace registry
         //       - remove all redundant separators
         //       - upcase all characters ???
         key_path(string_view_type name, view view = view::view_default);
+
+        // TODO: add a constructor that takes just registry::view ???
 
         // TODO: ...
         template <typename Source, 
@@ -134,8 +147,8 @@ namespace registry
 
         //! Returns the root path of the path.
         /*!
-        If the key name is not empty and its first component identifies a predefined registry key,
-        returns `key_path(*begin(), key_view())`. Otherwise, returns `key_path(string_type(), key_view())`.
+        If the key name is not empty and its first component identifies a predefined registry
+        key, returns `key_path(*begin(), key_view())`. Otherwise, returns `key_path(key_view())`.
         */
         key_path root_path() const;
 
@@ -147,24 +160,24 @@ namespace registry
 
         //! Returns the leaf component of the path.
         /*!
-        If the key name is not empty, returns `key_path(*--end(), key_view())`.
-        Otherwise, returns `key_path(string_type(), key_view())`.
+        If the key name is not empty, returns `key_path(*--end(), key_view())`. Otherwise, returns `key_path(key_view())`.
         */
         key_path leaf_path() const;
 
         //! Returns the parent of the path.
         /*!
-        Returns `key_path(string_type(), key_view())` if `!has_parent_path()`. The resulting path is 
+        Returns `key_path(key_view())` if `!has_parent_path()`. The resulting path is 
         constructed by appending all  elements in a range `[begin(), --end())` to an path constructed as 
-        `key_path(string_type(), key_view())`.
+        `key_path(key_view())`.
         */
         // TODO: investigate what should be the appropriate behaviour
         key_path parent_path() const;
 
         //! Returns a path relative to the root path.
         /*!
-        The path is composed of every component of `*this` after the root-path. \n
-        If the key name is empty, returns `key_path(string_type(), key_view())`.
+        If `!has_root_path()`, returns `*this`. Otherwise, if `++begin() == end()`, returns `key_path(key_view())`.
+        Otherwise, returns a path which is composed of every component of `*this` after the root-path.
+        // TODO: rewrite the second sentence ???
         */
         key_path relative_path() const;
 
@@ -200,9 +213,9 @@ namespace registry
         - otherwise the key name components are compared lexicographically. The comparison is case-insensitive.
 
         @return
-            A value less than 0 if this path is less than the given path. \n
-            A value equal to 0 if this path is equal to the given path.   \n
-            A value greater than 0 if this path is greater than the given path.
+            A value less than 0 if `*this` is less then `other`. \n
+            A value equal to 0 if `*this` is equal to `other`.   \n
+            A value greater than 0 if `*this` is greater than `other`.
         */
         int compare(const key_path& other) const noexcept;
 
@@ -220,6 +233,16 @@ namespace registry
     public:
         //! Replaces the contents of the path.
         /*!
+        @post `*this == key_path(view)`.
+
+        @param[in] view - a registry view.
+
+        @return `*this`.
+        */
+        key_path& assign(view view);
+
+        //! Replaces the contents of the path.
+        /*!
         @post `*this == key_path(name, view)`.
 
         @param[in] name - a key name string.
@@ -231,18 +254,17 @@ namespace registry
 
         //! Appends elements to the key name.
         /*!
-        First, appends the key separator to the key name, except if any of the following conditions is true:
-        - the separator would be redundant (the key name already ends with a separator);
-        - the key name has no components, i.e. `begin() == end()`;
-        - `subkey` is an empty string;
-        - `subkey` begins with a key separator.
-
-        Then, appends `subkey` to the key name.
+        `subkey` is traversed element-wise, given that one element can be separated from enother by a sequence of
+        one or more key separators. Each element of `subkey` is appended to the key name preceeding by exactly one 
+        key separator. Key separators that preceed the first or follow the last element of `subkey` are ignored. If
+        `subkey` is an empty string or a string that consists entirely of key separators, nothing is appended to the 
+        key name.
 
         @param[in] subkey - a string, such as `Source` should be explicitly convertible to `registry::string_view_type`.
 
         @return `*this`.
         */
+        // TODO: rewrite the description
         template <typename Source, 
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
         >
@@ -250,8 +272,7 @@ namespace registry
 
         //! Appends elements to the key name.
         /*!
-        First, appends each component of `subkey` name to the key name as if by 
-        `for (auto it = subkey.begin(); it != subkey.end(); ++it) append(*it);`. \n
+        First, appends each component of `subkey` name to the key name as if by `append(subkey.key_name())` \n
         Then, assigns the key view to `subkey.key_view()`, except if `subkey.key_view() == view::view_default`.
 
         @return `*this`.
@@ -269,7 +290,9 @@ namespace registry
 
         //! Removes a single leaf component.
         /*!
-        @pre `has_leaf_path()`.
+        If the key name is empty, does nothing. \n
+        Note that the leaf component of the key is removed along with the preceding key separator, if present.
+
         @return `*this`.
         */
         key_path& remove_leaf_path();
@@ -279,13 +302,29 @@ namespace registry
         Equivalent to `remove_leaf_path().append(replacement)`.
 
         @pre `has_leaf_path()`.
+
+        @param[in] replacement - a string, such as `replacement` should be explicitly convertible to 
+                                 `registry::string_view_type`.
+
         @return `*this`.
         */
-        key_path& replace_leaf_path(string_view_type replacement);
+        template <typename Source, 
+                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+        >
+        key_path& replace_leaf_path(const Source& replacement);
 
-        // TODO: ...
-        // same as prev. overload but additionally may replace the view
-        //key_path& replace_leaf_path(const key_path& replacement);
+        //! Replaces a single leaf component with `replacement`.
+        /*!
+        First, replaces the leaf component as if by `replace_leaf_path(replacement.key_name())`. \n
+        Then, assigns the key view to `replacement.key_view()`, except if `replacement.key_view() == view::view_default`.
+
+        @pre `has_leaf_path()`.
+        @return `*this`.
+        */
+        key_path& replace_leaf_path(const key_path& replacement);
+
+        // TODO: ... ???
+        //void replace_view(view view) noexcept;
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;
@@ -415,7 +454,14 @@ namespace registry
     template <typename Source, 
               typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
     >
-    inline key_path& key_path::append(const Source& subkey) { return append_impl(subkey); }
+    inline key_path& key_path::append(const Source& subkey) 
+    { return do_append(static_cast<string_view_type>(subkey)); }
+
+    template <typename Source, 
+              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+    >
+    inline key_path& replace_leaf_path(const Source& replacement) 
+    { return do_replace_leaf_path(static_cast<string_view_type>(replacement)); }
 
     inline bool operator==(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) == 0; }
 

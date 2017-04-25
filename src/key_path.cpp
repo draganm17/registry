@@ -16,27 +16,41 @@ namespace registry {
 //                                 class key_path                                     //
 //------------------------------------------------------------------------------------//
 
-key_path& key_path::append_impl(string_view_type subkey)
+key_path& key_path::do_append(string_view_type src)
 {
-    const bool add_slash = !(begin() == end() || m_name.back() == separator ||
-                             subkey.empty() || subkey.front() == separator);
+    m_name.reserve(m_name.size() + src.size());
+    auto first = src.begin(), last = src.end();
+    
+    // append each component of 'src' to the key name
+    while (first != last)
+    {
+        m_name.push_back(key_path::separator);
+        for (; first != last && *first == key_path::separator; ++first);
+        for (; first != last && *first != key_path::separator; ++first) m_name.push_back(*first);
+    }
 
+    // remove trailing separator from the key name
+    if (m_name.size() && m_name.back() == key_path::separator) m_name.pop_back();
 
-    m_name.reserve(m_name.size() + subkey.size() + static_cast<int>(add_slash));
-    m_name.append(add_slash ? TEXT("\\") : TEXT("")).append(subkey.data(), subkey.size());
     return *this;
+}
+
+key_path& key_path::do_replace_leaf_path(string_view_type src)
+{
+    assert(has_leaf_path());
+    return remove_leaf_path().append(src);
 }
 
 key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_string(id)); }
 
+key_path::key_path(view view) noexcept
+    : m_view(view)
+{ }
+
 key_path::key_path(string_view_type name, view view)
     : m_view(view)
-    //, m_name(static_cast<string_type>(name))
 {
-    // TODO: ...
-
-    m_name.reserve(name.size());
-    // ...
+    do_append(name);
 }
 
 const string_type& key_path::key_name() const noexcept { return m_name; }
@@ -62,6 +76,15 @@ key_path key_path::parent_path() const
     return path;
 }
 
+key_path key_path::relative_path() const
+{
+    if (!has_root_path()) return *this;
+    
+    const auto it = ++begin();
+    return it != end() ? key_path(it->data(), m_view)
+                       : key_path(string_view_type(), m_view);
+}
+
 bool key_path::has_root_path() const noexcept { return root_key_id() != key_id::unknown; }
 
 bool key_path::has_leaf_path() const noexcept { return begin() != end(); }
@@ -70,6 +93,13 @@ bool key_path::has_parent_path() const noexcept
 {
     auto beg_it = begin(), end_it = end();
     return beg_it != end_it && ++beg_it != end_it;
+}
+
+bool key_path::has_relative_path() const noexcept 
+{
+    auto first = begin(), last = end();
+    const bool has_rp = has_root_path();
+    return (has_rp && ++first != last) || (!has_rp && first != last);
 }
 
 bool key_path::is_absolute() const noexcept { return has_root_path(); }
@@ -94,8 +124,8 @@ int key_path::compare(const key_path& other) const noexcept
 key_path::iterator key_path::begin() const noexcept
 {
     iterator it;
-    it.m_value = string_view_type(m_name.data(), 0);
-    it.m_key_name_view = string_view_type(m_name.data(), m_name.size());
+    it.m_value = string_view_type(m_name.data() - 1, 0);
+    it.m_key_name_view = static_cast<string_view_type>(m_name);
     return ++it;
 }
 
@@ -103,8 +133,15 @@ key_path::iterator key_path::end() const noexcept
 {
     iterator it;
     it.m_value = string_view_type(m_name.data() + m_name.size(), 0);
-    it.m_key_name_view = string_view_type(m_name.data(), m_name.size());
+    it.m_key_name_view = static_cast<string_view_type>(m_name);
     return it;
+}
+
+key_path& key_path::assign(view view)
+{
+    m_name.clear();
+    m_view = view;
+    return *this;
 }
 
 key_path& key_path::assign(string_view_type name, view view)
@@ -116,30 +153,36 @@ key_path& key_path::assign(string_view_type name, view view)
 
 key_path& key_path::append(const key_path& subkey)
 {
+    do_append(subkey.m_name);
     if (subkey.m_view != view::view_default) m_view = subkey.m_view;
-    for (auto it = subkey.begin(); it != subkey.end(); ++it) append(*it);
     return *this;
 }
 
 key_path& key_path::concat(string_view_type str)
 {
-    m_name.append(str.data(), str.size());
+    // TODO: ...
+
+    //do_concat(m_name, str);
+    //m_name.append(str.data(), str.size());
     return *this;
 }
 
 key_path& key_path::remove_leaf_path()
 {
-    assert(has_leaf_path());
+    // TODO: check that function
 
-    auto it = --end();
-    m_name.resize((it != begin()) ? (--it, it->data() - m_name.data() + it->size()) : 0);
+    if (!m_name.empty()) {
+        auto it = --end();
+        m_name.resize((it != begin()) ? (--it, it->data() - m_name.data() + it->size()) : 0);
+    }
     return *this;
 }
 
-key_path& key_path::replace_leaf_path(string_view_type replacement)
+key_path& key_path::replace_leaf_path(const key_path& replacement)
 {
-    assert(has_leaf_path());
-    return remove_leaf_path().append(replacement);
+    do_replace_leaf_path(replacement.m_name);
+    if (replacement.m_view != view::view_default) m_view = replacement.m_view;
+    return *this;
 }
 
 void key_path::swap(key_path& other) noexcept
@@ -180,11 +223,7 @@ key_path::iterator& key_path::iterator::operator++() noexcept
     // TODO: is end iterator assert
 
     const auto end = m_key_name_view.end();
-
-    auto first = m_value.end();
-    for (; first != end && *first == separator; ++first);
-
-    auto last = first;
+    auto first = m_value.end() + 1, last = first;
     for (; last != end && *last != separator; ++last);
 
     m_value = string_view_type(first, last - first);
@@ -197,15 +236,13 @@ key_path::iterator& key_path::iterator::operator--() noexcept
 {
     // TODO: is begin iterator assert
 
-    const auto rbegin = m_key_name_view.begin() - 1;
+    // TODO: ...
 
-    auto last = m_value.begin() - 1;
-    for (; last != rbegin && *last == separator; --last);
+    //const auto rbeg = m_key_name_view.begin() - 1;
+    //auto rfirst = m_value.end() - 1, rlast = rfirst;
+    //for (; rlast != rbeg && *rlast != separator; --rlast);
 
-    auto first = last;
-    for (; first != rbegin && *first != separator; --first);
-
-    m_value = string_view_type(++first, ++last - first);
+    //m_value = string_view_type(rlast + 1, rfirst - rlast);
     return *this;
 }
 
