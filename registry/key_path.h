@@ -47,6 +47,7 @@ namespace registry
     iterates over all subkeys (key separators are skipped). Calling any non-const member function of a key invalidates
     all iterators referring to elements of that object.
     */
+    // TODO: rewrite description
     class key_path
     {
     public:
@@ -113,8 +114,6 @@ namespace registry
         //       - remove all redundant separators
         //       - upcase all characters ???
         key_path(string_view_type name, view view = view::view_default);
-
-        // TODO: add a constructor that takes just registry::view ???
 
         // TODO: ...
         template <typename Source, 
@@ -255,29 +254,31 @@ namespace registry
         //! Appends elements to the key name.
         /*!
         `subkey` is traversed element-wise, given that one element can be separated from enother by a sequence of
-        one or more key separators. Each element of `subkey` is appended to the key name preceeding by exactly one 
+        one or more key separators. Each element of `subkey` is appended to the key name preceeding by exactly one
         key separator. Key separators that preceed the first or follow the last element of `subkey` are ignored. If
-        `subkey` is an empty string or a string that consists entirely of key separators, nothing is appended to the 
+        `subkey` is an empty string or a string that consists entirely of key separators, nothing is appended to the
         key name.
-
-        @param[in] subkey - a string, such as `Source` should be explicitly convertible to `registry::string_view_type`.
-
-        @return `*this`.
-        */
-        // TODO: rewrite the description
-        template <typename Source, 
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
-        >
-        key_path& append(const Source& subkey);
-
-        //! Appends elements to the key name.
-        /*!
+        // ...
         First, appends each component of `subkey` name to the key name as if by `append(subkey.key_name())` \n
         Then, assigns the key view to `subkey.key_view()`, except if `subkey.key_view() == view::view_default`.
 
         @return `*this`.
         */
+        // TODO: rewrite the description
         key_path& append(const key_path& subkey);
+
+        //! Appends elements to the key name.
+        /*!
+        Equivalent to `append(key_path(subkey))`.
+
+        @param[in] subkey - a string, such as `Source` should be explicitly convertible to `registry::string_view_type`.
+
+        @return `*this`.
+        */
+        template <typename Source, 
+                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+        >
+        key_path& append(const Source& subkey);
 
         //! Concatenates the key name with `str` without introducing a key separator.
         /*!
@@ -303,6 +304,18 @@ namespace registry
 
         @pre `has_leaf_path()`.
 
+        @param[in] replacement - the replacement.
+
+        @return `*this`.
+        */
+        key_path& replace_leaf_path(const key_path& replacement);
+
+        //! Replaces a single leaf component with `replacement`.
+        /*!
+        Equivalent to `replace_leaf_path(key_path(replacement))`.
+
+        @pre `has_leaf_path()`.
+
         @param[in] replacement - a string, such as `replacement` should be explicitly convertible to 
                                  `registry::string_view_type`.
 
@@ -312,16 +325,6 @@ namespace registry
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
         >
         key_path& replace_leaf_path(const Source& replacement);
-
-        //! Replaces a single leaf component with `replacement`.
-        /*!
-        First, replaces the leaf component as if by `replace_leaf_path(replacement.key_name())`. \n
-        Then, assigns the key view to `replacement.key_view()`, except if `replacement.key_view() == view::view_default`.
-
-        @pre `has_leaf_path()`.
-        @return `*this`.
-        */
-        key_path& replace_leaf_path(const key_path& replacement);
 
         // TODO: ... ???
         //void replace_view(view view) noexcept;
@@ -340,6 +343,7 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     //! A constant BidirectionalIterator with a value_type of registry::string_view_type.
+    // TODO: value_type should be 'key_path'
     class key_path::iterator
     {
         friend class key_path;
@@ -369,6 +373,8 @@ namespace registry
 
         //! Accesses the pointed-to registry::string_view_type.
         /*!
+        Note that the string is not guarantee to be null-terminated.
+
         @pre `*this` is a valid iterator and not the end iterator.
         @return Value of the string_view_type referred to by this iterator.
         */
@@ -376,6 +382,8 @@ namespace registry
 
         //! Accesses the pointed-to registry::string_view_type.
         /*!
+        Note that the string is not guarantee to be null-terminated.
+
         @pre `*this` is a valid iterator and not the end iterator.
         @return Pointer to the string_view_type referred to by this iterator.
         */

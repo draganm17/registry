@@ -222,9 +222,8 @@ key_path::iterator& key_path::iterator::operator++() noexcept
 {
     // TODO: is end iterator assert
 
-    const auto end = m_key_name_view.end();
-    auto first = m_value.end() + 1, last = first;
-    for (; last != end && *last != separator; ++last);
+    auto first = m_value.end(), last = ++first;
+    for (; *last && *last != separator; ++last);
 
     m_value = string_view_type(first, last - first);
     return *this;
