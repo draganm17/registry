@@ -216,21 +216,19 @@ bool key_path::iterator::operator!=(const iterator& rhs) const noexcept { return
 
 key_path::iterator::reference key_path::iterator::operator*() const noexcept
 {
-    // TODO: is end iterator assert
-
+    assert(m_name_iterator != details::key_name_iterator::end(m_path_ptr->key_name()));
     return m_element;
 }
 
 key_path::iterator::pointer key_path::iterator::operator->() const noexcept
 {
-    // TODO: is end iterator assert
-
+    assert(m_name_iterator != details::key_name_iterator::end(m_path_ptr->key_name()));
     return &m_element;
 }
 
 key_path::iterator& key_path::iterator::operator++()
 {
-    // TODO: is end iterator assert
+    assert(m_name_iterator != details::key_name_iterator::end(m_path_ptr->key_name()));
     
     const auto name_end = details::key_name_iterator::end(m_path_ptr->key_name());
     if (++m_name_iterator != name_end) m_element = key_path(*m_name_iterator, m_path_ptr->key_view());
@@ -241,7 +239,7 @@ key_path::iterator key_path::iterator::operator++(int) { auto tmp = *this; ++*th
 
 key_path::iterator& key_path::iterator::operator--()
 {
-    // TODO: is begin iterator assert
+    assert(m_name_iterator != details::key_name_iterator::begin(m_path_ptr->key_name()));
 
     const auto name_beg = details::key_name_iterator::begin(m_path_ptr->key_name());
     if (m_name_iterator-- != name_beg) m_element = key_path(*m_name_iterator, m_path_ptr->key_view());
@@ -252,7 +250,10 @@ key_path::iterator key_path::iterator::operator--(int) { auto tmp = *this; --*th
 
 void key_path::iterator::swap(iterator& other) noexcept
 {
-    // TODO: ...
+    using std::swap;
+    swap(m_element, other.m_element);
+    swap(m_path_ptr, other.m_path_ptr);
+    swap(m_name_iterator, other.m_name_iterator);
 }
 
 

@@ -35,20 +35,26 @@ namespace registry
 
     //! Represents a path to a registry key.
     /*!
-    Objects of type `registry::key_path` represent paths on the Windows registry. Only syntactic aspects of paths are
-    handled: the pathname may represent a non-existing registry key or even one that is not allowed to exist on Windows. \n
-    A key path is composed of two parts: `registry::view` and the key name. The latter has the following syntax:
-    1. Predefined key identifier (optional): a root registry key (such as `HKEY_LOCAL_MACHINE`).
+    An object of class `key_path` represents a path on the Windows registry and contains a key name and a registry view.
+    Such an object is concerned only with the lexical and syntactic aspects of a path. The path does not necessarily 
+    exist in the registry, and the key name is not necessarily valid.
+    
+    The key name has the following syntax:
+    1. Root key name (optional): a root registry key (such as `HKEY_LOCAL_MACHINE`).
     2. Zero or more of the following:
         - subkey name:    sequence of characters that aren't key separators.
         - key-separators: the backslash character `\`. If this character is repeated, it is treated as a single key 
                           separator: `HKEY_LOCAL_MACHINE\Software` is the same as `HKEY_LOCAL_MACHINE\\\\Software`.
+                          // TODO: remove the part about multiple separators ???
 
-    The key name can be traversed element-wise via iterators returned by the `begin()` and `end()` functions, which 
-    iterates over all subkeys (key separators are skipped). Calling any non-const member function of a key invalidates
-    all iterators referring to elements of that object.
+    // TODO: something about the view ...
+    //       the view is always present evenen if the key name is empty ...
+
+    The path can be traversed element-wise via iterators returned by the `begin()` and `end()` functions, which iterates
+    over all components af the key name (key separators are skipped). Each element has the same registry view as the 
+    whole path. Calling any non-const member function of a path invalidates all iterators referring to elements of that 
+    object.
     */
-    // TODO: rewrite description
     class key_path
     {
     public:
@@ -105,15 +111,18 @@ namespace registry
 
         //! Constructs the path from a key name string and a registry view.
         /*!
-        @post `key_name() == static_cast<string_type>(name)`.
+        The key name is composed as follows: \n
+        `name` is traversed element-wise, given that one element can be separated from enother by a sequence of one or
+        more key separators. Each element of `name` is appended to the key name preceeding by exactly one key separator,
+        except for the first element, which is not preceded by a separator. Key separators that preceed the first or 
+        follow the last element of `name` are ignored. If `name` is an empty string or a string that consists entirely
+        of key separators, nothing is appended to the key name.
+
         @post `key_view() == view`.
 
         @param[in] name - a key name string.
         @param[in] view - a registry view.
         */
-        // TODO: construct the path in a generic format :
-        //       - remove all redundant separators
-        //       - upcase all characters ???
         key_path(string_view_type name, view view = view::view_default);
 
         // TODO: ...
@@ -138,6 +147,13 @@ namespace registry
         */
         key_path& operator=(key_path&& other) noexcept = default;
 
+        // TODO: ...
+        //key_path& operator/=(const key_path& path);
+        //key_path& operator/=(Source&& name);
+
+        // TODO: ...
+        //key_path& operator+=(string_view_type str);
+
     public:
         //! Returns the name of the key.
         const string_type& key_name() const noexcept;
@@ -147,8 +163,8 @@ namespace registry
 
         //! Returns the root path of the path.
         /*!
-        If the key name is not empty and its first component identifies a predefined
-        registry key, returns `key_path(*begin())`. Otherwise, returns `key_path(key_view())`.
+        If `begin() != end()` and `*begin()` identifies a predefined registry key, returns `key_path(*begin())`.
+        Otherwise, returns `key_path(key_view())`.
         */
         key_path root_path() const;
 
@@ -160,24 +176,22 @@ namespace registry
 
         //! Returns the leaf component of the path.
         /*!
-        If the key name is not empty, returns `key_path(*--end())`. Otherwise, returns `key_path(key_view())`.
+        If `begin() != end()`, returns `key_path(*--end())`. Otherwise, returns `key_path(key_view())`.
         */
         key_path leaf_path() const;
 
         //! Returns the parent of the path.
         /*!
-        Returns `key_path(key_view())` if `!has_parent_path()`. The resulting path is 
-        constructed by appending all  elements in a range `[begin(), --end())` to an path constructed as 
-        `key_path(key_view())`.
+        If `begin() == end() || ++begin() == end()`, returns `key_path(key_view())`. Otherwise, returns `pp`,
+        where `pp` is constructed as if by starting with an default-constructed path and successively applying 
+        `operator/=` for each element in the range `[begin(), —end())`.
         */
-        // TODO: investigate what should be the appropriate behaviour
         key_path parent_path() const;
 
         //! Returns a path relative to the root path.
         /*!
         If `!has_root_path()`, returns `*this`. Otherwise, if `++begin() == end()`, returns `key_path(key_view())`.
         Otherwise, returns a path which is composed of every component of `*this` after the root-path.
-        // TODO: rewrite the second sentence ???
         */
         key_path relative_path() const;
 
@@ -219,15 +233,16 @@ namespace registry
         */
         int compare(const key_path& other) const noexcept;
 
-        //! Returns an iterator to the first component of the key name.
+        //! Returns an iterator to the first component of the path.
         /*!
-        If the key name is empty, returns `end()`.
+        If the path has no components, returns `end()`.
         */
         iterator begin() const noexcept;
 
-        /*! \brief
-        Returns an iterator one past the last component of the key name. Dereferencing this iterator is undefined 
-        behavior. */
+        //! Returns an iterator one past the last component of the path.
+        /*!
+        Dereferencing this iterator is undefined behavior.
+        */
         iterator end() const noexcept;
 
     public:
@@ -252,7 +267,7 @@ namespace registry
         */
         key_path& assign(string_view_type name, view view = view::view_default);
 
-        //! Appends elements to the key name.
+        //! Appends elements to the path. 
         /*!
         `subkey` is traversed element-wise, given that one element can be separated from enother by a sequence of
         one or more key separators. Each element of `subkey` is appended to the key name preceeding by exactly one
@@ -266,20 +281,20 @@ namespace registry
         @return `*this`.
         */
         // TODO: rewrite the description
-        key_path& append(const key_path& subkey);
+        key_path& append(const key_path& path);
 
         //! Appends elements to the key name.
         /*!
-        Equivalent to `append(key_path(subkey))`.
+        Equivalent to `append(key_path(name))`.
 
-        @param[in] subkey - a string, such as `Source` should be explicitly convertible to `registry::string_view_type`.
+        @param[in] name - a key name. `Source` should be explicitly convertible to `registry::string_view_type`.
 
         @return `*this`.
         */
         template <typename Source, 
                   typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
         >
-        key_path& append(const Source& subkey);
+        key_path& append(const Source& name);
 
         //! Concatenates the key name with `str` without introducing a key separator.
         /*!
@@ -292,8 +307,8 @@ namespace registry
 
         //! Removes a single leaf component.
         /*!
-        If the key name is empty, does nothing. \n
-        Note that the leaf component of the key is removed along with the preceding key separator, if present.
+        If `begin() == end()`, does nothing. \n
+        Note that the leaf component of the key name is removed along with the preceding key separator, if present.
 
         @return `*this`.
         */
@@ -421,6 +436,10 @@ namespace registry
     //------------------------------------------------------------------------------------//
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
+
+    // TODO: ...
+    //       and template overloads ???
+    //key_path operator/(const key_path& lhs, const key_path& rhs);
 
     //! Checks whether `lhs` is equal to `rhs`. Equivalent to `lhs.compare(rhs) == 0`.
     bool operator==(const key_path& lhs, const key_path& rhs) noexcept;
