@@ -45,6 +45,10 @@ key_path::key_path(string_view_type name, view view)
     do_append(name);
 }
 
+key_path& key_path::operator/=(const key_path& path) { return append(path); }
+
+key_path& key_path::operator+=(string_view_type str) { return concat(str); }
+
 const string_type& key_path::key_name() const noexcept { return m_name; }
 
 view key_path::key_view() const noexcept { return m_view; }
@@ -173,8 +177,6 @@ key_path& key_path::concat(string_view_type str)
 
 key_path& key_path::remove_leaf_path()
 {
-    // TODO: check that function
-
     auto first = details::key_name_iterator::begin(m_name);
     auto last = details::key_name_iterator::end(m_name);
 
@@ -200,12 +202,7 @@ void key_path::swap(key_path& other) noexcept
 }
 
 bool key_path::iterator::operator==(const iterator& rhs) const noexcept 
-{
-    // TODO: ...
-    return 0;
-
-    //return m_element == rhs.m_element;
-}
+{ return m_name_iterator == rhs.m_name_iterator; }
 
 bool key_path::iterator::operator!=(const iterator& rhs) const noexcept { return !(*this == rhs); }
 

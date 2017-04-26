@@ -12,19 +12,65 @@ using namespace registry;
 TEST(KeyPath, Construct) 
 {
     // default constructor
-    key_path p1;
-    ASSERT_TRUE(p1.key_name().empty());
-    ASSERT_TRUE(p1.key_view() == view::view_default);
+    {
+        key_path p;
+        ASSERT_TRUE(p.key_name().empty());
+        ASSERT_TRUE(p.key_view() == view::view_default);
+    }
+
+    // construct from view
+    {
+        key_path p(view::view_64bit);
+        EXPECT_TRUE(p.key_name().empty());
+        EXPECT_TRUE(p.key_view() == view::view_64bit);
+    }
 
     // construct from name an view
-    key_path p2(TEXT("HKEY_CURRENT_user\\Test"), view::view_32bit);
-    EXPECT_TRUE(p2.key_name() == TEXT("HKEY_CURRENT_user\\Test"));
-    EXPECT_TRUE(p2.key_view() == view::view_32bit);
+    {
+        key_path p00(TEXT("HKEY_CURRENT_user\\Test"), view::view_32bit);
+        EXPECT_TRUE(p00.key_name() == TEXT("HKEY_CURRENT_user\\Test"));
+        EXPECT_TRUE(p00.key_view() == view::view_32bit);
+
+        key_path p01;
+        ASSERT_TRUE(p01.key_name().empty());
+
+        key_path p02 = TEXT("\\");
+        ASSERT_TRUE(p02.key_name().empty());
+
+        key_path p03 = TEXT("\\\\");
+        ASSERT_TRUE(p03.key_name().empty());
+
+        key_path p04 = TEXT("Test");
+        ASSERT_TRUE(p04.key_name() == TEXT("Test"));
+
+        key_path p05 = TEXT("\\Test");
+        ASSERT_TRUE(p05.key_name() == TEXT("Test"));
+
+        key_path p06 = TEXT("Test\\");
+        ASSERT_TRUE(p06.key_name() == TEXT("Test"));
+
+        key_path p07 = TEXT("\\\\Test\\\\");
+        ASSERT_TRUE(p07.key_name() == TEXT("Test"));
+
+        key_path p08 = TEXT("Test1\\Test2\\Test3");
+        ASSERT_TRUE(p08.key_name() == TEXT("Test1\\Test2\\Test3"));
+
+        key_path p09 = TEXT("\\Test1\\Test2\\Test3");
+        ASSERT_TRUE(p09.key_name() == TEXT("Test1\\Test2\\Test3"));
+
+        key_path p10 = TEXT("Test1\\Test2\\Test3\\");
+        ASSERT_TRUE(p10.key_name() == TEXT("Test1\\Test2\\Test3"));
+
+        key_path p11 = TEXT("\\\\Test1\\Test2\\\\Test3\\\\");
+        ASSERT_TRUE(p11.key_name() == TEXT("Test1\\Test2\\Test3"));
+    }
 
     // test implicit from-string construction
-    key_path p3 = TEXT("HKEY_CURRENT_user\\Test");
-    EXPECT_TRUE(p2.key_name() == TEXT("HKEY_CURRENT_user\\Test"));
-    EXPECT_TRUE(p2.key_view() == view::view_default);
+    {
+        key_path p = TEXT("HKEY_CURRENT_user\\Test");
+        EXPECT_TRUE(p.key_name() == TEXT("HKEY_CURRENT_user\\Test"));
+        EXPECT_TRUE(p.key_view() == view::view_default);
+    }
 }
 
 TEST(KeyPath, Assign)
@@ -140,10 +186,10 @@ TEST(KeyPath, Iterate)
 
 TEST(KeyPath, Queries)
 {
-    // key_path::has_root_key()
+    // key_path::has_root_path()
     {
         key_path p1;
-        ASSERT_TRUE(p1.has_root_key() == (p1.begin() != p1.end()));
+        ASSERT_TRUE(!p1.has_root_path());
 
         key_path p2 = TEXT("Test");
         ASSERT_TRUE(p2.has_root_key() == (p2.begin() != p2.end()));

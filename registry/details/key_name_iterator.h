@@ -8,11 +8,10 @@
 namespace registry {
 namespace details {
 
-    // TODO: key_path_iterator should be able to process keys names with multipple redundant separators !!!
+    // NOTE: key_name_iterator is able to process names with multiple redundant separators.
     class key_name_iterator
     {
-        string_view_type  m_element;
-        string_view_type  m_key_name;
+        static constexpr auto separator = string_type::value_type('\\');
 
     public:
         using value_type =        string_view_type;
@@ -39,9 +38,10 @@ namespace details {
         }
 
     public:
-        bool operator==(const key_name_iterator& rhs) const noexcept { /* TODO: ... */ return 0; }
+        bool operator==(const key_name_iterator& rhs) const noexcept 
+        { return m_element.data() == rhs.m_element.data() && m_element.size() == rhs.m_element.size(); }
 
-        bool operator!=(const key_name_iterator& rhs) const noexcept { /* TODO: ... */ return 0; }
+        bool operator!=(const key_name_iterator& rhs) const noexcept { return !(*this == rhs); }
 
         reference operator*() const noexcept { return m_element; }
 
@@ -50,8 +50,11 @@ namespace details {
     public:
         key_name_iterator& operator++() noexcept
         {
-            auto first = m_element.end(), last = ++first;
-            for (; *last && *last != string_type::value_type('\\'); ++last);
+            auto first = m_element.end(); ++first;
+            for (;  *first == separator; ++first);
+
+            auto last = first;
+            for (; *last && *last != separator; ++last);
 
             m_element = string_view_type(first, last - first);
             return *this;
@@ -61,7 +64,15 @@ namespace details {
 
         key_name_iterator& operator--() noexcept
         {
-            // TODO: ...
+            auto last = m_element.begin(); --last;
+            for (;   *last == separator;  --last);
+
+            auto first = last;
+            auto rbeg = m_key_name.begin(); --rbeg;
+            for (; first != rbeg && *first != separator; --first);
+
+            ++first; ++last;
+            m_element = string_view_type(first, last - first);
             return *this;
         }
 
@@ -74,6 +85,10 @@ namespace details {
             swap(m_element, other.m_element);
             swap(m_key_name, other.m_key_name);
         }
+
+    private:
+        string_view_type  m_element;
+        string_view_type  m_key_name;
     };
 
 }} // namespace registry::details

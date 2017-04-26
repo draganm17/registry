@@ -107,7 +107,7 @@ namespace registry
 
         @param[in] view - a registry view.
         */
-        key_path(view view) noexcept;
+        explicit key_path(view view) noexcept;
 
         //! Constructs the path from a key name string and a registry view.
         /*!
@@ -147,12 +147,26 @@ namespace registry
         */
         key_path& operator=(key_path&& other) noexcept = default;
 
-        // TODO: ...
-        //key_path& operator/=(const key_path& path);
-        //key_path& operator/=(Source&& name);
+        //! Appends elements to the path.
+        /*!
+        Equivalent to `append(path)`.
+        */
+        key_path& operator/=(const key_path& path);
 
-        // TODO: ...
-        //key_path& operator+=(string_view_type str);
+        //! Appends elements to the path.
+        /*!
+        Equivalent to `append(name)`.
+        */
+        template <typename Source, 
+                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+        >
+        key_path& operator/=(const Source& name);
+
+        //! Concatenates the key name with `str` without introducing a key separator.
+        /*!
+        Equivalent to `concat(str)`.
+        */
+        key_path& operator+=(string_view_type str);
 
     public:
         //! Returns the name of the key.
@@ -355,8 +369,7 @@ namespace registry
     //                          class key_path::iterator                                  //
     //------------------------------------------------------------------------------------//
 
-    //! A constant BidirectionalIterator with a value_type of registry::string_view_type.
-    // TODO: value_type should be 'key_path'
+    //! A constant BidirectionalIterator with a value_type of registry::key_path.
     class key_path::iterator
     {
         friend class key_path;
@@ -374,32 +387,22 @@ namespace registry
 
     public:
         //! Checks whether `*this` is equal to `rhs`.
-        /*!
-        Equivalent to `operator*().data() == rhs.operator*().data() && operator*().size() == rhs.operator*().size()`.
-        */
         bool operator==(const iterator& rhs) const noexcept;
 
         //! Checks whether `*this` is not equal to `rhs`.
-        /*!
-        Equivalent to `!(*this == rhs)`.
-        */
         bool operator!=(const iterator& rhs) const noexcept;
 
-        //! Accesses the pointed-to registry::string_view_type.
+        //! Accesses the pointed-to `registry::key_path`.
         /*!
-        Note that the string is not guarantee to be null-terminated.
-
         @pre `*this` is a valid iterator and not the end iterator.
-        @return Value of the string_view_type referred to by this iterator.
+        @return Value of the `registry::key_path` referred to by this iterator.
         */
         reference operator*() const noexcept;
 
-        //! Accesses the pointed-to registry::string_view_type.
+        //! Accesses the pointed-to `registry::key_path`.
         /*!
-        Note that the string is not guarantee to be null-terminated.
-
         @pre `*this` is a valid iterator and not the end iterator.
-        @return Pointer to the string_view_type referred to by this iterator.
+        @return Pointer to the `registry::key_path` referred to by this iterator.
         */
         pointer operator->() const noexcept;
 
@@ -416,7 +419,7 @@ namespace registry
         */
         iterator operator++(int);
 
-        //! Shifts the iterator to the previous entry, then returns `*this`.
+        //! Decrements the iterator to the previous entry, then returns `*this`.
         /*!
         @pre `*this` is a valid iterator and not the begin iterator.
         */
@@ -438,8 +441,13 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     // TODO: ...
-    //       and template overloads ???
-    //key_path operator/(const key_path& lhs, const key_path& rhs);
+    key_path operator/(const key_path& lhs, const key_path& rhs);
+
+    // TODO: ...
+    template <typename Source, 
+              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+    >
+    key_path operator/(const key_path& lhs, const Source& rhs);
 
     //! Checks whether `lhs` is equal to `rhs`. Equivalent to `lhs.compare(rhs) == 0`.
     bool operator==(const key_path& lhs, const key_path& rhs) noexcept;
@@ -475,7 +483,12 @@ namespace registry
     template <typename Source, 
               typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
     >
-    key_path::key_path(const Source& name) : key_path(string_view_type(name)) { }
+    inline key_path::key_path(const Source& name) : key_path(static_cast<string_view_type>(name)) { }
+
+    template <typename Source, 
+              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+    >
+    inline key_path& key_path::operator/=(const Source& name) { return arrend(static_cast<string_view_type>(subkey)); }
 
     template <typename Source, 
               typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
@@ -488,6 +501,14 @@ namespace registry
     >
     inline key_path& replace_leaf_path(const Source& replacement) 
     { return do_replace_leaf_path(static_cast<string_view_type>(replacement)); }
+
+    inline key_path operator/(const key_path& lhs, const key_path& rhs) { return key_path(lhs) / rhs; }
+
+    // TODO: ...
+    template <typename Source, 
+              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+    >
+    inline key_path operator/(const key_path& lhs, const Source& rhs) { return key_path(lhs) / rhs; }
 
     inline bool operator==(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) == 0; }
 
