@@ -164,9 +164,9 @@ key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& w
     if (&was_created != &dont_care()) was_created = false;
     key lkey(open_only_tag{}, lpath, access_rights::create_sub_key, ec2);
 
-    while (ec2.value() == ERROR_FILE_NOT_FOUND && lpath.has_parent_key()) {
-        rpath = lpath.leaf_key().append(rpath);
-        lkey = key(open_only_tag{}, lpath.remove_leaf_key(), access_rights::create_sub_key, ec2);
+    while (ec2.value() == ERROR_FILE_NOT_FOUND && lpath.has_parent_path()) {
+        rpath = lpath.leaf_path().append(rpath);
+        lkey = key(open_only_tag{}, lpath.remove_leaf_path(), access_rights::create_sub_key, ec2);
     }
 
     std::pair<key, bool> create_key_result;

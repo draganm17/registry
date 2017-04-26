@@ -51,7 +51,7 @@ namespace details {
         key_name_iterator& operator++() noexcept
         {
             auto first = m_element.end(), last = ++first;
-            for (; *last && *last != TEXT('\\'); ++last);
+            for (; *last && *last != string_type::value_type('\\'); ++last);
 
             m_element = string_view_type(first, last - first);
             return *this;
