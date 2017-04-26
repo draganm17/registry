@@ -5,6 +5,7 @@
 #include <iterator>
 #include <type_traits>
 
+#include <registry/details/key_name_iterator.h>
 #include <registry/types.h>
 
 
@@ -146,8 +147,8 @@ namespace registry
 
         //! Returns the root path of the path.
         /*!
-        If the key name is not empty and its first component identifies a predefined registry
-        key, returns `key_path(*begin(), key_view())`. Otherwise, returns `key_path(key_view())`.
+        If the key name is not empty and its first component identifies a predefined
+        registry key, returns `key_path(*begin())`. Otherwise, returns `key_path(key_view())`.
         */
         key_path root_path() const;
 
@@ -159,7 +160,7 @@ namespace registry
 
         //! Returns the leaf component of the path.
         /*!
-        If the key name is not empty, returns `key_path(*--end(), key_view())`. Otherwise, returns `key_path(key_view())`.
+        If the key name is not empty, returns `key_path(*--end())`. Otherwise, returns `key_path(key_view())`.
         */
         key_path leaf_path() const;
 
@@ -255,7 +256,7 @@ namespace registry
         /*!
         `subkey` is traversed element-wise, given that one element can be separated from enother by a sequence of
         one or more key separators. Each element of `subkey` is appended to the key name preceeding by exactly one
-        key separator. Key separators that preceed the first or follow the last element of `subkey` are ignored. If
+        key separator, except fro the first key... TODO: ....  Key separators that preceed the first or follow the last element of `subkey` are ignored. If
         `subkey` is an empty string or a string that consists entirely of key separators, nothing is appended to the
         key name.
         // ...
@@ -326,9 +327,6 @@ namespace registry
         >
         key_path& replace_leaf_path(const Source& replacement);
 
-        // TODO: ... ???
-        //void replace_view(view view) noexcept;
-
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;
 
@@ -348,11 +346,12 @@ namespace registry
     {
         friend class key_path;
 
-        string_view_type  m_value;
-        string_view_type  m_key_name_view;
+        key_path                    m_element;
+        const key_path*             m_path_ptr;
+        details::key_name_iterator  m_name_iterator;
 
     public:
-        using value_type =        string_view_type;
+        using value_type =        key_path;
         using difference_type =   std::ptrdiff_t;
         using pointer =           const value_type*;
         using reference =         const value_type&;
@@ -394,25 +393,25 @@ namespace registry
         /*!
         @pre `*this` is a valid iterator and not the end iterator.
         */
-        iterator& operator++() noexcept;
+        iterator& operator++();
 
         //! Makes a copy of `*this`, calls operator++(), then returns the copy.
         /*!
         @pre `*this` is a valid iterator and not the end iterator.
         */
-        iterator operator++(int) noexcept;
+        iterator operator++(int);
 
         //! Shifts the iterator to the previous entry, then returns `*this`.
         /*!
         @pre `*this` is a valid iterator and not the begin iterator.
         */
-        iterator& operator--() noexcept;
+        iterator& operator--();
 
         //! Makes a copy of `*this`, calls operator--(), then returns the copy.
         /*!
         @pre `*this` is a valid iterator and not the begin iterator.
         */
-        iterator operator--(int) noexcept;
+        iterator operator--(int);
 
     public:
         //! Swaps the contents of `*this` and `other`.
