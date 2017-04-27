@@ -135,7 +135,7 @@ key::key(open_only_tag, const key_path& path, access_rights rights, std::error_c
     {
         HKEY hkey;
         rc = RegOpenKeyEx(reinterpret_cast<HKEY>(path.root_key_id()),
-                          path.has_parent_key() ? (++path.begin())->data() : TEXT(""), 0,
+                          path.relative_path().key_name().data(), 0,
                           static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
 
         if (rc == ERROR_SUCCESS) {

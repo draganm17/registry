@@ -129,19 +129,20 @@ int key_path::compare(const key_path& other) const noexcept
     return int(beg_2 == end_2) - int(beg_1 == end_1);
 }
 
-key_path::iterator key_path::begin() const noexcept
+key_path::iterator key_path::begin() const
 {
     iterator it;
     it.m_path_ptr = this;
-    it.m_name_iterator = details::key_name_iterator::begin(m_name);
-    return ++it;
+    it.m_name_it = details::key_name_iterator::begin(m_name);
+    if (it.m_name_it != details::key_name_iterator::end(m_name)) it.m_element = key_path(*it.m_name_it, key_view());
+    return it;
 }
 
 key_path::iterator key_path::end() const noexcept
 {
     iterator it;
     it.m_path_ptr = this;
-    it.m_name_iterator = details::key_name_iterator::end(m_name);
+    it.m_name_it = details::key_name_iterator::end(m_name);
     return it;
 }
 
@@ -201,8 +202,7 @@ void key_path::swap(key_path& other) noexcept
     swap(m_name, other.m_name);
 }
 
-bool key_path::iterator::operator==(const iterator& rhs) const noexcept 
-{ return m_name_iterator == rhs.m_name_iterator; }
+bool key_path::iterator::operator==(const iterator& rhs) const noexcept { return m_name_it == rhs.m_name_it; }
 
 bool key_path::iterator::operator!=(const iterator& rhs) const noexcept { return !(*this == rhs); }
 
@@ -213,22 +213,22 @@ bool key_path::iterator::operator!=(const iterator& rhs) const noexcept { return
 
 key_path::iterator::reference key_path::iterator::operator*() const noexcept
 {
-    assert(m_name_iterator != details::key_name_iterator::end(m_path_ptr->key_name()));
+    assert(m_name_it != details::key_name_iterator::end(m_path_ptr->key_name()));
     return m_element;
 }
 
 key_path::iterator::pointer key_path::iterator::operator->() const noexcept
 {
-    assert(m_name_iterator != details::key_name_iterator::end(m_path_ptr->key_name()));
+    assert(m_name_it != details::key_name_iterator::end(m_path_ptr->key_name()));
     return &m_element;
 }
 
 key_path::iterator& key_path::iterator::operator++()
 {
-    assert(m_name_iterator != details::key_name_iterator::end(m_path_ptr->key_name()));
-    
     const auto name_end = details::key_name_iterator::end(m_path_ptr->key_name());
-    if (++m_name_iterator != name_end) m_element = key_path(*m_name_iterator, m_path_ptr->key_view());
+    assert(m_name_it != name_end);
+    
+    if (++m_name_it != name_end) m_element = key_path(*m_name_it, m_path_ptr->key_view());
     return *this;
 }
 
@@ -236,10 +236,10 @@ key_path::iterator key_path::iterator::operator++(int) { auto tmp = *this; ++*th
 
 key_path::iterator& key_path::iterator::operator--()
 {
-    assert(m_name_iterator != details::key_name_iterator::begin(m_path_ptr->key_name()));
-
     const auto name_beg = details::key_name_iterator::begin(m_path_ptr->key_name());
-    if (m_name_iterator-- != name_beg) m_element = key_path(*m_name_iterator, m_path_ptr->key_view());
+    assert(m_name_it != name_beg);
+
+    if (m_name_it-- != name_beg) m_element = key_path(*m_name_it, m_path_ptr->key_view());
     return *this;
 }
 
@@ -249,8 +249,8 @@ void key_path::iterator::swap(iterator& other) noexcept
 {
     using std::swap;
     swap(m_element, other.m_element);
+    swap(m_name_it, other.m_name_it);
     swap(m_path_ptr, other.m_path_ptr);
-    swap(m_name_iterator, other.m_name_iterator);
 }
 
 

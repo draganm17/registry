@@ -251,7 +251,7 @@ namespace registry
         /*!
         If the path has no components, returns `end()`.
         */
-        iterator begin() const noexcept;
+        iterator begin() const;
 
         //! Returns an iterator one past the last component of the path.
         /*!
@@ -375,8 +375,8 @@ namespace registry
         friend class key_path;
 
         key_path                    m_element;
+        details::key_name_iterator  m_name_it;
         const key_path*             m_path_ptr;
-        details::key_name_iterator  m_name_iterator;
 
     public:
         using value_type =        key_path;
@@ -499,7 +499,7 @@ namespace registry
     template <typename Source, 
               typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
     >
-    inline key_path& replace_leaf_path(const Source& replacement) 
+    inline key_path& key_path::replace_leaf_path(const Source& replacement)
     { return do_replace_leaf_path(static_cast<string_view_type>(replacement)); }
 
     inline key_path operator/(const key_path& lhs, const key_path& rhs) { return key_path(lhs) / rhs; }

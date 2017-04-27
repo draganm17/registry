@@ -126,7 +126,7 @@ key_iterator& key_iterator::increment(std::error_code& ec)
                           m_state->buf.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
         if (rc == ERROR_SUCCESS) {
-            m_state->val.m_path.replace_leaf_path({ m_state->buf.data(), buffer_size });
+            m_state->val.m_path.replace_leaf_path(string_view_type(m_state->buf.data(), buffer_size));
         } else if (rc == ERROR_NO_MORE_ITEMS) {
             key_iterator tmp(std::move(*this)); // *this becomes the end iterator
         } else {

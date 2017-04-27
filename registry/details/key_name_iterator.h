@@ -21,14 +21,16 @@ namespace details {
         using iterator_category = std::bidirectional_iterator_tag;
 
     public:
+        // NOTE: 'name' may not be null-terminated
         static key_name_iterator begin(string_view_type name) noexcept
         {
             key_name_iterator it;
             it.m_key_name = name;
-            it.m_element = string_view_type(name.data() - 1, 0);
+            it.m_element = string_view_type(name.data(), 0);
             return ++it;
         }
 
+        // NOTE: 'name' may not be null-terminated
         static key_name_iterator end(string_view_type name) noexcept
         {
             key_name_iterator it;
@@ -50,11 +52,12 @@ namespace details {
     public:
         key_name_iterator& operator++() noexcept
         {
-            auto first = m_element.end(); ++first;
-            for (;  *first == separator; ++first);
+            auto first = m_element.end();
+            const auto end = m_key_name.end();
+            for (; first != end && *first == separator; ++first);
 
             auto last = first;
-            for (; *last && *last != separator; ++last);
+            for (; last != end && *last != separator; ++last);
 
             m_element = string_view_type(first, last - first);
             return *this;
