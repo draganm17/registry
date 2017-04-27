@@ -502,13 +502,13 @@ namespace registry
     inline key_path& key_path::replace_leaf_path(const Source& replacement)
     { return do_replace_leaf_path(static_cast<string_view_type>(replacement)); }
 
-    inline key_path operator/(const key_path& lhs, const key_path& rhs) { return key_path(lhs) / rhs; }
+    inline key_path operator/(const key_path& lhs, const key_path& rhs) { return key_path(lhs).append(rhs); }
 
     // TODO: ...
     template <typename Source, 
               typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
     >
-    inline key_path operator/(const key_path& lhs, const Source& rhs) { return key_path(lhs) / rhs; }
+    inline key_path operator/(const key_path& lhs, const Source& rhs) { return key_path(lhs).append(rhs); }
 
     inline bool operator==(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) == 0; }
 

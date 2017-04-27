@@ -242,9 +242,16 @@ TEST(KeyPath, QueriesAndDecomposition)
         EXPECT_TRUE(!p2.has_parent_path() &&
                     p2.parent_path() == key_path(p2.key_view()));
 
-        key_path p3 = TEXT("Test1\\Test2\\Test3");
+        key_path p3(TEXT("Test1\\Test2"), view::view_32bit);
         EXPECT_TRUE(p3.has_parent_path() &&
-                    p3.parent_path() == (*p3.begin() / *++p3.begin()));
+                    p3.parent_path() == *p3.begin());
+
+        key_path p4 = TEXT("Test1\\Test2\\Test3");
+        auto __x1 = p4.parent_path();
+        auto __x3 = (*p4.begin() / *++p4.begin());
+        EXPECT_TRUE(p4.has_parent_path() &&
+                    p4.parent_path() == (*p4.begin() / *++p4.begin())
+        );
     }
 
     // key_path::is_absolute()

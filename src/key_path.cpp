@@ -77,10 +77,11 @@ key_path key_path::leaf_path() const
 
 key_path key_path::parent_path() const
 {
-    auto it = details::key_name_iterator::begin(m_name);
-    const auto last = details::key_name_iterator::end(m_name);
-    return (it == last || ++it == last) ? key_path(m_view)
-                                        : key_path(it->data(), m_view);
+    auto it = details::key_name_iterator::end(m_name);
+    const auto first = details::key_name_iterator::begin(m_name);
+
+    if (it == first || --it == first) return key_path(m_view);
+    return key_path(string_view_type(first->data(), (--it)->end() - first->begin()), m_view);
 }
 
 key_path key_path::relative_path() const
@@ -134,7 +135,7 @@ key_path::iterator key_path::begin() const
     iterator it;
     it.m_path_ptr = this;
     it.m_name_it = details::key_name_iterator::begin(m_name);
-    if (it.m_name_it != details::key_name_iterator::end(m_name)) it.m_element = key_path(*it.m_name_it, key_view());
+    if (it.m_name_it != details::key_name_iterator::end(m_name)) it.m_element.assign(*it.m_name_it, key_view());
     return it;
 }
 
@@ -228,7 +229,7 @@ key_path::iterator& key_path::iterator::operator++()
     const auto name_end = details::key_name_iterator::end(m_path_ptr->key_name());
     assert(m_name_it != name_end);
     
-    if (++m_name_it != name_end) m_element = key_path(*m_name_it, m_path_ptr->key_view());
+    if (++m_name_it != name_end) m_element.assign(*m_name_it, m_path_ptr->key_view());
     return *this;
 }
 
@@ -239,7 +240,7 @@ key_path::iterator& key_path::iterator::operator--()
     const auto name_beg = details::key_name_iterator::begin(m_path_ptr->key_name());
     assert(m_name_it != name_beg);
 
-    if (m_name_it-- != name_beg) m_element = key_path(*m_name_it, m_path_ptr->key_view());
+    if (m_name_it-- != name_beg) m_element.assign(*m_name_it, m_path_ptr->key_view());
     return *this;
 }
 
