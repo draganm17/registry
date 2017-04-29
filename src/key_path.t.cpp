@@ -296,16 +296,6 @@ TEST(KeyPath, Modifiers)
         EXPECT_TRUE(p6.append(TEXT("Test")).key_name() == TEXT("HKEY_CURRENT_USER\\Test"));
     }
 
-    // key_path::append(const key_path&)
-    // key_path::operator/=(const key_path&)
-    {
-        key_path p1(TEXT("HKEY_CURRENT_USER"), view::view_32bit);
-        key_path p2(TEXT("Test1\\Test2\\\\"), view::view_64bit);
-
-        p1.append(p2);
-        EXPECT_TRUE(p1.key_name() == TEXT("HKEY_CURRENT_USER\\Test1\\Test2") && p1.key_view() == view::view_64bit);
-    }
-
     // key_path::concat(const Source&)
     // key_path::operator+=(const Source&)
     {
@@ -317,12 +307,6 @@ TEST(KeyPath, Modifiers)
 
         key_path p3 = TEXT("HKEY_CURRENT_USER\\"), p3_copy = p3;
         EXPECT_TRUE(p3.concat(TEXT("Test")) == key_path(p3_copy.key_name() + TEXT("Test"), p3_copy.key_view()));
-    }
-
-    // key_path::concat(const key_path&)
-    // key_path::operator+=(const key_path&)
-    {
-        // TODO: ...
     }
 
     // key_path::remove_leaf_path()
@@ -344,11 +328,6 @@ TEST(KeyPath, Modifiers)
     }
 
     // key_path::replace_leaf_path(const Source&)
-    {
-        // TODO: ...
-    }
-
-    // key_path::replace_leaf_path(const key_path&)
     {
         key_path p1 = TEXT("HKEY_CURRENT_USER"), p1_copy = p1;
         EXPECT_TRUE(p1.replace_leaf_path(TEXT("replacement")) == p1_copy.remove_leaf_path().append(TEXT("replacement")));

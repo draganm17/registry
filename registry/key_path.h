@@ -181,7 +181,7 @@ namespace registry
         /*!
         Equivalent to `append(str)`.
 
-        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
+        @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
         @return `*this`.
         */
         template <typename Source, 
@@ -193,7 +193,7 @@ namespace registry
         /*!
         Equivalent to `concat(str)`.
 
-        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
+        @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
         @return `*this`.
         */
         template <typename Source, 
@@ -322,7 +322,7 @@ namespace registry
           of that element to the key name of the current path. ... key separator ...  TODO: ...
         - Replaces the current path key view with `p.key_view()`, except if `p.key_view() == view::view_default`.
 
-        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
+        @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
 
         @return `*this`.
         */
@@ -335,7 +335,7 @@ namespace registry
         /*!
         // TODO: ...
 
-        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
+        @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
 
         @return `*this`.
         */
