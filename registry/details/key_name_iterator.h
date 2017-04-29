@@ -67,11 +67,11 @@ namespace details {
 
         key_name_iterator& operator--() noexcept
         {
-            auto last = m_element.begin(); --last;
-            for (;   *last == separator;  --last);
+            auto last = m_element.begin() - 1;
+            for (; *last == separator;  --last);
 
             auto first = last;
-            auto rbeg = m_key_name.begin(); --rbeg;
+            auto rbeg = m_key_name.begin() - 1;
             for (; first != rbeg && *first != separator; --first);
 
             ++first; ++last;

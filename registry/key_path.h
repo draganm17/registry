@@ -29,6 +29,29 @@ namespace registry
         view_64bit =    0x00000100
     };
 
+
+    // TODO: move these traits to a separate file and use them from other components
+    class key_path;
+    //
+    namespace details
+    {
+        template <typename T, typename = void> static constexpr bool is_path_v = false;
+
+        template <typename T> static constexpr bool is_path_v
+            <T, typename std::enable_if_t<std::is_same<std::decay_t<T>, key_path>::value>> = true;
+
+        template <typename T, typename = void> static constexpr bool is_pathable_v = false;
+
+        template <typename T> static constexpr bool is_pathable_v
+            <T, typename std::enable_if_t<std::is_constructible<key_path, T>::value>> = true;
+
+        template <typename T, typename = void> static constexpr bool is_string_viewable_v = false;
+
+        template <typename T> static constexpr bool is_string_viewable_v
+            <T, typename std::enable_if_t<std::is_constructible<string_view_type, T>::value>> = true;
+
+    }  // namespace registry::details
+
     //------------------------------------------------------------------------------------//
     //                                 class key_path                                     //
     //------------------------------------------------------------------------------------//
@@ -66,7 +89,17 @@ namespace registry
         static constexpr string_type::value_type separator = string_type::value_type('\\');
 
     private:
+        key_path(nullptr_t, string_view_type name, view view);
+
+        key_path& do_append(const key_path& src);
+
         key_path& do_append(string_view_type src);
+
+        key_path& do_concat(const key_path& src);
+
+        key_path& do_concat(string_view_type src);
+
+        key_path& do_replace_leaf_path(const key_path& src);
 
         key_path& do_replace_leaf_path(string_view_type src);
 
@@ -120,16 +153,13 @@ namespace registry
 
         @post `key_view() == view`.
 
-        @param[in] name - a key name string.
+        @param[in] name - a key name string. `Source` should be explicitly convertible to `registry::string_view_type`.
         @param[in] view - a registry view.
         */
-        key_path(string_view_type name, view view = view::view_default);
-
-        // TODO: ...
         template <typename Source, 
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+                  typename = std::enable_if_t<details::is_string_viewable_v<Source>>
         >
-        key_path(const Source& name);
+        key_path(const Source& name, view view = view::view_default);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -147,26 +177,29 @@ namespace registry
         */
         key_path& operator=(key_path&& other) noexcept = default;
 
-        //! Appends elements to the path.
+        //! Appends elements to the path with a key separator.
         /*!
-        Equivalent to `append(path)`.
-        */
-        key_path& operator/=(const key_path& path);
+        Equivalent to `append(str)`.
 
-        //! Appends elements to the path.
-        /*!
-        Equivalent to `append(name)`.
+        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
+        @return `*this`.
         */
         template <typename Source, 
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+                  typename = std::enable_if_t<details::is_pathable_v<Source>>
         >
-        key_path& operator/=(const Source& name);
+        key_path& operator/=(const Source& src);
 
-        //! Concatenates the key name with `str` without introducing a key separator.
+        //! Concatenates the current path and `str` without introducing a key separator.
         /*!
         Equivalent to `concat(str)`.
+
+        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
+        @return `*this`.
         */
-        key_path& operator+=(string_view_type str);
+        template <typename Source, 
+                  typename = std::enable_if_t<details::is_pathable_v<Source>>
+        >
+        key_path& operator+=(const Source& src);
 
     public:
         //! Returns the name of the key.
@@ -281,43 +314,35 @@ namespace registry
         */
         key_path& assign(string_view_type name, view view = view::view_default);
 
-        //! Appends elements to the path. 
+        //! Appends elements to the path with a key separator.
         /*!
-        `subkey` is traversed element-wise, given that one element can be separated from enother by a sequence of
-        one or more key separators. Each element of `subkey` is appended to the key name preceeding by exactly one
-        key separator, except fro the first key... TODO: ....  Key separators that preceed the first or follow the last element of `subkey` are ignored. If
-        `subkey` is an empty string or a string that consists entirely of key separators, nothing is appended to the
-        key name.
-        // ...
-        First, appends each component of `subkey` name to the key name as if by `append(subkey.key_name())` \n
-        Then, assigns the key view to `subkey.key_view()`, except if `subkey.key_view() == view::view_default`.
+        Establishes the postcondition, as if by applying the following steps:
+        - Constructs an object `p` as if by `key_path p(src)`;
+        - For each element of `p` traversed via iterators returned by `p.begin()` and `p.end()`, appends the key name 
+          of that element to the key name of the current path. ... key separator ...  TODO: ...
+        - Replaces the current path key view with `p.key_view()`, except if `p.key_view() == view::view_default`.
 
-        @return `*this`.
-        */
-        // TODO: rewrite the description
-        key_path& append(const key_path& path);
-
-        //! Appends elements to the key name.
-        /*!
-        Equivalent to `append(key_path(name))`.
-
-        @param[in] name - a key name. `Source` should be explicitly convertible to `registry::string_view_type`.
+        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
 
         @return `*this`.
         */
         template <typename Source, 
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+                  typename = std::enable_if_t<details::is_pathable_v<Source>>
         >
-        key_path& append(const Source& name);
+        key_path& append(const Source& src);
 
-        //! Concatenates the key name with `str` without introducing a key separator.
+        //! Concatenates the current path and `str` without introducing a key separator.
         /*!
-        Equivalent to `*this = key_path(key_name() + static_cast<string_type>(str)), key_view())`.
+        // TODO: ...
+
+        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
 
         @return `*this`.
         */
-        // TODO: make shure to never introduce a separator, document that
-        key_path& concat(string_view_type str);
+        template <typename Source, 
+                  typename = std::enable_if_t<details::is_pathable_v<Source>>
+        >
+        key_path& concat(const Source& src);
 
         //! Removes a single leaf component.
         /*!
@@ -328,33 +353,20 @@ namespace registry
         */
         key_path& remove_leaf_path();
 
-        //! Replaces a single leaf component with `replacement`.
+        //! Replaces a single leaf component with `src`.
         /*!
-        Equivalent to `remove_leaf_path().append(replacement)`.
+        Equivalent to `remove_leaf_path().append(src)`.
 
         @pre `has_leaf_path()`.
 
-        @param[in] replacement - the replacement.
-
-        @return `*this`.
-        */
-        key_path& replace_leaf_path(const key_path& replacement);
-
-        //! Replaces a single leaf component with `replacement`.
-        /*!
-        Equivalent to `replace_leaf_path(key_path(replacement))`.
-
-        @pre `has_leaf_path()`.
-
-        @param[in] replacement - a string, such as `replacement` should be explicitly convertible to 
-                                 `registry::string_view_type`.
+        @param[in] src - `Source` should be explicitly convertible to `registry::key_path`.
 
         @return `*this`.
         */
         template <typename Source, 
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+                  typename = std::enable_if_t<details::is_pathable_v<Source>>
         >
-        key_path& replace_leaf_path(const Source& replacement);
+        key_path& replace_leaf_path(const Source& src);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;
@@ -441,11 +453,8 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     // TODO: ...
-    key_path operator/(const key_path& lhs, const key_path& rhs);
-
-    // TODO: ...
     template <typename Source, 
-              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+              typename = std::enable_if_t<details::is_pathable_v<Source>>
     >
     key_path operator/(const key_path& lhs, const Source& rhs);
 
@@ -481,33 +490,46 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     template <typename Source, 
-              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
+              typename = std::enable_if_t<details::is_string_viewable_v<Source>>
     >
-    inline key_path::key_path(const Source& name) : key_path(static_cast<string_view_type>(name)) { }
+    inline key_path::key_path(const Source& name, view view) 
+    : key_path(nullptr_t{}, static_cast<string_view_type>(name), view) { }
 
-    template <typename Source, 
-              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
-    >
-    inline key_path& key_path::operator/=(const Source& name) { return arrend(static_cast<string_view_type>(subkey)); }
+    template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
+    inline key_path& key_path::operator/=(const Source& src) { return append(src); }
 
-    template <typename Source, 
-              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
-    >
-    inline key_path& key_path::append(const Source& subkey) 
-    { return do_append(static_cast<string_view_type>(subkey)); }
+    template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
+    inline key_path& key_path::operator+=(const Source& src) { return concat(src); }
 
-    template <typename Source, 
-              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
-    >
-    inline key_path& key_path::replace_leaf_path(const Source& replacement)
-    { return do_replace_leaf_path(static_cast<string_view_type>(replacement)); }
+    template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
+    inline key_path& key_path::append(const Source& src)
+    {
+        using T = std::conditional_t<details::is_path_v<Source>, const key_path&,
+                  std::conditional_t<details::is_string_viewable_v<Source>, string_view_type, key_path>>;
 
-    inline key_path operator/(const key_path& lhs, const key_path& rhs) { return key_path(lhs).append(rhs); }
+        return do_append(static_cast<T>(src));
+    }
 
-    // TODO: ...
-    template <typename Source, 
-              typename = std::enable_if_t<std::is_constructible<string_view_type, Source>::value>
-    >
+    template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
+    inline key_path& key_path::concat(const Source& src)
+    {
+        using T = std::conditional_t<details::is_path_v<Source>, const key_path&,
+                  std::conditional_t<details::is_string_viewable_v<Source>, string_view_type, key_path>>;
+        
+        return do_concat(static_cast<T>(src));
+    }
+
+    template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
+    inline key_path& key_path::replace_leaf_path(const Source& src)
+    {
+        using T = std::conditional_t<details::is_path_v<Source>, const key_path&,
+                  std::conditional_t<details::is_string_viewable_v<Source>, string_view_type, key_path>>;
+
+        assert(has_leaf_path());
+        return do_replace_leaf_path(static_cast<T>(src));
+    }
+
+    template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path operator/(const key_path& lhs, const Source& rhs) { return key_path(lhs).append(rhs); }
 
     inline bool operator==(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) == 0; }

@@ -156,7 +156,7 @@ key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& w
     : m_rights(rights)
 {
     std::error_code ec2;
-    key_path lpath = path, rpath({}, path.key_view());
+    key_path lpath = path, rpath(path.key_view());
     if (&was_created != &dont_care()) was_created = false;
     key lkey(open_only_tag{}, lpath, access_rights::create_sub_key, ec2);
 

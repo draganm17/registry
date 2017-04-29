@@ -16,6 +16,19 @@ namespace registry {
 //                                 class key_path                                     //
 //------------------------------------------------------------------------------------//
 
+key_path::key_path(nullptr_t, string_view_type name, view view)
+    : m_view(view)
+{
+    do_append(name);
+}
+
+key_path& key_path::do_append(const key_path& src)
+{
+    do_append(static_cast<string_view_type>(src.key_name()));
+    if (src.m_view != view::view_default) m_view = src.m_view;
+    return *this;
+}
+
 key_path& key_path::do_append(string_view_type src)
 {
     m_name.reserve(m_name.size() + src.size());
@@ -27,9 +40,34 @@ key_path& key_path::do_append(string_view_type src)
     return *this;
 }
 
+key_path& key_path::do_concat(const key_path& src)
+{
+    do_concat(static_cast<string_view_type>(src.key_name()));
+    if (src.m_view != view::view_default) m_view = src.m_view;
+    return *this;
+}
+
+key_path& key_path::do_concat(string_view_type src)
+{
+    m_name.reserve(m_name.size() + src.size());
+    for (auto it = details::key_name_iterator::begin(src); it != details::key_name_iterator::end(src); ++it)
+    {
+        m_name.append(it->data(), it->size());
+        m_name.push_back(key_path::separator);
+    }
+    if (!m_name.empty() && m_name.back() == key_path::separator) m_name.pop_back();
+    return *this;
+}
+
+key_path& key_path::do_replace_leaf_path(const key_path& src)
+{
+    do_replace_leaf_path(static_cast<string_view_type>(src.key_name()));
+    if (src.m_view != view::view_default) m_view = src.m_view;
+    return *this;
+}
+
 key_path& key_path::do_replace_leaf_path(string_view_type src)
 {
-    assert(has_leaf_path());
     return remove_leaf_path().append(src);
 }
 
@@ -38,16 +76,6 @@ key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_s
 key_path::key_path(view view) noexcept
     : m_view(view)
 { }
-
-key_path::key_path(string_view_type name, view view)
-    : m_view(view)
-{
-    do_append(name);
-}
-
-key_path& key_path::operator/=(const key_path& path) { return append(path); }
-
-key_path& key_path::operator+=(string_view_type str) { return concat(str); }
 
 const string_type& key_path::key_name() const noexcept { return m_name; }
 
@@ -161,22 +189,6 @@ key_path& key_path::assign(string_view_type name, view view)
     return *this;
 }
 
-key_path& key_path::append(const key_path& subkey)
-{
-    do_append(subkey.m_name);
-    if (subkey.m_view != view::view_default) m_view = subkey.m_view;
-    return *this;
-}
-
-key_path& key_path::concat(string_view_type str)
-{
-    // TODO: ...
-
-    //do_concat(m_name, str);
-    //m_name.append(str.data(), str.size());
-    return *this;
-}
-
 key_path& key_path::remove_leaf_path()
 {
     auto first = details::key_name_iterator::begin(m_name);
@@ -186,13 +198,6 @@ key_path& key_path::remove_leaf_path()
         auto it = --last;
         m_name.resize((it != first) ? (--it, it->data() - first->data() + it->size()) : 0);
     }
-    return *this;
-}
-
-key_path& key_path::replace_leaf_path(const key_path& replacement)
-{
-    do_replace_leaf_path(replacement.m_name);
-    if (replacement.m_view != view::view_default) m_view = replacement.m_view;
     return *this;
 }
 

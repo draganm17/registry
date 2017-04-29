@@ -1,4 +1,3 @@
-#include <iterator>
 #include <Windows.h>
 
 #include <gmock/gmock.h>
@@ -247,8 +246,6 @@ TEST(KeyPath, QueriesAndDecomposition)
                     p3.parent_path() == *p3.begin());
 
         key_path p4 = TEXT("Test1\\Test2\\Test3");
-        auto __x1 = p4.parent_path();
-        auto __x3 = (*p4.begin() / *++p4.begin());
         EXPECT_TRUE(p4.has_parent_path() &&
                     p4.parent_path() == (*p4.begin() / *++p4.begin())
         );
@@ -274,6 +271,7 @@ TEST(KeyPath, QueriesAndDecomposition)
 TEST(KeyPath, Modifiers)
 {
     // key_path::append(const Source&)
+    // key_path::operator+=(const Source&)
     {
         // redundant separator case 1
         key_path p1 = TEXT("HKEY_CURRENT_USER\\");
@@ -299,6 +297,7 @@ TEST(KeyPath, Modifiers)
     }
 
     // key_path::append(const key_path&)
+    // key_path::operator/=(const key_path&)
     {
         key_path p1(TEXT("HKEY_CURRENT_USER"), view::view_32bit);
         key_path p2(TEXT("Test1\\Test2\\\\"), view::view_64bit);
@@ -307,7 +306,8 @@ TEST(KeyPath, Modifiers)
         EXPECT_TRUE(p1.key_name() == TEXT("HKEY_CURRENT_USER\\Test1\\Test2") && p1.key_view() == view::view_64bit);
     }
 
-    // key_path::concat(string_view_type)
+    // key_path::concat(const Source&)
+    // key_path::operator+=(const Source&)
     {
         key_path p1, p1_copy = p1;
         EXPECT_TRUE(p1.concat(TEXT("Test")) == key_path(p1_copy.key_name() + TEXT("Test"), p1_copy.key_view()));
@@ -317,6 +317,12 @@ TEST(KeyPath, Modifiers)
 
         key_path p3 = TEXT("HKEY_CURRENT_USER\\"), p3_copy = p3;
         EXPECT_TRUE(p3.concat(TEXT("Test")) == key_path(p3_copy.key_name() + TEXT("Test"), p3_copy.key_view()));
+    }
+
+    // key_path::concat(const key_path&)
+    // key_path::operator+=(const key_path&)
+    {
+        // TODO: ...
     }
 
     // key_path::remove_leaf_path()
@@ -337,7 +343,12 @@ TEST(KeyPath, Modifiers)
         EXPECT_TRUE(p5.remove_leaf_path().key_name() == TEXT("HKEY_CURRENT_USER"));
     }
 
-    // key_path::replace_leaf_path(string_view_type)
+    // key_path::replace_leaf_path(const Source&)
+    {
+        // TODO: ...
+    }
+
+    // key_path::replace_leaf_path(const key_path&)
     {
         key_path p1 = TEXT("HKEY_CURRENT_USER"), p1_copy = p1;
         EXPECT_TRUE(p1.replace_leaf_path(TEXT("replacement")) == p1_copy.remove_leaf_path().append(TEXT("replacement")));
