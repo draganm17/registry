@@ -73,7 +73,7 @@ key_path& key_path::do_replace_leaf_path(string_view_type src)
 
 key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_string(id)); }
 
-key_path::key_path(view view) noexcept
+key_path::key_path(view view)
     : m_view(view)
 { }
 

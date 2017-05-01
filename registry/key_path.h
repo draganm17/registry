@@ -106,8 +106,11 @@ namespace registry
     public:
         //! Constructs a path that identifies an predefined registry key.
         /*!
-        Returns `key_path()` if `id == key_id::unknown`. \n
-        The view of the returned path is always equal to `view::view_default`.
+        @param[in] id - a predefined key identifier.
+        
+        @return 
+            If `id == key_id::unknown`, returns `key_path()`. Otherwise, returns `p`, where `p.key_name()`
+            contains the name of the predefined registry key and `p.key_view()` is equal to `view::view_default`.
         */
         static key_path from_key_id(key_id id);
 
@@ -140,11 +143,11 @@ namespace registry
 
         @param[in] view - a registry view.
         */
-        explicit key_path(view view) noexcept;
+        explicit key_path(view view);
 
-        //! Constructs the path from a key name string and a registry view.
+        //! Constructs the path from a key name and a registry view.
         /*!
-        The key name is composed as follows: \n
+        The current path key name is composed as follows: \n
         `name` is traversed element-wise, given that one element can be separated from enother by a sequence of one or
         more key separators. Each element of `name` is appended to the key name preceeding by exactly one key separator,
         except for the first element, which is not preceded by a separator. Key separators that preceed the first or 
@@ -153,7 +156,7 @@ namespace registry
 
         @post `key_view() == view`.
 
-        @param[in] name - a key name string. `Source` should be explicitly convertible to `registry::string_view_type`.
+        @param[in] name - a key name. `Source` should be explicitly convertible to `registry::string_view_type`.
         @param[in] view - a registry view.
         */
         template <typename Source, 
@@ -179,7 +182,7 @@ namespace registry
 
         //! Appends elements to the path with a key separator.
         /*!
-        Equivalent to `append(str)`.
+        Equivalent to `append(src)`.
 
         @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
         @return `*this`.
@@ -189,9 +192,9 @@ namespace registry
         >
         key_path& operator/=(const Source& src);
 
-        //! Concatenates the current path and `str` without introducing a key separator.
+        //! Concatenates the current path and `src` without introducing a key separator.
         /*!
-        Equivalent to `concat(str)`.
+        Equivalent to `concat(src)`.
 
         @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
         @return `*this`.
@@ -210,14 +213,14 @@ namespace registry
 
         //! Returns the root path of the path.
         /*!
-        If `begin() != end()` and `*begin()` identifies a predefined registry key, returns `key_path(*begin())`.
-        Otherwise, returns `key_path(key_view())`.
+        If `root_key_id() != key_id::unknown`, returns `key_path(*begin())`. Otherwise, returns `key_path(key_view())`.
         */
         key_path root_path() const;
 
         //! Returns the identifier of the root key.
         /*!
-        if `!has_root_path()`, returns `key_id::unknown`.
+        If `begin() != end()` and `*begin()` identifies a predefined registry key, returns that key identifier.
+        Otherwise, returns `key_id::unknown`.
         */
         key_id root_key_id() const noexcept;
 
@@ -229,16 +232,16 @@ namespace registry
 
         //! Returns the parent of the path.
         /*!
-        If `begin() == end() || ++begin() == end()`, returns `key_path(key_view())`. Otherwise, returns `pp`,
-        where `pp` is constructed as if by starting with an default-constructed path and successively applying 
-        `operator/=` for each element in the range `[begin(), —end())`.
+        If `begin() != end()`, returns `p`, where `p` is constructed as if by `key_path p(key_view())` and 
+        successively applying `operator/=` for each element in the range `[begin(), --end())`. Otherwise, returns 
+        `key_path(key_view())`.
         */
         key_path parent_path() const;
 
         //! Returns a path relative to the root path.
         /*!
-        If `!has_root_path()`, returns `*this`. Otherwise, if `++begin() == end()`, returns `key_path(key_view())`.
-        Otherwise, returns a path which is composed of every component of `*this` after the root-path.
+        If `has_root_path()`, returns `p`, where `p` is constructed as if by `key_path p(key_view())` and successively 
+        applying `operator/=` for each element in the range `[++begin(), end())`. Otherwise, returns `*this`.
         */
         key_path relative_path() const;
 
@@ -312,14 +315,17 @@ namespace registry
 
         @return `*this`.
         */
+        // TODO: replace 'string_view_type' by template ???
         key_path& assign(string_view_type name, view view = view::view_default);
 
         //! Appends elements to the path with a key separator.
         /*!
         Establishes the postcondition, as if by applying the following steps:
         - Constructs an object `p` as if by `key_path p(src)`;
-        - For each element of `p` traversed via iterators returned by `p.begin()` and `p.end()`, appends the key name 
-          of that element to the key name of the current path. ... key separator ...  TODO: ...
+        - Appends `separator` to the current path key name, except if any of the following conditions is true:
+          - `key_name()` is an empty string;
+          - `p.key_name()` is an empty string.
+        - Appends `p.key_name()` the  to the current path key name.
         - Replaces the current path key view with `p.key_view()`, except if `p.key_view() == view::view_default`.
 
         @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
@@ -331,9 +337,12 @@ namespace registry
         >
         key_path& append(const Source& src);
 
-        //! Concatenates the current path and `str` without introducing a key separator.
+        //! Concatenates the current path and `src` without introducing a key separator.
         /*!
-        // TODO: ...
+        Establishes the postcondition, as if by applying the following steps:
+        - Constructs an object `p` as if by `key_path p(src)`;
+        - Appends `p.key_name()` the  to the current path key name.
+        - Replaces the current path key view with `p.key_view()`, except if `p.key_view() == view::view_default`.
 
         @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
 
@@ -367,6 +376,10 @@ namespace registry
                   typename = std::enable_if_t<details::is_pathable_v<Source>>
         >
         key_path& replace_leaf_path(const Source& src);
+
+        // TODO: ... 
+        //       to be able to set the key viewy to the default value
+        // void replace_key_view(view); /* noexcept ??? */
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;
@@ -452,7 +465,13 @@ namespace registry
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
 
-    // TODO: ...
+    //! Appends `lhs` to `rhs` with a key separator.
+    /*!
+    Equivalent to `key_path(lhs).append(rhs)`.
+
+    @param[in] lhs - the left hand side.
+    @param[in] rhs - the rights hand side. `Source` should be explicitly convertible to `registry::key_path`.
+    */
     template <typename Source, 
               typename = std::enable_if_t<details::is_pathable_v<Source>>
     >
