@@ -24,7 +24,7 @@ namespace registry
 
         /*! Skip keys that would otherwise result in permission denied errors. */
         skip_permission_denied =  0x0001
-    };
+    }; // TODO: rename 'key_options' to something else ???
 
     //------------------------------------------------------------------------------------//
     //                               class key_entry                                      //
