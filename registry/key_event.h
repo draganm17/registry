@@ -17,36 +17,40 @@ namespace registry
     enum class key_event_status : uint32_t
     {
         /*! TODO: ... */
-        signalled =  0x00000000,
+        signalled = 0x00000000,
 
         /*! TODO: ... */
-        timeout =    0x00000102,
+        timeout = 0x00000102,
 
         /*! TODO: ... */
-        failed =     0xFFFFFFFF  // TOTO: rename to 'none' or 'unknown'  ???
+        failed = 0xFFFFFFFF  // TOTO: rename to 'none' or 'unknown'  ???
     };
 
-    // TODO: ...
-    enum class key_event_filter : uint32_t
+    //! TODO: ...
+    //        document that at least one of notification fields should be present
+    enum class key_event_options : uint32_t
     {
         /*! TODO: ... */
-        notify_none =               0x00000000,
+        notify_none = 0x00000000,
 
         /*! Notify the caller if a subkey is added or deleted. */
-        notify_change_name =        0x00000001,
+        notify_change_name = 0x00000001,
 
         /*! Notify the caller of changes to the attributes of the key, such as the security descriptor information. */
-        notify_change_attributes =  0x00000002,
+        notify_change_attributes = 0x00000002,
 
-        /*! Notify the caller of changes to a value of the key. This can include adding or deleting a value, or 
+        /*! Notify the caller of changes to a value of the key. This can include adding or deleting a value, or
         changing an existing value. */
-        notify_change_last_set =    0x00000004,
+        notify_change_last_set = 0x00000004,
 
         /*! Notify the caller of changes to the security descriptor of the key. */
-        notify_change_security =    0x00000008,
+        notify_change_security = 0x00000008,
 
         /*! TODO: ... */
-        notify_all =                0x0000000F
+        notify_all = 0x0000000F,
+
+        /*! TODO: ... */
+        watch_subtree = 0x00000080
 
         // REG_NOTIFY_THREAD_AGNOSTIC ???
     };
@@ -72,8 +76,8 @@ namespace registry
             std::error_code& ec = throws()) const;
 
     private:
-        key_event(native_handle_type event_handle, const key_path& path, 
-                  key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
+        //key_event(native_handle_type event_handle, const key_path& path, 
+        //          key_event_options options, std::error_code& ec = throws());
 
     public:
         // TODO: ...
@@ -92,20 +96,14 @@ namespace registry
         key_event& operator=(key_event&&) noexcept = default;
 
         // TODO: ...
-        key_event(const key_path& path, key_event_filter filter, bool watch_subtree, std::error_code& ec = throws());
+        key_event(const key_path& path, key_event_options options, std::error_code& ec = throws());
 
         // TODO: ...
         ~key_event() noexcept = default;
 
     public:
         // TODO: ...
-        key_path path() const;
-
-        // TODO: ...
-        key_event_filter filter() const noexcept;
-
-        // TODO: ...
-        bool watch_subtree() const noexcept;
+        key_event_options options() const noexcept;
 
         // TODO: ...
         native_handle_type native_handle() const noexcept;
@@ -132,8 +130,7 @@ namespace registry
         void swap(key_event& other) noexcept;
 
     private:
-        bool                                   m_watch_subtree;
-        key_event_filter                       m_filter;
+        key_event_options                      m_options;
         key                                    m_key;
         std::unique_ptr<void, close_handle_t>  m_event_handle;
     };
@@ -143,19 +140,19 @@ namespace registry
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
 
-    constexpr key_event_filter operator&(key_event_filter lhs, key_event_filter rhs) noexcept;
+    constexpr key_event_options operator&(key_event_options lhs, key_event_options rhs) noexcept;
 
-    constexpr key_event_filter operator|(key_event_filter lhs, key_event_filter rhs) noexcept;
+    constexpr key_event_options operator|(key_event_options lhs, key_event_options rhs) noexcept;
 
-    constexpr key_event_filter operator^(key_event_filter lhs, key_event_filter rhs) noexcept;
+    constexpr key_event_options operator^(key_event_options lhs, key_event_options rhs) noexcept;
 
-    constexpr key_event_filter operator~(key_event_filter lhs) noexcept;
+    constexpr key_event_options operator~(key_event_options lhs) noexcept;
 
-    key_event_filter& operator&=(key_event_filter& lhs, key_event_filter rhs) noexcept;
+    key_event_options& operator&=(key_event_options& lhs, key_event_options rhs) noexcept;
 
-    key_event_filter& operator|=(key_event_filter& lhs, key_event_filter rhs) noexcept;
+    key_event_options& operator|=(key_event_options& lhs, key_event_options rhs) noexcept;
 
-    key_event_filter& operator^=(key_event_filter& lhs, key_event_filter rhs) noexcept;
+    key_event_options& operator^=(key_event_options& lhs, key_event_options rhs) noexcept;
 
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(key_event& lhs, key_event& rhs) noexcept;
@@ -164,23 +161,23 @@ namespace registry
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
 
-    inline constexpr key_event_filter operator&(key_event_filter lhs, key_event_filter rhs) noexcept
-    { return static_cast<key_event_filter>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
+    inline constexpr key_event_options operator&(key_event_options lhs, key_event_options rhs) noexcept
+    { return static_cast<key_event_options>(static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs)); }
 
-    inline constexpr key_event_filter operator|(key_event_filter lhs, key_event_filter rhs) noexcept
-    { return static_cast<key_event_filter>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
+    inline constexpr key_event_options operator|(key_event_options lhs, key_event_options rhs) noexcept
+    { return static_cast<key_event_options>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs)); }
 
-    inline constexpr key_event_filter operator^(key_event_filter lhs, key_event_filter rhs) noexcept
-    { return static_cast<key_event_filter>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs)); }
+    inline constexpr key_event_options operator^(key_event_options lhs, key_event_options rhs) noexcept
+    { return static_cast<key_event_options>(static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs)); }
 
-    inline constexpr key_event_filter operator~(key_event_filter lhs) noexcept
-    { return static_cast<key_event_filter>(~static_cast<uint32_t>(lhs)); }
+    inline constexpr key_event_options operator~(key_event_options lhs) noexcept
+    { return static_cast<key_event_options>(~static_cast<uint32_t>(lhs)); }
 
-    inline key_event_filter& operator&=(key_event_filter& lhs, key_event_filter rhs) noexcept { return lhs = lhs & rhs; }
+    inline key_event_options& operator&=(key_event_options& lhs, key_event_options rhs) noexcept { return lhs = lhs & rhs; }
 
-    inline key_event_filter& operator|=(key_event_filter& lhs, key_event_filter rhs) noexcept { return lhs = lhs | rhs; }
+    inline key_event_options& operator|=(key_event_options& lhs, key_event_options rhs) noexcept { return lhs = lhs | rhs; }
 
-    inline key_event_filter& operator^=(key_event_filter& lhs, key_event_filter rhs) noexcept { return lhs = lhs ^ rhs; }
+    inline key_event_options& operator^=(key_event_options& lhs, key_event_options rhs) noexcept { return lhs = lhs ^ rhs; }
 
     inline void swap(key_event& lhs, key_event& rhs) noexcept { lhs.swap(rhs); }
 
