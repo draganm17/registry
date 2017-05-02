@@ -304,7 +304,7 @@ TEST(Operations, All)
         EXPECT_TRUE(remove_keys(p2, ec) == 3 && !ec && !key_exists(p2));
 
         // some clean-up
-        remove_keys(key_path(p1).remove_leaf_key());
+        remove_keys(key_path(p1).remove_leaf_path());
     }
 
     //equivalent

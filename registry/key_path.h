@@ -245,16 +245,16 @@ namespace registry
         */
         key_path relative_path() const;
 
-        //! Checks whether `root_path()` key name is empty.
+        //! Checks whether `root_path()` has at least one component.
         bool has_root_path() const noexcept;
 
-        //! Checks whether `leaf_path()` key name is empty.
+        //! Checks whether `leaf_path()` has at least one component.
         bool has_leaf_path() const noexcept;
 
-        //! Checks whether `parent_path()` key name is empty.
+        //! Checks whether `parent_path()` has at least one component.
         bool has_parent_path() const noexcept;
 
-        //! Checks whether `relative_path()` key name is empty.
+        //! Checks whether `relative_path()` has at least one component.
         bool has_relative_path() const noexcept;
 
         //! Checks whether the path is absolute.
@@ -325,7 +325,7 @@ namespace registry
         - Appends `separator` to the current path key name, except if any of the following conditions is true:
           - `key_name()` is an empty string;
           - `p.key_name()` is an empty string.
-        - Appends `p.key_name()` the  to the current path key name.
+        - Appends `p.key_name()` the to the current path key name;
         - Replaces the current path key view with `p.key_view()`, except if `p.key_view() == view::view_default`.
 
         @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
@@ -341,7 +341,7 @@ namespace registry
         /*!
         Establishes the postcondition, as if by applying the following steps:
         - Constructs an object `p` as if by `key_path p(src)`;
-        - Appends `p.key_name()` the  to the current path key name.
+        - Appends `p.key_name()` the  to the current path key name;
         - Replaces the current path key view with `p.key_view()`, except if `p.key_view() == view::view_default`.
 
         @param[in] src - a path to append. `Source` should be explicitly convertible to `registry::key_path`.
@@ -379,7 +379,7 @@ namespace registry
 
         // TODO: ... 
         //       to be able to set the key viewy to the default value
-        // void replace_key_view(view); /* noexcept ??? */
+        // void replace_key_view(view);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(key_path& other) noexcept;

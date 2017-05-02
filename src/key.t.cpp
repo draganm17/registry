@@ -229,7 +229,7 @@ TEST(Key, OperationsOnRegistry)
             k.read_value(TEXT("non_existent"));
         } catch(const registry_error& e) {
             ++exceptions;
-            EXPECT_TRUE(e.path1() == key_path(TEXT("non_existent")));
+            EXPECT_TRUE(e.path1() == key_path());
             EXPECT_TRUE(e.path2() == key_path());
             EXPECT_TRUE(e.value_name() == TEXT("non_existent"));
         }
