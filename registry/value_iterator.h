@@ -155,7 +155,7 @@ namespace registry
         /*!
         Calls `value_iterator(key.path(), ec)`.
         */
-        explicit value_iterator(const key &key, std::error_code& ec = throws());
+        //explicit value_iterator(const key& key, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!

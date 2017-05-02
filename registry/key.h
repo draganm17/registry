@@ -103,7 +103,6 @@ namespace registry
         /*!
         Unless `id == key_id::unknown` the postconditions are the following:
         - `is_open()`.
-        - `path() == key_path::from_key_id(id)`.
         - `rights() == access_rights::unknown`.
         - `native_handle() == reinterpret_cast<native_handle_type>(id)`. // TODO: expose this ???
 
@@ -119,7 +118,6 @@ namespace registry
         registry key on error.
 
         @post `is_open()`.
-        @post `this->path() == path`.
         @post `this->rights() == rights`.
 
         @param[in]  tag    - dispatching tag.
@@ -149,7 +147,6 @@ namespace registry
         registry key on error.
 
         @post `is_open()`.
-        @post `this->path() == path`.
         @post `this->rights() == rights`.
 
         @param[in]  tag         - dispatching tag.
@@ -183,12 +180,6 @@ namespace registry
         key& operator=(key&& other) noexcept = default;
 
     public:
-        //! Returns the path of the registry key identified by `*this`.
-        /*!
-        If there is no registry key associated, default constructed `key_path` is returned.
-        */
-        key_path path() const;
-
         //! Returns the access rights the key was opened with.
         /*!
         If there is no registry key associated, `access_rights::unknown` is returned.
@@ -216,16 +207,14 @@ namespace registry
         @param[out] ec     - out-parameter for error reporting.
 
         @return 
-            A pair consisting of a `key` identifying a registry key and a `bool` denoting whether the  key was created.
-            The `key` object is constructed as if by `key(open_or_create_tag{}, this->path().append(path), rights)`. \n
+            A pair consisting of a `key` identifying a registry key and a `bool` denoting whether the  key was created. \n
             if the subkey name is empty (i.e. `path.key_name().empty()`), the returned `key` object will identify the
-            same registry key as `*this` does, except for the case when `!this->equivalent(this->path().append(path))`. \n
+            same registry key as `*this` does, except for the case when ... TODO: write about redirection and views. \n
             The overload that takes `std::error_code&` parameter returns `std::make_pair(key(), false)` on error.
 
         @throw 
-            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-            API errors, constructed with the first key path set to `this->path()`, the second key path set to `path`
-            and the OS error code as the error code argument. \n
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
+            errors, constructed with the first key path set to `path` and the OS error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -248,8 +237,7 @@ namespace registry
 
         @throw 
             The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the second key path set `path` and the OS
-            error code as the error code argument. \n
+            errors, constructed with the first key path set to `path` and the OS error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -271,8 +259,7 @@ namespace registry
 
         @throw 
             The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the second key path set to `key.path()`
-            and the OS  error code as the error code argument. \n
+            errors, constructed with the OS  error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -295,8 +282,7 @@ namespace registry
 
         @throw 
             The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()` and the OS error code as the error code
-            argument. \n
+            errors, constructed with the OS error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -313,9 +299,8 @@ namespace registry
             The overload that takes `std::error_code&` parameter returns `false` on error.
 
         @throw 
-            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-            API errors, constructed with the first key path set to `this->path()`, the second key path set to `path`
-            and the OS error code as the error code argument. \n
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
+            errors, constructed with the first key path set to `path` and the OS error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -329,15 +314,14 @@ namespace registry
         @param[out] ec     - out-parameter for error reporting.
 
         @return 
-            An `key` object constructed as if by `key(open_only_tag{}, this->path().append(path), rights)`. \n
+            A `key` object identifying the opened registry key. \n
             if the subkey name is empty (i.e. `path.key_name().empty()`), the returned `key` object will identify the
-            same registry key as `*this` does, except for the case when `!this->equivalent(this->path().append(path))`. \n
+            same registry key as `*this` does, except for the case when ... TODO: write about redirection and views. \n
             The overload that takes `std::error_code&` parameter returns an default-constructed value on error.
 
         @throw 
             The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the second key path set to `path` and the
-            OS error code as the error code argument. \n
+            errors, constructed with the first key path set to `path` and the OS error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -359,9 +343,9 @@ namespace registry
             The overload that takes `std::error_code&` parameter returns an default-constructed value on error.
         
         @throw 
-            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the value name set to `value_name`and the
-            OS error code as the error code argument. \n
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+            API errors, constructed with the value name set to `value_name` and the OS error code as the error code 
+            argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -383,8 +367,7 @@ namespace registry
 
         @throw 
             The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the second key path set `path` and the OS
-            error code as the error code argument. \n
+            errors, constructed with the first key path set to `path` and the OS error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -406,8 +389,7 @@ namespace registry
         
         @throw 
             The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the second key path set `path` and the OS
-            error code as the error code argument. \n
+            errors, constructed with the first key path set to `path` and the OS error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -425,9 +407,9 @@ namespace registry
             The overload  that takes `std::error_code&` parameter returns `false` on error.
 
         @throw 
-            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the value name set to `value_name` and the
-            OS error code as the error code argument. \n
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+            API errors, constructed with the value name set to `value_name` and the OS error code as the error code 
+            argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -447,9 +429,9 @@ namespace registry
             The overload that takes `std::error_code&` parameter returns `false` on error.
 
         @throw 
-            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the value name set to `value_name` and the
-            OS error code as the error code argument. \n
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+            API errors, constructed with the value name set to `value_name` and the OS error code as the error code 
+            argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -466,9 +448,9 @@ namespace registry
         @param[out] ec         - out-parameter for error reporting.
 
         @throw 
-            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()`, the value name set to `value_name` and the
-            OS error code as the error code argument. \n
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
+            API errors, constructed with the value name set to `value_name` and the OS error code as the error code 
+            argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -488,8 +470,7 @@ namespace registry
         
         @throw 
             The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-            errors, constructed with the first key path set to `this->path()` and the OS error code as the error code
-            argument. \n
+            errors, constructed with the OS error code as the error code argument. \n
             The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails,
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
@@ -500,7 +481,6 @@ namespace registry
         void swap(key& other) noexcept;
 
     private:
-        key_path       m_path;
         access_rights  m_rights;
         handle_t       m_handle;
     };

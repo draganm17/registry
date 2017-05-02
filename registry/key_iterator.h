@@ -162,7 +162,7 @@ namespace registry
         /*!
         Calls `key_iterator(key.path(), ec)`.
         */
-        explicit key_iterator(const key& key, std::error_code& ec = throws());
+        //explicit key_iterator(const key& key, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -302,13 +302,13 @@ namespace registry
         /*!
         Calls `recursive_key_iterator(key.path(), key_options::none, ec)`.
         */
-        explicit recursive_key_iterator(const key& key, std::error_code& ec = throws());
+        //explicit recursive_key_iterator(const key& key, std::error_code& ec = throws());
 
         //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
         /*!
         Calls `recursive_key_iterator(key.path(), options, ec)`.
         */
-        recursive_key_iterator(const key& key, key_options options, std::error_code& ec = throws());
+        //recursive_key_iterator(const key& key, key_options options, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!

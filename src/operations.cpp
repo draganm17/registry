@@ -75,11 +75,11 @@ bool remove_key(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
     // NOTE: key open rights does not affect the delete operation.
-    key key(open_only_tag{}, path.parent_key(), access_rights::read, ec2);
+    key key(open_only_tag{}, path.parent_path(), access_rights::read, ec2);
 
     bool result;
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
-    if (!ec2 && (result = key.remove_key(path.leaf_key(), ec2), !ec2)) RETURN_RESULT(ec, result);
+    if (!ec2 && (result = key.remove_key(path.leaf_path(), ec2), !ec2)) RETURN_RESULT(ec, result);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
@@ -87,11 +87,11 @@ uint32_t remove_keys(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
     // NOTE: key open rights does not affect the delete operation.
-    key key(open_only_tag{}, path.parent_key(), access_rights::read, ec2);
+    key key(open_only_tag{}, path.parent_path(), access_rights::read, ec2);
 
     uint32_t result;
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, 0);
-    if (!ec2 && (result = key.remove_keys(path.leaf_key(), ec2), !ec2)) RETURN_RESULT(ec, result);
+    if (!ec2 && (result = key.remove_keys(path.leaf_path(), ec2), !ec2)) RETURN_RESULT(ec, result);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), static_cast<uint32_t>(-1);
 }
 

@@ -16,74 +16,141 @@ namespace registry {
 //                                 class key_path                                     //
 //------------------------------------------------------------------------------------//
 
-key_path& key_path::append_impl(string_view_type subkey)
+key_path::key_path(nullptr_t, string_view_type name, view view)
+    : m_view(view)
 {
-    const bool add_slash = !(begin() == end() || m_name.back() == separator ||
-                             subkey.empty() || subkey.front() == separator);
+    do_append(name);
+}
 
-
-    m_name.reserve(m_name.size() + subkey.size() + static_cast<int>(add_slash));
-    m_name.append(add_slash ? TEXT("\\") : TEXT("")).append(subkey.data(), subkey.size());
+key_path& key_path::do_append(const key_path& src)
+{
+    do_append(static_cast<string_view_type>(src.key_name()));
+    if (src.m_view != view::view_default) m_view = src.m_view;
     return *this;
+}
+
+key_path& key_path::do_append(string_view_type src)
+{
+    m_name.reserve(m_name.size() + src.size());
+    for (auto it = details::key_name_iterator::begin(src); it != details::key_name_iterator::end(src); ++it)
+    {
+        if (!m_name.empty()) m_name.push_back(key_path::separator);
+        m_name.append(it->data(), it->size());
+    }
+    return *this;
+}
+
+key_path& key_path::do_concat(const key_path& src)
+{
+    do_concat(static_cast<string_view_type>(src.key_name()));
+    if (src.m_view != view::view_default) m_view = src.m_view;
+    return *this;
+}
+
+key_path& key_path::do_concat(string_view_type src)
+{
+    m_name.reserve(m_name.size() + src.size());
+    for (auto it = details::key_name_iterator::begin(src); it != details::key_name_iterator::end(src); ++it)
+    {
+        m_name.append(it->data(), it->size());
+        m_name.push_back(key_path::separator);
+    }
+    if (!m_name.empty() && m_name.back() == key_path::separator) m_name.pop_back();
+    return *this;
+}
+
+key_path& key_path::do_replace_leaf_path(const key_path& src)
+{
+    do_replace_leaf_path(static_cast<string_view_type>(src.key_name()));
+    if (src.m_view != view::view_default) m_view = src.m_view;
+    return *this;
+}
+
+key_path& key_path::do_replace_leaf_path(string_view_type src)
+{
+    return remove_leaf_path().append(src);
 }
 
 key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_string(id)); }
 
-key_path::key_path(string_view_type name, view view)
+key_path::key_path(view view)
     : m_view(view)
-    , m_name(static_cast<string_type>(name))
 { }
 
 const string_type& key_path::key_name() const noexcept { return m_name; }
 
 view key_path::key_view() const noexcept { return m_view; }
 
-key_path key_path::root_key() const 
-{ return has_root_key() ? key_path(*begin(), key_view()) : key_path(string_view_type(), key_view()); }
-
-key_id key_path::root_key_id() const { return details::key_id_from_string(*begin()); }
-
-key_path key_path::leaf_key() const 
-{ return has_leaf_key() ? key_path(*--end(), key_view()) : key_path(string_view_type(), key_view()); }
-
-key_path key_path::parent_key() const
+key_path key_path::root_path() const
 {
-    auto first = begin(), last = end();
-    key_path path(string_view_type(), key_view());
-
-    if (first != last && first != --last) {
-        for (; first != last; ++first) path.append(*first);
-    }
-    return path;
+    const auto it = details::key_name_iterator::begin(m_name);
+    return (it == details::key_name_iterator::end(m_name) ||
+            details::key_id_from_string(*it) == key_id::unknown) ? key_path(m_view)
+                                                                 : key_path(*it, m_view);
 }
 
-bool key_path::has_root_key() const noexcept { return begin() != end(); }
-
-bool key_path::has_leaf_key() const noexcept { return begin() != end(); }
-
-bool key_path::has_parent_key() const noexcept
+key_id key_path::root_key_id() const noexcept
 {
-    auto beg_it = begin(), end_it = end();
-    return beg_it != end_it && ++beg_it != end_it;
+    const auto it = details::key_name_iterator::begin(m_name);
+    return it == details::key_name_iterator::end(m_name) ? key_id::unknown
+                                                         : details::key_id_from_string(*it);
 }
 
-bool key_path::is_absolute() const noexcept
+key_path key_path::leaf_path() const 
 {
-    const auto beg_it = begin(), end_it = end();
-    return beg_it != end_it && beg_it->data() == m_name.data() && 
-           details::key_id_from_string(*beg_it) != key_id::unknown;
+    auto it = details::key_name_iterator::end(m_name);
+    return (it == details::key_name_iterator::begin(m_name)) ? key_path(m_view)
+                                                             : key_path(*--it, m_view);
 }
+
+key_path key_path::parent_path() const
+{
+    auto it = details::key_name_iterator::end(m_name);
+    const auto first = details::key_name_iterator::begin(m_name);
+
+    if (it == first || --it == first) return key_path(m_view);
+    return key_path(string_view_type(first->data(), (--it)->end() - first->begin()), m_view);
+}
+
+key_path key_path::relative_path() const
+{
+    if (!has_root_path()) return *this;
+    const auto it = ++details::key_name_iterator::begin(m_name);
+    return it == details::key_name_iterator::end(m_name) ? key_path(m_view)
+                                                         : key_path(it->data(), m_view);
+}
+
+bool key_path::has_root_path() const noexcept { return root_key_id() != key_id::unknown; }
+
+bool key_path::has_leaf_path() const noexcept 
+{ return details::key_name_iterator::begin(m_name) != details::key_name_iterator::end(m_name); }
+
+bool key_path::has_parent_path() const noexcept
+{ return std::distance(details::key_name_iterator::begin(m_name), details::key_name_iterator::end(m_name)) > 1; }
+
+bool key_path::has_relative_path() const noexcept 
+{
+    const bool has_root = has_root_path();
+    auto first = details::key_name_iterator::begin(m_name);
+    const auto last = details::key_name_iterator::end(m_name);
+    return (has_root && ++first != last) || (!has_root && first != last);
+}
+
+bool key_path::is_absolute() const noexcept { return has_root_path(); }
 
 bool key_path::is_relative() const noexcept { return !is_absolute(); }
 
 int key_path::compare(const key_path& other) const noexcept
 {
-    if (key_view() != other.key_view()) {
-        return key_view() < other.key_view() ? -1 : 1;
+    if (m_view != other.m_view) {
+        return m_view < other.m_view ? -1 : 1;
     }
 
-    iterator beg_1 = begin(), end_1 = end();
-    iterator beg_2 = other.begin(), end_2 = other.end();
+    auto beg_1 = details::key_name_iterator::begin(m_name);
+    const auto end_1 = details::key_name_iterator::end(m_name);
+    auto beg_2 = details::key_name_iterator::begin(other.m_name);
+    const auto end_2 = details::key_name_iterator::end(other.m_name);
+
     for (; beg_1 != end_1 && beg_2 != end_2; ++beg_1, ++beg_2) {
         if (boost::ilexicographical_compare(*beg_1, *beg_2)) return -1;
         if (boost::ilexicographical_compare(*beg_2, *beg_1)) return  1;
@@ -91,20 +158,28 @@ int key_path::compare(const key_path& other) const noexcept
     return int(beg_2 == end_2) - int(beg_1 == end_1);
 }
 
-key_path::iterator key_path::begin() const noexcept
+key_path::iterator key_path::begin() const
 {
     iterator it;
-    it.m_value = string_view_type(m_name.data(), 0);
-    it.m_key_name_view = string_view_type(m_name.data(), m_name.size());
-    return ++it;
+    it.m_path_ptr = this;
+    it.m_name_it = details::key_name_iterator::begin(m_name);
+    if (it.m_name_it != details::key_name_iterator::end(m_name)) it.m_element.assign(*it.m_name_it, key_view());
+    return it;
 }
 
 key_path::iterator key_path::end() const noexcept
 {
     iterator it;
-    it.m_value = string_view_type(m_name.data() + m_name.size(), 0);
-    it.m_key_name_view = string_view_type(m_name.data(), m_name.size());
+    it.m_path_ptr = this;
+    it.m_name_it = details::key_name_iterator::end(m_name);
     return it;
+}
+
+key_path& key_path::assign(view view)
+{
+    m_name.clear();
+    m_view = view;
+    return *this;
 }
 
 key_path& key_path::assign(string_view_type name, view view)
@@ -114,32 +189,16 @@ key_path& key_path::assign(string_view_type name, view view)
     return *this;
 }
 
-key_path& key_path::append(const key_path& subkey)
+key_path& key_path::remove_leaf_path()
 {
-    m_view = subkey.key_view();
-    for (auto it = subkey.begin(); it != subkey.end(); ++it) append(*it);
+    auto first = details::key_name_iterator::begin(m_name);
+    auto last = details::key_name_iterator::end(m_name);
+
+    if (first != last) {
+        auto it = --last;
+        m_name.resize((it != first) ? (--it, it->data() - first->data() + it->size()) : 0);
+    }
     return *this;
-}
-
-key_path& key_path::concat(string_view_type str)
-{
-    m_name.append(str.data(), str.size());
-    return *this;
-}
-
-key_path& key_path::remove_leaf_key()
-{
-    assert(has_leaf_key());
-
-    auto it = --end();
-    m_name.resize((it != begin()) ? (--it, it->data() - m_name.data() + it->size()) : 0);
-    return *this;
-}
-
-key_path& key_path::replace_leaf_key(string_view_type replacement)
-{
-    assert(has_leaf_key());
-    return remove_leaf_key().append(replacement);
 }
 
 void key_path::swap(key_path& other) noexcept
@@ -149,10 +208,7 @@ void key_path::swap(key_path& other) noexcept
     swap(m_name, other.m_name);
 }
 
-bool key_path::iterator::operator==(const iterator& rhs) const noexcept
-{
-    return m_value.data() == rhs.m_value.data() && m_value.size() == rhs.m_value.size();
-}
+bool key_path::iterator::operator==(const iterator& rhs) const noexcept { return m_name_it == rhs.m_name_it; }
 
 bool key_path::iterator::operator!=(const iterator& rhs) const noexcept { return !(*this == rhs); }
 
@@ -163,58 +219,44 @@ bool key_path::iterator::operator!=(const iterator& rhs) const noexcept { return
 
 key_path::iterator::reference key_path::iterator::operator*() const noexcept
 {
-    // TODO: is end iterator assert
-
-    return m_value;
+    assert(m_name_it != details::key_name_iterator::end(m_path_ptr->key_name()));
+    return m_element;
 }
 
 key_path::iterator::pointer key_path::iterator::operator->() const noexcept
 {
-    // TODO: is end iterator assert
-
-    return &m_value;
+    assert(m_name_it != details::key_name_iterator::end(m_path_ptr->key_name()));
+    return &m_element;
 }
 
-key_path::iterator& key_path::iterator::operator++() noexcept
+key_path::iterator& key_path::iterator::operator++()
 {
-    // TODO: is end iterator assert
-
-    const auto end = m_key_name_view.end();
-
-    auto first = m_value.end();
-    for (; first != end && *first == separator; ++first);
-
-    auto last = first;
-    for (; last != end && *last != separator; ++last);
-
-    m_value = string_view_type(first, last - first);
+    const auto name_end = details::key_name_iterator::end(m_path_ptr->key_name());
+    assert(m_name_it != name_end);
+    
+    if (++m_name_it != name_end) m_element.assign(*m_name_it, m_path_ptr->key_view());
     return *this;
 }
 
-key_path::iterator key_path::iterator::operator++(int) noexcept { auto tmp = *this; ++*this; return tmp; }
+key_path::iterator key_path::iterator::operator++(int) { auto tmp = *this; ++*this; return tmp; }
 
-key_path::iterator& key_path::iterator::operator--() noexcept
+key_path::iterator& key_path::iterator::operator--()
 {
-    // TODO: is begin iterator assert
+    const auto name_beg = details::key_name_iterator::begin(m_path_ptr->key_name());
+    assert(m_name_it != name_beg);
 
-    const auto rbegin = m_key_name_view.begin() - 1;
-
-    auto last = m_value.begin() - 1;
-    for (; last != rbegin && *last == separator; --last);
-
-    auto first = last;
-    for (; first != rbegin && *first != separator; --first);
-
-    m_value = string_view_type(++first, ++last - first);
+    if (m_name_it-- != name_beg) m_element.assign(*m_name_it, m_path_ptr->key_view());
     return *this;
 }
 
-key_path::iterator key_path::iterator::operator--(int) noexcept { auto tmp = *this; --*this; return tmp; }
+key_path::iterator key_path::iterator::operator--(int) { auto tmp = *this; --*this; return tmp; }
 
 void key_path::iterator::swap(iterator& other) noexcept
 {
-    m_value.swap(other.m_value);
-    m_key_name_view.swap(other.m_key_name_view);
+    using std::swap;
+    swap(m_element, other.m_element);
+    swap(m_name_it, other.m_name_it);
+    swap(m_path_ptr, other.m_path_ptr);
 }
 
 
@@ -226,7 +268,10 @@ size_t hash_value(const key_path& path) noexcept
 {
     const auto locale = std::locale();
     size_t hash = std::hash<view>()(path.key_view());
-    for (auto it = path.begin(); it != path.end(); ++it) {
+
+    for (auto it = details::key_name_iterator::begin(path.key_name()); 
+              it != details::key_name_iterator::end(path.key_name()); ++it) 
+    {
         std::for_each(it->begin(), it->end(), [&](auto c) { boost::hash_combine(hash, std::tolower(c, locale)); });
     }
     return hash;
