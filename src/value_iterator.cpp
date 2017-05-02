@@ -86,7 +86,7 @@ value_iterator::value_iterator(const key_path& path, std::error_code& ec)
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
-value_iterator::value_iterator(const key &key, std::error_code& ec) : value_iterator(key.path(), ec) { }
+//value_iterator::value_iterator(const key& key, std::error_code& ec) : value_iterator(key.path(), ec) { }
 
 bool value_iterator::operator==(const value_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
 
