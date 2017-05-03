@@ -5,6 +5,7 @@
 #include <memory>
 #include <system_error>
 
+#include <registry/details/possibly_weak_key_ptr.h>
 #include <registry/key_path.h>
 #include <registry/types.h>
 #include <registry/value.h>
@@ -89,9 +90,9 @@ namespace registry
         void swap(value_entry& other) noexcept;
 
     private:
-        key_path            m_path;
-        string_type         m_value_name;
-        std::weak_ptr<key>  m_key_weak_ptr;
+        key_path                        m_path;
+        string_type                     m_value_name;
+        details::possibly_weak_key_ptr  m_key_weak_ptr;
     };
     
     //------------------------------------------------------------------------------------//
@@ -151,11 +152,8 @@ namespace registry
         */
         explicit value_iterator(const key_path& path, std::error_code& ec = throws());
 
-        //! Constructs a iterator that refers to the first value of a key specified by `key.path()`.
-        /*!
-        Calls `value_iterator(key.path(), ec)`.
-        */
-        //explicit value_iterator(const key& key, std::error_code& ec = throws());
+        //! TODO: ...
+        explicit value_iterator(const key& key, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!

@@ -1,6 +1,9 @@
 #include <cassert>
+#include <functional>
+#include <mutex>
 #include <Windows.h>
 
+#include <registry/details/possibly_unique_key_ptr.h>
 #include <registry/details/utils.impl.h>
 #include <registry/exception.h>
 #include <registry/key.h>
@@ -57,7 +60,7 @@ void value_entry::swap(value_entry& other) noexcept
 struct value_iterator::state
 {
     uint32_t                              idx;
-    key                                   key;
+    details::possibly_unique_key_ptr      key;
     value_entry                           val;
     std::vector<string_type::value_type>  buf;  // TODO: write data directly to val.m_key_name ???
 
@@ -73,11 +76,11 @@ value_iterator::value_iterator(const key_path& path, std::error_code& ec)
     m_state = std::make_shared<state>(state{ uint32_t(-1), 
                                              std::move(k),
                                              value_entry(path, string_type()) });
-    if (!ec2 && (info = m_state->key.info(key_info_mask::read_max_value_name_size, ec2), !ec2))
+    if (!ec2 && (info = m_state->key.get()->info(key_info_mask::read_max_value_name_size, ec2), !ec2))
     {
         m_state->buf.resize(++info.max_value_name_size);
         m_state->val.m_value_name.reserve(info.max_value_name_size);
-        m_state->val.m_key_weak_ptr = std::shared_ptr<key>(m_state, &m_state->key);
+        //m_state->val.m_key_weak_ptr = std::shared_ptr<key>(m_state, m_state->key.get());
 
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
@@ -86,7 +89,24 @@ value_iterator::value_iterator(const key_path& path, std::error_code& ec)
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
-//value_iterator::value_iterator(const key& key, std::error_code& ec) : value_iterator(key.path(), ec) { }
+value_iterator::value_iterator(const key& key, std::error_code& ec)
+    : m_state(std::make_shared<state>(state{ uint32_t(-1), &key }))
+{
+    key_info info;
+    std::error_code ec2;
+    using kref = std::reference_wrapper<const registry::key>;
+    if (info = m_state->key.get()->info(key_info_mask::read_max_value_name_size, ec2), !ec2)
+    {
+        m_state->buf.resize(++info.max_value_name_size);
+        m_state->val.m_value_name.reserve(info.max_value_name_size);
+        //m_state->val.m_key_weak_ptr = std::shared_ptr<key>(m_state, &m_state->key);
+
+        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
+    }
+
+    swap(value_iterator());
+    details::set_or_throw(&ec, ec2, __FUNCTION__);
+}
 
 bool value_iterator::operator==(const value_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
 
@@ -126,8 +146,8 @@ value_iterator& value_iterator::increment(std::error_code& ec)
     try {
         do {
             DWORD buffer_size = m_state->buf.size();
-            rc = RegEnumValue(reinterpret_cast<HKEY>(m_state->key.native_handle()), ++m_state->idx,
-                              m_state->buf.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
+            rc = RegEnumValue(reinterpret_cast<HKEY>(m_state->key.get()->native_handle()),
+                              ++m_state->idx, m_state->buf.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
             if (rc == ERROR_SUCCESS) {
                 m_state->val.m_value_name.assign(m_state->buf.data(), buffer_size);
