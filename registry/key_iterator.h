@@ -84,8 +84,11 @@ namespace registry
         //! Returns the key path this object was initializes with.
         const key_path& path() const noexcept;
 
-        // TODO: ...
+        //! TODO: ...
         key_info info(key_info_mask mask = key_info_mask::all, std::error_code& ec = throws()) const;
+
+        //! TODO: ...
+        bool key_exists(std::error_code& ec = throws()) const;
 
     public:
         //! Replaces the contents of the entry.

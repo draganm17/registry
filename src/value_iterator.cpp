@@ -23,11 +23,21 @@ const key_path& value_entry::path() const noexcept { return m_path; }
 
 const string_type& value_entry::value_name() const noexcept { return m_value_name; }
 
-value value_entry::value(std::error_code& ec) const
+value value_entry::read_value(std::error_code& ec) const
 {
     std::error_code ec2;
     const auto key_ptr = m_key_weak_ptr.lock();
-    auto result = key_ptr ? key_ptr->read_value(m_value_name, ec2) : read_value(m_path, m_value_name, ec2);
+    auto result = key_ptr ? key_ptr->read_value(m_value_name, ec2) : registry::read_value(m_path, m_value_name, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, result);
+    details::set_or_throw(&ec, ec2, __FUNCTION__, m_path, key_path(), m_value_name);
+}
+
+bool value_entry::value_exists(std::error_code& ec) const
+{
+    std::error_code ec2;
+    const auto key_ptr = m_key_weak_ptr.lock();
+    auto result = key_ptr ? key_ptr->value_exists(m_value_name, ec2) : registry::value_exists(m_path, m_value_name, ec2);
 
     if (!ec2) RETURN_RESULT(ec, result);
     details::set_or_throw(&ec, ec2, __FUNCTION__, m_path, key_path(), m_value_name);

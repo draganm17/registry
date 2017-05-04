@@ -35,8 +35,8 @@ void test_iteration(const std::function<value_iterator()>& get_iterator)
     for (const auto& entry : get_iterator())
     {
         ++elements;
-        EXPECT_TRUE(expected_values.at(entry.value_name()) == entry.value());
-        EXPECT_TRUE(expected_values.at(entry.value_name()) == entry.value(ec) && !ec);
+        EXPECT_TRUE(expected_values.at(entry.value_name()) == entry.read_value());
+        EXPECT_TRUE(expected_values.at(entry.value_name()) == entry.read_value(ec) && !ec);
     }
     EXPECT_TRUE(elements == 9);
 
@@ -45,8 +45,8 @@ void test_iteration(const std::function<value_iterator()>& get_iterator)
     for (auto it = get_iterator(); it != value_iterator(); ++it)
     {
         ++elements;
-        EXPECT_TRUE(expected_values.at(it->value_name()) == it->value());
-        EXPECT_TRUE(expected_values.at(it->value_name()) == it->value(ec) && !ec);
+        EXPECT_TRUE(expected_values.at(it->value_name()) == it->read_value());
+        EXPECT_TRUE(expected_values.at(it->value_name()) == it->read_value(ec) && !ec);
     }
     EXPECT_TRUE(elements == 9);
 
@@ -55,8 +55,8 @@ void test_iteration(const std::function<value_iterator()>& get_iterator)
     for (auto it = get_iterator(); it != value_iterator(); it++)
     {
         ++elements;
-        EXPECT_TRUE(expected_values.at(it->value_name()) == it->value());
-        EXPECT_TRUE(expected_values.at(it->value_name()) == it->value(ec) && !ec);
+        EXPECT_TRUE(expected_values.at(it->value_name()) == it->read_value());
+        EXPECT_TRUE(expected_values.at(it->value_name()) == it->read_value(ec) && !ec);
     }
     EXPECT_TRUE(elements == 9);
 
@@ -66,8 +66,8 @@ void test_iteration(const std::function<value_iterator()>& get_iterator)
     {
         ++elements;
         EXPECT_TRUE(!ec);
-        EXPECT_TRUE(expected_values.at(it->value_name()) == it->value());
-        EXPECT_TRUE(expected_values.at(it->value_name()) == it->value(ec) && !ec);
+        EXPECT_TRUE(expected_values.at(it->value_name()) == it->read_value());
+        EXPECT_TRUE(expected_values.at(it->value_name()) == it->read_value(ec) && !ec);
     }
     EXPECT_TRUE(elements == 9);
 }

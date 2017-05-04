@@ -76,8 +76,11 @@ namespace registry
         //! Returns the value name this object was initializes with.
         const string_type& value_name() const noexcept;
 
-        // TODO: ...
-        registry::value value(std::error_code& ec = throws()) const; // TODO: rename to 'read_value' ???
+        //! TODO: ...
+        value read_value(std::error_code& ec = throws()) const;
+
+        //! TODO: ...
+        bool value_exists(std::error_code& ec = throws()) const;
 
     public:
         //! Replaces the contents of the entry.
