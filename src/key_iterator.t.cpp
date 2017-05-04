@@ -219,13 +219,16 @@ TEST(RecursiveKeyIterator, Construct)
 TEST(RecursiveKeyIterator, ConstructFromPathAndIterate)
 {
     const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key k(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
 
-    test_recursive_iteration(p, [&]() { return recursive_key_iterator(p); });
+    test_recursive_iteration(p, [&]() { return recursive_key_iterator(k); });
 }
 
 TEST(RecursiveKeyIterator, ConstructFromKeyAndIterate)
 {
-    // TODO: ...
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+
+    test_recursive_iteration(p, [&]() { return recursive_key_iterator(p); });
 }
 
 TEST(RecursiveKeyIterator, Pop)

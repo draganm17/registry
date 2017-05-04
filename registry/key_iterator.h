@@ -268,6 +268,15 @@ namespace registry
         unspecified state. */
         recursive_key_iterator(recursive_key_iterator&& other) noexcept = default;
 
+        //! TODO: ...
+        /*!
+        Calls `recursive_key_iterator(key, key_options::none, ec)`.
+        */
+        explicit recursive_key_iterator(const key& key, std::error_code& ec = throws());
+
+        //! TODO: ...
+        recursive_key_iterator(const key& key, key_options options, std::error_code& ec = throws());
+
         //! Constructs a iterator that refers to the first subkey of a registry key specified by `path`.
         /*!
         Calls `recursive_key_iterator(path, key_options::none, ec)`.

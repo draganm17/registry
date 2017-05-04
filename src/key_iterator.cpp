@@ -164,6 +164,31 @@ void key_iterator::swap(key_iterator& other) noexcept { m_state.swap(other.m_sta
 //                         class recursive_key_iterator                               //
 //------------------------------------------------------------------------------------//
 
+recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& ec)
+    : recursive_key_iterator(key, key_options::none, ec) { }
+
+recursive_key_iterator::recursive_key_iterator(const key& key, key_options options, std::error_code& ec)
+    : m_options(options)
+{
+    // TODO: ...
+    //assert(key.is_open())  ???
+
+    // TODO: do we need options in this constructor ???
+
+    std::error_code ec2;
+    m_stack.emplace_back(key, ec2);
+    if (!ec2 && m_stack.back() != key_iterator()) RETURN_RESULT(ec, VOID);
+
+    swap(recursive_key_iterator());
+    if (!ec2) RETURN_RESULT(ec, VOID);
+    if ((ec2.value() == ERROR_ACCESS_DENIED) &&
+        (options & key_options::skip_permission_denied) != key_options::none)
+    {
+        RETURN_RESULT(ec, VOID);
+    }
+    details::set_or_throw(&ec, ec2, __FUNCTION__);
+}
+
 recursive_key_iterator::recursive_key_iterator(const key_path& path, std::error_code& ec)
     : recursive_key_iterator(path, key_options::none, ec) { }
 
