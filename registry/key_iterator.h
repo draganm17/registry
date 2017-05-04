@@ -6,6 +6,7 @@
 #include <system_error>
 #include <vector>
 
+#include <registry/details/iterator_utils.h>
 #include <registry/key_path.h>
 #include <registry/types.h>
 
@@ -97,8 +98,8 @@ namespace registry
         void swap(key_entry& other) noexcept;
 
     private:
-        key_path            m_path;
-        std::weak_ptr<key>  m_key_weak_ptr;
+        key_path                               m_path;
+        details::possibly_weak_ptr<const key>  m_key_weak_ptr;
     };
 
     //------------------------------------------------------------------------------------//
@@ -116,12 +117,19 @@ namespace registry
     */
     class key_iterator
     {
+        friend class key;
+
     public:
         using value_type =        key_entry;
         using difference_type =   ptrdiff_t;
         using pointer =           const value_type*;
         using reference =         const value_type&;
         using iterator_category = std::input_iterator_tag;
+
+    private:
+        // used by key::get_key_iterator()
+        // TODO: make public ???
+        explicit key_iterator(const key& key, std::error_code& ec = throws());
 
     public:
         //! Constructs the end iterator.
@@ -157,12 +165,6 @@ namespace registry
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
         explicit key_iterator(const key_path& path, std::error_code& ec = throws());
-
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
-        /*!
-        Calls `key_iterator(key.path(), ec)`.
-        */
-        //explicit key_iterator(const key& key, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!

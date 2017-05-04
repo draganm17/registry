@@ -1,3 +1,4 @@
+#include <functional>
 #include <set>
 #include <vector>
 #include <Windows.h>
@@ -5,9 +6,64 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <registry/key.h>
 #include <registry/key_iterator.h>
 
 using namespace registry;
+
+
+namespace {
+
+void test_iteration(const key_path& p,
+                    const std::function<key_iterator()>& get_iterator)
+{
+    std::error_code ec;
+
+    std::set<key_path> expected_keys;
+    expected_keys.emplace(key_path(p).append(TEXT("key_1_deep_0")));
+    expected_keys.emplace(key_path(p).append(TEXT("key_2_deep_0")));
+    expected_keys.emplace(key_path(p).append(TEXT("key_3_deep_0")));
+
+    // using range-based for loop
+    int elements = 0;
+    for (const auto& entry : get_iterator())
+    {
+        ++elements;
+        EXPECT_TRUE(expected_keys.find(entry.path()) != expected_keys.end());
+    }
+    EXPECT_TRUE(elements == 3);
+
+    // using operator++()
+    elements = 0;
+    for (auto it = get_iterator(); it != key_iterator(); ++it)
+    {
+        ++elements;
+        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
+    }
+    EXPECT_TRUE(elements == 3);
+
+    // using operator++(int)
+    elements = 0;
+    for (auto it = get_iterator(); it != key_iterator(); it++)
+    {
+        ++elements;
+        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
+    }
+    EXPECT_TRUE(elements == 3);
+
+    // using increment(error_code&)
+    elements = 0;
+    for (auto it = get_iterator(); it != key_iterator(); it.increment(ec))
+    {
+        ++elements;
+        EXPECT_TRUE(!ec);
+        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
+    }
+    EXPECT_TRUE(elements == 3);
+}
+
+}
+
 
 TEST(KeyIterator, Construct)
 {
@@ -50,52 +106,20 @@ TEST(KeyIterator, Construct)
     }
 }
 
-TEST(KeyIterator, Iterate)
+TEST(KeyIterator, ObtainFromPathAndIterate)
 {
     std::error_code ec;
     const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
-    std::set<key_path> expected_keys;
-    expected_keys.emplace(key_path(p).append(TEXT("key_1_deep_0")));
-    expected_keys.emplace(key_path(p).append(TEXT("key_2_deep_0")));
-    expected_keys.emplace(key_path(p).append(TEXT("key_3_deep_0")));
+    test_iteration(p, [&]() { return key_iterator(p); });
+}
 
-    // using range-based for loop
-    int elements = 0;
-    for (const auto& entry : key_iterator(p))
-    {
-        ++elements;
-        EXPECT_TRUE(expected_keys.find(entry.path()) != expected_keys.end());
-    }
-    EXPECT_TRUE(elements == 3);
+TEST(KeyIterator, ObtainFromKeyAndIterate)
+{
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key k(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
 
-    // using operator++()
-    elements = 0;
-    for (auto it = key_iterator(p); it != key_iterator(); ++it)
-    {
-        ++elements;
-        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
-    }
-    EXPECT_TRUE(elements == 3);
-
-    // using operator++(int)
-    elements = 0;
-    for (auto it = key_iterator(p); it != key_iterator(); it++)
-    {
-        ++elements;
-        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
-    }
-    EXPECT_TRUE(elements == 3);
-
-    // using increment(error_code&)
-    elements = 0;
-    for (auto it = key_iterator(p); it != key_iterator(); it.increment(ec))
-    {
-        ++elements;
-        EXPECT_TRUE(!ec);
-        EXPECT_TRUE(expected_keys.find(it->path()) != expected_keys.end());
-    }
-    EXPECT_TRUE(elements == 3);
+    test_iteration(key_path(), [&]() { return k.get_key_iterator(); });
 }
 
 TEST(RecursiveKeyIterator, Construct)

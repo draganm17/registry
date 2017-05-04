@@ -42,7 +42,7 @@ key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 key_entry& key_entry::assign(const key_path& path)
 { 
     m_path = path;
-    m_key_weak_ptr.swap(std::weak_ptr<key>());
+    m_key_weak_ptr.swap(details::possibly_weak_ptr<const key>());
     return *this;
 }
 
@@ -61,33 +61,49 @@ void key_entry::swap(key_entry& other) noexcept
 struct key_iterator::state
 {
     uint32_t                                           idx;
-    key                                                key;
     key_entry                                          val;
+    details::possibly_ptr<const key>                   key;
     std::array<string_type::value_type, MAX_KEY_SIZE>  buf;
 };
+
+key_iterator::key_iterator(const key& key, std::error_code& ec)
+    : m_state(std::make_shared<state>(state{ uint32_t(-1), 
+                                             key_entry(TEXT("PLACEHOLDER")), 
+                                             details::possibly_ptr<const registry::key>(&key) }))
+{
+    // TODO: ...
+    // assert(key.is_open()); ???
+
+    std::error_code ec2;
+    using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
+    m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
+        
+    if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
+
+    swap(key_iterator());
+    details::set_or_throw(&ec, ec2, __FUNCTION__);
+}
 
 key_iterator::key_iterator(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
     key k(open_only_tag{}, path, access_rights::enumerate_sub_keys | access_rights::query_value, ec2);
+    if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
 
     if (!ec2) {
         m_state = std::make_shared<state>(state{ uint32_t(-1),
-                                                 std::move(k),
-                                                 key_entry(key_path(path).append(TEXT("PLACEHOLDER"))) });
+                                                 key_entry(key_path(path).append(TEXT("PLACEHOLDER"))),
+                                                 details::possibly_ptr<const key>(std::move(k)) });
 
-        m_state->val.m_key_weak_ptr = std::shared_ptr<key>(m_state, &m_state->key);
+        using weak_key_ptr_t = details::possibly_weak_ptr<const key>;
+        m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const key>(m_state, m_state->key.operator->()));
         
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
-    } else if (ec2.value() == ERROR_FILE_NOT_FOUND) {
-        RETURN_RESULT(ec, VOID);
     }
 
     swap(key_iterator());
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
-
-//key_iterator::key_iterator(const key& key, std::error_code& ec) : key_iterator(key.path(), ec) { }
 
 bool key_iterator::operator==(const key_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
 
@@ -122,7 +138,7 @@ key_iterator& key_iterator::increment(std::error_code& ec)
     try {
         LSTATUS rc;
         DWORD buffer_size = m_state->buf.size();
-        rc = RegEnumKeyEx(reinterpret_cast<HKEY>(m_state->key.native_handle()), ++m_state->idx,
+        rc = RegEnumKeyEx(reinterpret_cast<HKEY>(m_state->key->native_handle()), ++m_state->idx,
                           m_state->buf.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
         if (rc == ERROR_SUCCESS) {

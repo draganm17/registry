@@ -65,6 +65,28 @@ struct value_iterator::state
 
 };
 
+value_iterator::value_iterator(const key& key, std::error_code& ec)
+    : m_state(std::make_shared<state>(state{ uint32_t(-1), {}, details::possibly_ptr<const registry::key>(&key) }))
+{
+    // TODO: ...
+    // assert(key.is_open()); ???
+
+    key_info info;
+    std::error_code ec2;
+    using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
+    if (info = m_state->key->info(key_info_mask::read_max_value_name_size, ec2), !ec2)
+    {
+        m_state->buf.resize(++info.max_value_name_size);
+        m_state->val.m_value_name.reserve(info.max_value_name_size);
+        m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
+
+        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
+    }
+
+    swap(value_iterator());
+    details::set_or_throw(&ec, ec2, __FUNCTION__);
+}
+
 value_iterator::value_iterator(const key_path& path, std::error_code& ec)
 {
     std::error_code ec2;
@@ -88,28 +110,6 @@ value_iterator::value_iterator(const key_path& path, std::error_code& ec)
 
     swap(value_iterator());
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
-}
-
-value_iterator::value_iterator(const key& key, std::error_code& ec)
-    : m_state(std::make_shared<state>(state{ uint32_t(-1), {}, details::possibly_ptr<const registry::key>(&key) }))
-{
-    // TODO: ...
-    // assert(key.is_open()); ???
-
-    key_info info;
-    std::error_code ec2;
-    using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
-    if (info = m_state->key->info(key_info_mask::read_max_value_name_size, ec2), !ec2)
-    {
-        m_state->buf.resize(++info.max_value_name_size);
-        m_state->val.m_value_name.reserve(info.max_value_name_size);
-        m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
-
-        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
-    }
-
-    swap(value_iterator());
-    details::set_or_throw(&ec, ec2, __FUNCTION__);
 }
 
 bool value_iterator::operator==(const value_iterator& rhs) const noexcept { return m_state == rhs.m_state; }

@@ -184,6 +184,15 @@ key::native_handle_type key::native_handle() const noexcept
 
 bool key::is_open() const noexcept { return static_cast<bool>(m_handle); }
 
+key_iterator key::get_key_iterator(std::error_code& ec) const
+{
+    std::error_code ec2;
+    key_iterator it(*this, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, it);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__), key_iterator();
+}
+
 value_iterator key::get_value_iterator(std::error_code& ec) const
 {
     std::error_code ec2;

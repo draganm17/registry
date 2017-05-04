@@ -199,7 +199,7 @@ namespace registry
 
     public:
         //! TODO: ...
-        value_iterator get_key_iterator(std::error_code& ec = throws()) const;
+        key_iterator get_key_iterator(std::error_code& ec = throws()) const;
 
         //! TODO: ...
         //value_iterator get_recursive_key_iterator(args..., std::error_code& ec = throws()) const;

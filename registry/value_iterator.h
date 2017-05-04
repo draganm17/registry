@@ -110,12 +110,19 @@ namespace registry
     */
     class value_iterator
     {
+        friend class key;
+
     public:
         using value_type =        value_entry;
         using difference_type =   ptrdiff_t;
         using pointer =           const value_type*;
         using reference =         const value_type&;
         using iterator_category = std::input_iterator_tag;
+
+    private:
+        // used by key::get_value_iterator()
+        // TODO: make public ???
+        explicit value_iterator(const key& key, std::error_code& ec = throws());
 
     public:
         //! Constructs the end iterator.
@@ -151,9 +158,6 @@ namespace registry
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
         explicit value_iterator(const key_path& path, std::error_code& ec = throws());
-
-        //! TODO: ...
-        explicit value_iterator(const key& key, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
