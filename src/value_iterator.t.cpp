@@ -102,17 +102,17 @@ TEST(ValueIterator, Construct)
     }
 }
 
-TEST(ValueIterator, ObtainFromPathAndIterate)
+TEST(ValueIterator, ConstructFromPathAndIterate)
 {
     const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
 
     test_iteration([&]() { return value_iterator(p); });
 }
 
-TEST(ValueIterator, ObtainFromKeyAndIterate)
+TEST(ValueIterator, ConstructFromKeyAndIterate)
 {
     const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
     const key k(open_only_tag{}, p, access_rights::query_value);
 
-    test_iteration([&]() { return k.get_value_iterator(); });
+    test_iteration([&]() { return value_iterator(k); });
 }

@@ -117,19 +117,12 @@ namespace registry
     */
     class key_iterator
     {
-        friend class key;
-
     public:
         using value_type =        key_entry;
         using difference_type =   ptrdiff_t;
         using pointer =           const value_type*;
         using reference =         const value_type&;
         using iterator_category = std::input_iterator_tag;
-
-    private:
-        // used by key::get_key_iterator()
-        // TODO: make public ???
-        explicit key_iterator(const key& key, std::error_code& ec = throws());
 
     public:
         //! Constructs the end iterator.
@@ -148,6 +141,9 @@ namespace registry
         @post `*this` has the original value of `other`.
         */
         key_iterator(key_iterator&& other) noexcept = default;
+
+        //! TODO: ...
+        explicit key_iterator(const key& key, std::error_code& ec = throws());
 
         //! Constructs a iterator that refers to the first subkey of a registry key specified by `path`.
         /*!
@@ -299,18 +295,6 @@ namespace registry
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
         recursive_key_iterator(const key_path& path, key_options options, std::error_code& ec = throws());
-
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
-        /*!
-        Calls `recursive_key_iterator(key.path(), key_options::none, ec)`.
-        */
-        //explicit recursive_key_iterator(const key& key, std::error_code& ec = throws());
-
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
-        /*!
-        Calls `recursive_key_iterator(key.path(), options, ec)`.
-        */
-        //recursive_key_iterator(const key& key, key_options options, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!

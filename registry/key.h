@@ -7,11 +7,9 @@
 #include <system_error>
 #include <type_traits>
 
-#include <registry/key_iterator.h>
 #include <registry/key_path.h>
 #include <registry/types.h>
 #include <registry/value.h>
-#include <registry/value_iterator.h>
 
 
 namespace registry
@@ -196,16 +194,6 @@ namespace registry
         @return `true` if the key is open (i.e. `*this` identifies a registry key), `false` otherwise.
         */
         bool is_open() const noexcept;
-
-    public:
-        //! TODO: ...
-        key_iterator get_key_iterator(std::error_code& ec = throws()) const;
-
-        //! TODO: ...
-        //value_iterator get_recursive_key_iterator(args..., std::error_code& ec = throws()) const;
-
-        //! TODO: ...
-        value_iterator get_value_iterator(std::error_code& ec = throws()) const;
 
     public:
         //! Creates a subkey in the registry key identified by `*this`.
