@@ -5,7 +5,7 @@
 #include <memory>
 #include <system_error>
 
-#include <registry/details/possibly_weak_key_ptr.h>
+#include <registry/details/iterator_utils.h>
 #include <registry/key_path.h>
 #include <registry/types.h>
 #include <registry/value.h>
@@ -90,9 +90,9 @@ namespace registry
         void swap(value_entry& other) noexcept;
 
     private:
-        key_path                        m_path;
-        string_type                     m_value_name;
-        details::possibly_weak_key_ptr  m_key_weak_ptr;
+        key_path                               m_path;
+        string_type                            m_value_name;
+        details::possibly_weak_ptr<const key>  m_key_weak_ptr;
     };
     
     //------------------------------------------------------------------------------------//

@@ -3,7 +3,6 @@
 #include <mutex>
 #include <Windows.h>
 
-#include <registry/details/possibly_unique_key_ptr.h>
 #include <registry/details/utils.impl.h>
 #include <registry/exception.h>
 #include <registry/key.h>
@@ -40,7 +39,7 @@ value_entry& value_entry::assign(const key_path& path, string_view_type value_na
 {
     m_path = path;
     m_value_name.assign(value_name.data(), value_name.size());
-    m_key_weak_ptr.swap(std::weak_ptr<key>());
+    m_key_weak_ptr.swap(details::possibly_weak_ptr<const key>());
     return *this;
 }
 
@@ -60,8 +59,8 @@ void value_entry::swap(value_entry& other) noexcept
 struct value_iterator::state
 {
     uint32_t                              idx;
-    details::possibly_unique_key_ptr      key;
     value_entry                           val;
+    details::possibly_ptr<const key>      key;
     std::vector<string_type::value_type>  buf;  // TODO: write data directly to val.m_key_name ???
 
 };
@@ -73,14 +72,16 @@ value_iterator::value_iterator(const key_path& path, std::error_code& ec)
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, VOID);
 
     key_info info;
-    m_state = std::make_shared<state>(state{ uint32_t(-1), 
-                                             std::move(k),
-                                             value_entry(path, string_type()) });
-    if (!ec2 && (info = m_state->key.get()->info(key_info_mask::read_max_value_name_size, ec2), !ec2))
+    using weak_key_ptr_t = details::possibly_weak_ptr<const key>;
+    if (!ec2 && (info = k.info(key_info_mask::read_max_value_name_size, ec2), !ec2))
     {
+        m_state = std::make_shared<state>(state{ uint32_t(-1), 
+                                                 value_entry(path, string_type()),
+                                                 details::possibly_ptr<const key>(std::move(k)) });
+
         m_state->buf.resize(++info.max_value_name_size);
         m_state->val.m_value_name.reserve(info.max_value_name_size);
-        //m_state->val.m_key_weak_ptr = std::shared_ptr<key>(m_state, m_state->key.get());
+        m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const key>(m_state, m_state->key.operator->()));
 
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
@@ -90,16 +91,19 @@ value_iterator::value_iterator(const key_path& path, std::error_code& ec)
 }
 
 value_iterator::value_iterator(const key& key, std::error_code& ec)
-    : m_state(std::make_shared<state>(state{ uint32_t(-1), &key }))
+    : m_state(std::make_shared<state>(state{ uint32_t(-1), {}, details::possibly_ptr<const registry::key>(&key) }))
 {
+    // TODO: ...
+    // assert(key.is_open()); ???
+
     key_info info;
     std::error_code ec2;
-    using kref = std::reference_wrapper<const registry::key>;
-    if (info = m_state->key.get()->info(key_info_mask::read_max_value_name_size, ec2), !ec2)
+    using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
+    if (info = m_state->key->info(key_info_mask::read_max_value_name_size, ec2), !ec2)
     {
         m_state->buf.resize(++info.max_value_name_size);
         m_state->val.m_value_name.reserve(info.max_value_name_size);
-        //m_state->val.m_key_weak_ptr = std::shared_ptr<key>(m_state, &m_state->key);
+        m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
 
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
@@ -146,8 +150,8 @@ value_iterator& value_iterator::increment(std::error_code& ec)
     try {
         do {
             DWORD buffer_size = m_state->buf.size();
-            rc = RegEnumValue(reinterpret_cast<HKEY>(m_state->key.get()->native_handle()),
-                              ++m_state->idx, m_state->buf.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
+            rc = RegEnumValue(reinterpret_cast<HKEY>(m_state->key->native_handle()), ++m_state->idx,
+                              m_state->buf.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
             if (rc == ERROR_SUCCESS) {
                 m_state->val.m_value_name.assign(m_state->buf.data(), buffer_size);
