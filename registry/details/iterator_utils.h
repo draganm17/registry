@@ -27,7 +27,8 @@ namespace details {
         explicit possibly_ptr(T* ptr) noexcept : m_ptr(ptr) { }
 
         template <typename TT>
-        explicit possibly_ptr(TT&& val) /*noexcept TODO: ... */ : m_ptr(std::forward<TT>(val)) { }
+        explicit possibly_ptr(TT&& val) noexcept(std::is_nothrow_constructible<T, TT>::value) 
+        : m_ptr(std::forward<TT>(val)) { }
 
     public:
         explicit operator bool() const noexcept 
@@ -37,7 +38,7 @@ namespace details {
         { return boost::apply_visitor([this](auto&& v) { return do_get(v); }, m_ptr); }
 
     public:
-        void swap(possibly_ptr& other) noexcept(m_ptr.swap(other.m_ptr)) { m_ptr.swap(other.m_ptr); }
+        void swap(possibly_ptr& other) noexcept(noexcept(m_ptr.swap(other.m_ptr))) { m_ptr.swap(other.m_ptr); }
 
     private:
         boost::variant<T*, std::remove_const_t<T>> m_ptr;
@@ -46,15 +47,6 @@ namespace details {
     template <typename T>
     class possibly_shared_ptr
     {
-    private:
-        T* do_get(T* val) const noexcept { return val; }
-
-        T* do_get(const std::shared_ptr<T>& val) const noexcept { return val.get(); }
-
-        bool do_check(T* val) const noexcept { return static_cast<bool>(val); }
-
-        bool do_check(const std::shared_ptr<T>& val) const noexcept { return static_cast<bool>(val); }
-
     public:
         possibly_shared_ptr() noexcept : m_ptr(nullptr) { }
 
@@ -64,10 +56,10 @@ namespace details {
 
     public:
         explicit operator bool() const noexcept 
-        { return boost::apply_visitor([this](auto&& v) { return do_check(v); }, m_ptr); }
+        { return boost::apply_visitor([](auto&& v) { return static_cast<bool>(v); }, m_ptr); }
 
         T* operator->() const noexcept
-        { return boost::apply_visitor([this](auto&& v) { return do_get(v); }, m_ptr); }
+        { return boost::apply_visitor([](auto&& v) { return &*v; }, m_ptr); }
 
     public:
         void swap(possibly_shared_ptr& other) noexcept { m_ptr.swap(other.m_ptr); }
@@ -79,12 +71,10 @@ namespace details {
     template <typename T>
     class possibly_weak_ptr
     {
-        using shared_t = possibly_shared_ptr<T>;
-
     private:
-        possibly_shared_ptr<T> do_lock(T* val) const noexcept { return shared_t(val); }
+        possibly_shared_ptr<T> do_lock(T* val) const noexcept { return possibly_shared_ptr<T>(val); }
 
-        possibly_shared_ptr<T> do_lock(const std::weak_ptr<T>& val) const noexcept { return shared_t(val.lock()); }
+        possibly_shared_ptr<T> do_lock(const std::weak_ptr<T>& val) const noexcept { return possibly_shared_ptr<T>(val.lock()); }
 
     public:
         possibly_weak_ptr() noexcept : m_ptr(nullptr) { }
@@ -105,7 +95,7 @@ namespace details {
     };
 
     template <typename T>
-    inline void swap(possibly_ptr<T>& lhs, possibly_ptr<T>& rhs) noexcept(lhs.swap(rhs)) { lhs.swap(rhs); }
+    inline void swap(possibly_ptr<T>& lhs, possibly_ptr<T>& rhs) noexcept(noexcept(lhs.swap(rhs))) { lhs.swap(rhs); }
 
     template <typename T>
     inline void swap(possibly_shared_ptr<T>& lhs, possibly_shared_ptr<T>& rhs) noexcept { lhs.swap(rhs); }
