@@ -57,10 +57,6 @@ void close_handle(key::native_handle_type handle, std::error_code& ec) noexcept
 
 uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code& ec)
 {
-    // TODO: ...
-    return 0;
-
-    /*
     ec.clear();
     auto subkey = key.open_key(path, access_rights::read, ec);
     
@@ -74,7 +70,7 @@ uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code
     for (auto it = key_iterator(subkey, ec); !ec && it != key_iterator(); it.increment(ec))
     {
         if (ec) break;
-        rm_list.push_back(it->path().leaf_key());
+        rm_list.push_back(it->path().leaf_path());
         keys_deleted += remove_all_inside(subkey, rm_list.back(), ec);
     }
 
@@ -83,7 +79,6 @@ uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code
     }
 
     return !ec ? keys_deleted : static_cast<uint32_t>(-1);
-    */
 }
 
 std::wstring nt_key_name(key::native_handle_type handle)

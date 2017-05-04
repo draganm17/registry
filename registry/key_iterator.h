@@ -6,6 +6,7 @@
 #include <system_error>
 #include <vector>
 
+#include <registry/details/iterator_utils.h>
 #include <registry/key_path.h>
 #include <registry/types.h>
 
@@ -97,8 +98,8 @@ namespace registry
         void swap(key_entry& other) noexcept;
 
     private:
-        key_path            m_path;
-        std::weak_ptr<key>  m_key_weak_ptr;
+        key_path                               m_path;
+        details::possibly_weak_ptr<const key>  m_key_weak_ptr;
     };
 
     //------------------------------------------------------------------------------------//
@@ -141,6 +142,9 @@ namespace registry
         */
         key_iterator(key_iterator&& other) noexcept = default;
 
+        //! TODO: ...
+        explicit key_iterator(const key& key, std::error_code& ec = throws());
+
         //! Constructs a iterator that refers to the first subkey of a registry key specified by `path`.
         /*!
         If `path` refers to an non-existing registry key, returns the end iterator and does not report an error.
@@ -157,12 +161,6 @@ namespace registry
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
         explicit key_iterator(const key_path& path, std::error_code& ec = throws());
-
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
-        /*!
-        Calls `key_iterator(key.path(), ec)`.
-        */
-        //explicit key_iterator(const key& key, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -270,6 +268,15 @@ namespace registry
         unspecified state. */
         recursive_key_iterator(recursive_key_iterator&& other) noexcept = default;
 
+        //! TODO: ...
+        /*!
+        Calls `recursive_key_iterator(key, key_options::none, ec)`.
+        */
+        explicit recursive_key_iterator(const key& key, std::error_code& ec = throws());
+
+        //! TODO: ...
+        recursive_key_iterator(const key& key, key_options options, std::error_code& ec = throws());
+
         //! Constructs a iterator that refers to the first subkey of a registry key specified by `path`.
         /*!
         Calls `recursive_key_iterator(path, key_options::none, ec)`.
@@ -297,18 +304,6 @@ namespace registry
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
         recursive_key_iterator(const key_path& path, key_options options, std::error_code& ec = throws());
-
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
-        /*!
-        Calls `recursive_key_iterator(key.path(), key_options::none, ec)`.
-        */
-        //explicit recursive_key_iterator(const key& key, std::error_code& ec = throws());
-
-        //! Constructs a iterator that refers to the first subkey of a registry key specified by `key.path()`.
-        /*!
-        Calls `recursive_key_iterator(key.path(), options, ec)`.
-        */
-        //recursive_key_iterator(const key& key, key_options options, std::error_code& ec = throws());
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
