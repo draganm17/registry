@@ -61,7 +61,8 @@ uint32_t remove_all_inside(const key& key, const key_path& path, std::error_code
     auto subkey = key.open_key(path, access_rights::read, ec);
     
     if (ec) {
-        return (ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), 0)
+        return (ec.value() == ERROR_KEY_DELETED ||
+                ec.value() == ERROR_FILE_NOT_FOUND) ? (ec.clear(), 0)
                                                     : static_cast<uint32_t>(-1);
     }
 
@@ -253,6 +254,7 @@ bool key::key_exists(const key_path& path, std::error_code& ec) const
     open_key(path, access_rights::read, ec2);
 
     if (!ec2) RETURN_RESULT(ec, true);
+    if (ec2.value() == ERROR_KEY_DELETED) RETURN_RESULT(ec, false);
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
@@ -309,6 +311,7 @@ bool key::remove_key(const key_path& path, std::error_code& ec)
 #endif
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
+    if (rc == ERROR_KEY_DELETED) RETURN_RESULT(ec, false);
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     const std::error_code ec2(rc, std::system_category());
@@ -332,6 +335,7 @@ bool key::remove_value(string_view_type value_name, std::error_code& ec)
     const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), value_name.data());
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
+    if (rc == ERROR_KEY_DELETED) RETURN_RESULT(ec, false);
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     const std::error_code ec2(rc, std::system_category());
@@ -344,6 +348,7 @@ bool key::value_exists(string_view_type value_name, std::error_code& ec) const
                                        value_name.data(), nullptr, nullptr, nullptr, nullptr);
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
+    if (rc == ERROR_KEY_DELETED) RETURN_RESULT(ec, false);
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     const std::error_code ec2(rc, std::system_category());
