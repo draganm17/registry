@@ -83,8 +83,14 @@ TEST(ValueIterator, Construct)
         EXPECT_TRUE(it == value_iterator());
     }
 
-    // value_iterator::value_iterator(const key_entry&)
-    // value_iterator::value_iterator(const key_entry&, std::error_code&)
+    // value_iterator::value_iterator(const key&)
+    // value_iterator::value_iterator(const key&, std::error_code&)
+    {
+        // TODO: ...
+    }
+
+    // value_iterator::value_iterator(const key_path&)
+    // value_iterator::value_iterator(const key_path&, std::error_code&)
     {
         std::error_code ec;
 
@@ -102,17 +108,17 @@ TEST(ValueIterator, Construct)
     }
 }
 
-TEST(ValueIterator, ConstructFromPathAndIterate)
-{
-    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
-
-    test_iteration([&]() { return value_iterator(p); });
-}
-
 TEST(ValueIterator, ConstructFromKeyAndIterate)
 {
     const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
     const key k(open_only_tag{}, p, access_rights::query_value);
 
     test_iteration([&]() { return value_iterator(k); });
+}
+
+TEST(ValueIterator, ConstructFromPathAndIterate)
+{
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+
+    test_iteration([&]() { return value_iterator(p); });
 }

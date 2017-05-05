@@ -130,6 +130,12 @@ TEST(KeyIterator, Construct)
         EXPECT_TRUE(it == key_iterator());
     }
 
+    // key_iterator::key_iterator(const key&)
+    // key_iterator::key_iterator(const key&, std::error_code&)
+    {
+        // TODO: ...
+    }
+
     // key_iterator::key_iterator(const key_path&)
     // key_iterator::key_iterator(const key_path&, std::error_code&)
     {
@@ -147,36 +153,22 @@ TEST(KeyIterator, Construct)
         key_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
         EXPECT_TRUE(it4 != key_iterator() && !ec);
     }
-
-    // key_iterator::key_iterator(const key&)
-    // key_iterator::key_iterator(const key&, std::error_code&)
-    {
-        // TODO: ...
-
-        //std::error_code ec;
-        //const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
-
-        //key_iterator it1(key_handle(p, access_rights::enumerate_sub_keys | access_rights::query_value));
-        //key_iterator it2(key_handle(p, access_rights::enumerate_sub_keys | access_rights::query_value), ec);
-        //EXPECT_TRUE(it1 != key_iterator());
-        //EXPECT_TRUE(it2 != key_iterator() && !ec);
-    }
 }
 
-TEST(KeyIterator, ObtainFromPathAndIterate)
-{
-    std::error_code ec;
-    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
-
-    test_iteration(p, [&]() { return key_iterator(p); });
-}
-
-TEST(KeyIterator, ObtainFromKeyAndIterate)
+TEST(KeyIterator, ConstructFromKeyAndIterate)
 {
     const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
     const key k(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
 
     test_iteration(key_path(), [&]() { return key_iterator(k); });
+}
+
+TEST(KeyIterator, ConstructFromPathAndIterate)
+{
+    std::error_code ec;
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+
+    test_iteration(p, [&]() { return key_iterator(p); });
 }
 
 TEST(RecursiveKeyIterator, Construct)
@@ -185,6 +177,12 @@ TEST(RecursiveKeyIterator, Construct)
     {
         recursive_key_iterator it;
         EXPECT_TRUE(it == recursive_key_iterator());
+    }
+
+    // recursive_key_iterator::recursive_key_iterator(const key&)
+    // recursive_key_iterator::recursive_key_iterator(const key&, std::error_code&)
+    {
+        // TODO: ...
     }
 
     // recursive_key_iterator::recursive_key_iterator(const key_path&)
@@ -208,12 +206,13 @@ TEST(RecursiveKeyIterator, Construct)
 
         // TODO: test construction with key_options::skip_permission_denied
     }
+}
 
-    // recursive_key_iterator::recursive_key_iterator(const key_handle&)
-    // recursive_key_iterator::recursive_key_iterator(const key_handle&, std::error_code&)
-    {
-        // TODO: ...
-    }
+TEST(RecursiveKeyIterator, ConstructFromKeyAndIterate)
+{
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+
+    test_recursive_iteration(p, [&]() { return recursive_key_iterator(p); });
 }
 
 TEST(RecursiveKeyIterator, ConstructFromPathAndIterate)
@@ -222,13 +221,6 @@ TEST(RecursiveKeyIterator, ConstructFromPathAndIterate)
     const key k(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
 
     test_recursive_iteration(p, [&]() { return recursive_key_iterator(k); });
-}
-
-TEST(RecursiveKeyIterator, ConstructFromKeyAndIterate)
-{
-    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
-
-    test_recursive_iteration(p, [&]() { return recursive_key_iterator(p); });
 }
 
 TEST(RecursiveKeyIterator, Pop)
