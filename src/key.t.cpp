@@ -76,16 +76,9 @@ TEST(Key, Construct)
                     k4.native_handle() != key::native_handle_type{});
 
         // try open an non-existing key
-        int exceptions = 0;
         const key_path p3 = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\non_existent");
-        try {
-            const key k5(open_only_tag{}, p3, access_rights::read);
-        } catch (const registry_error& e) {
-            ++exceptions;
-            EXPECT_TRUE(e.path1() == p3);
-        }
-        EXPECT_TRUE(exceptions == 1);
-
+        EXPECT_THROW(const key k5(open_only_tag{}, p3, access_rights::read), registry_error);
+        //
         const key k6(open_only_tag{}, p3, access_rights::read, ec);
         EXPECT_TRUE(ec && !k6.is_open());
     }
@@ -224,17 +217,8 @@ TEST(Key, OperationsOnRegistry)
         EXPECT_TRUE(!ec && v09 == v09a);
         EXPECT_TRUE(v09.type() == value_type::qword && v09.to_uint64() == 42);
 
-        int exceptions = 0;
-        try {
-            k.read_value(TEXT("non_existent"));
-        } catch(const registry_error& e) {
-            ++exceptions;
-            EXPECT_TRUE(e.path1() == key_path());
-            EXPECT_TRUE(e.path2() == key_path());
-            EXPECT_TRUE(e.value_name() == TEXT("non_existent"));
-        }
-        EXPECT_TRUE(exceptions == 1);
-
+        EXPECT_THROW(k.read_value(TEXT("non_existent")), registry_error);
+        //
         auto v10 = k.read_value(TEXT("non_existent"), ec);
         EXPECT_TRUE(ec && v10 == value());
     }

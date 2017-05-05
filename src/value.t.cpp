@@ -226,88 +226,71 @@ TEST(Value, Compare)
 
 TEST(Value, Cast)
 {
-    int exceptions = 0;
-    const std::array<uint8_t, 2> bytes{ 4, 2 };
+    const std::vector<uint8_t> bytes{ 4, 2 };
+    const std::vector<string_type> strings{ TEXT("test1"), TEXT("test2") };
 
     value v1;
-    try { v1.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v1.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v1.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v1.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v1.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 5);
+    EXPECT_THROW(v1.to_uint32(),     bad_value_cast);
+    EXPECT_THROW(v1.to_uint64(),     bad_value_cast);
+    EXPECT_THROW(v1.to_string(),     bad_value_cast);
+    EXPECT_THROW(v1.to_strings(),    bad_value_cast);
+    EXPECT_THROW(v1.to_byte_array(), bad_value_cast);
 
-    exceptions = 0;
     value v2(sz_value_tag{}, TEXT("test"));
-    try { v2.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v2.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v2.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v2.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v2.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 4);
+    EXPECT_THROW(v2.to_uint32(),     bad_value_cast);
+    EXPECT_THROW(v2.to_uint64(),     bad_value_cast);
+    EXPECT_TRUE (v2.to_string() ==   TEXT("test"));
+    EXPECT_THROW(v2.to_strings(),    bad_value_cast);
+    EXPECT_THROW(v2.to_byte_array(), bad_value_cast);
 
-    exceptions = 0;
     value v3(expand_sz_value_tag{}, TEXT("test"));
-    try { v3.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v3.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v3.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v3.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v3.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 4);
+    EXPECT_THROW(v3.to_uint32(),     bad_value_cast);
+    EXPECT_THROW(v3.to_uint64(),     bad_value_cast);
+    EXPECT_TRUE (v3.to_string() ==   TEXT("test"));
+    EXPECT_THROW(v3.to_strings(),    bad_value_cast);
+    EXPECT_THROW(v3.to_byte_array(), bad_value_cast);
 
-    exceptions = 0;
     value v4(binary_value_tag{}, { bytes.data(), bytes.size() });
-    try { v4.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v4.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v4.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v4.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v4.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 4);
+    EXPECT_THROW(v4.to_uint32(),      bad_value_cast);
+    EXPECT_THROW(v4.to_uint64(),      bad_value_cast);
+    EXPECT_THROW(v4.to_string(),      bad_value_cast);
+    EXPECT_THROW(v4.to_strings(),     bad_value_cast);
+    EXPECT_TRUE(v4.to_byte_array() == bytes);
 
-    exceptions = 0;
     value v5(dword_value_tag{}, 42);
-    try { v5.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v5.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v5.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v5.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v5.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 3);
+    EXPECT_TRUE (v5.to_uint32() ==   42);
+    EXPECT_TRUE (v5.to_uint64() ==   42);
+    EXPECT_THROW(v5.to_string(),     bad_value_cast);
+    EXPECT_THROW(v5.to_strings(),    bad_value_cast);
+    EXPECT_THROW(v5.to_byte_array(), bad_value_cast);
 
-    exceptions = 0;
     value v6(dword_big_endian_value_tag{}, 42);
-    try { v6.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v6.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v6.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v6.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v6.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 3);
+    EXPECT_TRUE (v6.to_uint32() ==   42);
+    EXPECT_TRUE (v6.to_uint64() ==   42);
+    EXPECT_THROW(v6.to_string(),     bad_value_cast);
+    EXPECT_THROW(v6.to_strings(),    bad_value_cast);
+    EXPECT_THROW(v6.to_byte_array(), bad_value_cast);
 
-    exceptions = 0;
     value v7(link_value_tag{}, TEXT("test"));
-    try { v7.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v7.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v7.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v7.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v7.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 4);
+    EXPECT_THROW(v7.to_uint32(),     bad_value_cast);
+    EXPECT_THROW(v7.to_uint64(),     bad_value_cast);
+    EXPECT_TRUE (v7.to_string() ==   TEXT("test"));
+    EXPECT_THROW(v7.to_strings(),    bad_value_cast);
+    EXPECT_THROW(v7.to_byte_array(), bad_value_cast);
 
-    exceptions = 0;
-    value v8(multi_sz_value_tag{}, { TEXT("test1"), TEXT("test2") });
-    try { v8.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v8.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v8.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v8.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v8.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 4);
+    value v8(multi_sz_value_tag{}, strings);
+    EXPECT_THROW(v8.to_uint32(),       bad_value_cast);
+    EXPECT_THROW(v8.to_uint64(),       bad_value_cast);
+    EXPECT_THROW(v8.to_string(),       bad_value_cast);
+    EXPECT_NO_THROW(v8.to_strings() == strings);
+    EXPECT_THROW(v8.to_byte_array(),   bad_value_cast);
 
-    exceptions = 0;
     value v9(qword_value_tag{}, 42);
-    try { v9.to_uint32(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v9.to_uint64(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v9.to_string(); }     catch(bad_value_cast&) { ++exceptions; }
-    try { v9.to_strings(); }    catch(bad_value_cast&) { ++exceptions; }
-    try { v9.to_byte_array(); } catch(bad_value_cast&) { ++exceptions; }
-    EXPECT_TRUE(exceptions == 4);
+    EXPECT_THROW(v9.to_uint32(),     bad_value_cast);
+    EXPECT_TRUE (v9.to_uint64() ==   42);
+    EXPECT_THROW(v9.to_string(),     bad_value_cast);
+    EXPECT_THROW(v9.to_strings(),    bad_value_cast);
+    EXPECT_THROW(v9.to_byte_array(), bad_value_cast);
 }
 
 TEST(Value, Swap)
