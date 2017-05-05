@@ -15,7 +15,7 @@ namespace details {
     private:
         T* do_get(T* val) const noexcept { return val; }
 
-        T* do_get(T& val) const noexcept { return &val; }
+        T* do_get(T& val) const noexcept { return std::addressof(val); }
 
         bool do_check(T* val) const noexcept { return static_cast<bool>(val); }
 
@@ -59,7 +59,7 @@ namespace details {
         { return boost::apply_visitor([](auto&& v) { return static_cast<bool>(v); }, m_ptr); }
 
         T* operator->() const noexcept
-        { return boost::apply_visitor([](auto&& v) { return &*v; }, m_ptr); }
+        { return boost::apply_visitor([](auto&& v) { return std::addressof(*v); }, m_ptr); }
 
     public:
         void swap(possibly_shared_ptr& other) noexcept { m_ptr.swap(other.m_ptr); }
