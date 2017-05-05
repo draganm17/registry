@@ -138,12 +138,28 @@ namespace registry
         */
         value_iterator(value_iterator&& other) noexcept = default;
 
-        //! TODO: ...
+        //! Constructs a iterator that refers to the first value of a registry key identified by `key`.
+        /*!
+        The address of `key` is stored in a data member. Calling any non-const member function of `key` invalidates 
+        this iterator. \n
+        `key` must have been opened with the `access_rights::query_value` access right. \n
+        The overload that takes  `std::error_code&` parameter constructs an end iterator on error.
+
+        @param[in]  key  - the registry key that this iterator iterates on.
+        @param[out] ec   - out-parameter for error reporting.
+
+        @throw 
+            The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
+            errors, constructed with the OS error code as the error code argument. \n
+            The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails,
+            and executes `ec.clear()` if no errors occur. \n
+            `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
+        */
         explicit value_iterator(const key& key, std::error_code& ec = throws());
 
-        //! Constructs a iterator that refers to the first value of a key specified by `path`.
+        //! Constructs a iterator that refers to the first value of a registry key specified by `path`.
         /*!
-        If `path` refers to an non-existing registry key, returns the end iterator and does not report an error. 
+        If `path` refers to an non-existing registry key, returns the end iterator and does not report an error. \n
         The overload that takes `std::error_code&` parameter constructs an end iterator on error.
 
         @param[in] path - an absolute key path specifying the registry key that this iterator iterates on.
