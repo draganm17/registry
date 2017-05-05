@@ -305,6 +305,7 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
+        // TODO: document the behaviour when 'path' is empty
         bool key_exists(const key_path& path, std::error_code& ec = throws()) const;
 
         //! Opens a subkey of a registry key identified by `*this`.
@@ -372,6 +373,7 @@ namespace registry
             and executes `ec.clear()` if no errors occur. \n
             `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
+        // TODO: somehow this function removes the current key if 'path' is empty - investigate that
         bool remove_key(const key_path& path, std::error_code& ec = throws());
 
         //! Deletes an subkey and all its subkeys, recursively, from the registry key identified by `*this`.

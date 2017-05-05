@@ -144,17 +144,8 @@ TEST(Operations, All)
         EXPECT_TRUE(!ec && v09 == v09a);
         EXPECT_TRUE(v09.type() == value_type::qword && v09.to_uint64() == 42);
 
-        int exceptions = 0;
-        try {
-            read_value(p, TEXT("non_existent"));
-        } catch(const registry_error& e) {
-            ++exceptions;
-            EXPECT_TRUE(e.path1() == p);
-            EXPECT_TRUE(e.path2() == key_path());
-            EXPECT_TRUE(e.value_name() == TEXT("non_existent"));
-        }
-        EXPECT_TRUE(exceptions == 1);
-
+        EXPECT_THROW(read_value(p, TEXT("non_existent")), registry_error);
+        //
         auto v10 = read_value(p, TEXT("non_existent"), ec);
         EXPECT_TRUE(ec && v10 == value());  
     }
