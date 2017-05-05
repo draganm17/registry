@@ -6,6 +6,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <registry/exception.h>
 #include <registry/key.h>
 #include <registry/key_iterator.h>
 
@@ -133,7 +134,23 @@ TEST(KeyIterator, Construct)
     // key_iterator::key_iterator(const key&)
     // key_iterator::key_iterator(const key&, std::error_code&)
     {
-        // TODO: ...
+        std::error_code ec;
+        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+
+        // right permissions
+        const key k1(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
+        key_iterator it1a(k1);
+        EXPECT_TRUE(it1a != key_iterator());
+        //
+        key_iterator it1b(k1, ec);
+        EXPECT_TRUE(!ec && it1b != key_iterator());
+
+        // wrong permissions
+        const key k2(open_only_tag{}, p, access_rights::set_value);
+        EXPECT_THROW(key_iterator it2a(k2), registry_error);
+        //
+        key_iterator it2b(k2, ec);
+        EXPECT_TRUE(ec && it2b == key_iterator());
     }
 
     // key_iterator::key_iterator(const key_path&)
@@ -182,7 +199,31 @@ TEST(RecursiveKeyIterator, Construct)
     // recursive_key_iterator::recursive_key_iterator(const key&)
     // recursive_key_iterator::recursive_key_iterator(const key&, std::error_code&)
     {
-        // TODO: ...
+        std::error_code ec;
+        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+
+        // right permissions
+        const key k1(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
+        recursive_key_iterator it1a(k1);
+        EXPECT_TRUE(it1a != recursive_key_iterator());
+        //
+        recursive_key_iterator it1b(k1, ec);
+        EXPECT_TRUE(!ec && it1b != recursive_key_iterator());
+
+        // wrong permissions
+        const key k2(open_only_tag{}, p, access_rights::set_value);
+        EXPECT_THROW(recursive_key_iterator it2a(k2), registry_error);
+        //
+        recursive_key_iterator it2b(k2, ec);
+        EXPECT_TRUE(ec && it2b == recursive_key_iterator());
+
+        // wrong permissions (but using key_options::skip_permission_denied)
+        const key k3(open_only_tag{}, p, access_rights::set_value);
+        recursive_key_iterator it3a(k3, key_options::skip_permission_denied);
+        EXPECT_TRUE(it3a == recursive_key_iterator());
+        //
+        recursive_key_iterator it3b(k3, key_options::skip_permission_denied, ec);
+        EXPECT_TRUE(!ec && it3b == recursive_key_iterator());
     }
 
     // recursive_key_iterator::recursive_key_iterator(const key_path&)

@@ -6,6 +6,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <registry/exception.h>
 #include <registry/key.h>
 #include <registry/value_iterator.h>
 
@@ -86,7 +87,23 @@ TEST(ValueIterator, Construct)
     // value_iterator::value_iterator(const key&)
     // value_iterator::value_iterator(const key&, std::error_code&)
     {
-        // TODO: ...
+        std::error_code ec;
+        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+
+        // right permissions
+        const key k1(open_only_tag{}, p, access_rights::query_value);
+        value_iterator it1a(k1);
+        EXPECT_TRUE(it1a != value_iterator());
+        //
+        value_iterator it1b(k1, ec);
+        EXPECT_TRUE(!ec && it1b != value_iterator());
+
+        // wrong permissions
+        const key k2(open_only_tag{}, p, access_rights::set_value);
+        EXPECT_THROW(value_iterator it2a(k2), registry_error);
+        //
+        value_iterator it2b(k2, ec);
+        EXPECT_TRUE(ec && it2b == value_iterator());
     }
 
     // value_iterator::value_iterator(const key_path&)
