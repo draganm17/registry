@@ -81,10 +81,15 @@ key_iterator::key_iterator(const key& key, std::error_code& ec)
     // assert(key.is_open()); ???
 
     std::error_code ec2;
-    using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
-    m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
-        
-    if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
+    if ((key.rights() & (access_rights::enumerate_sub_keys | access_rights::query_value)) != access_rights::unknown)
+    {
+        using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
+        m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
+
+        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
+    } else {
+        ec2 = std::error_code(ERROR_ACCESS_DENIED, std::system_category());
+    }
 
     swap(key_iterator());
     details::set_or_throw(&ec, ec2, __FUNCTION__);

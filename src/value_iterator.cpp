@@ -79,16 +79,21 @@ value_iterator::value_iterator(const key& key, std::error_code& ec)
     // TODO: ...
     // assert(key.is_open()); ???
 
-    key_info info;
     std::error_code ec2;
-    using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
-    if (info = m_state->key->info(key_info_mask::read_max_value_name_size, ec2), !ec2)
+    if ((key.rights() & access_rights::query_value) != access_rights::unknown)
     {
-        m_state->buf.resize(++info.max_value_name_size);
-        m_state->val.m_value_name.reserve(info.max_value_name_size);
-        m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
+        key_info info;
+        using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
+        if (info = m_state->key->info(key_info_mask::read_max_value_name_size, ec2), !ec2)
+        {
+            m_state->buf.resize(++info.max_value_name_size);
+            m_state->val.m_value_name.reserve(info.max_value_name_size);
+            m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
 
-        if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
+            if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
+        }
+    } else {
+        ec2 = std::error_code(ERROR_ACCESS_DENIED, std::system_category());
     }
 
     swap(value_iterator());
