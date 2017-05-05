@@ -76,6 +76,8 @@ struct value_iterator::state
 value_iterator::value_iterator(const key& key, std::error_code& ec)
     : m_state(std::make_shared<state>(state{ uint32_t(-1), {}, details::possibly_ptr<const registry::key>(&key) }))
 {
+    // TODO: is it an error if the key was deleted (ERROR_KEY_DELETED) ???
+
     // TODO: ...
     // assert(key.is_open()); ???
 
