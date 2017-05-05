@@ -41,8 +41,12 @@ key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 
 bool key_entry::key_exists(std::error_code& ec) const
 {
-    // TODO: ...
-    return 0;
+    std::error_code ec2;
+    const auto key_ptr = m_key_weak_ptr.lock();
+    auto result = key_ptr ? key_ptr->key_exists(key_path(), ec2) : registry::key_exists(m_path, ec2);
+
+    if (!ec2) RETURN_RESULT(ec, result);
+    details::set_or_throw(&ec, ec2, __FUNCTION__, m_path);
 }
 
 key_entry& key_entry::assign(const key_path& path)
