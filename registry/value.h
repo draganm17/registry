@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <vector>
 
-#include <registry/details/type_traits.h>
+#include <registry/details/type_traits_utility.h>
 #include <registry/types.h>
 
 

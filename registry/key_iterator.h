@@ -6,7 +6,7 @@
 #include <system_error>
 #include <vector>
 
-#include <registry/details/iterator_utils.h>
+#include <registry/details/iterator_utility.h>
 #include <registry/key_path.h>
 #include <registry/types.h>
 
