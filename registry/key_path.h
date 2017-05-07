@@ -5,7 +5,7 @@
 #include <iterator>
 #include <type_traits>
 
-#include <registry/details/key_name_iterator.h>
+#include <registry/details/key_path_utils.h>
 #include <registry/details/type_traits.h>
 #include <registry/types.h>
 
