@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <vector>
 
+#include <registry/details/type_traits.h>
 #include <registry/types.h>
 
 
@@ -213,7 +214,7 @@ namespace registry
                            `registry::string_view_type`.
         */
         template <typename Sequence,
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, Sequence::value_type>::value>
+                  typename = std::enable_if_t<details::is_string_viewable_v<Sequence::value_type>>
         >
         value(multi_sz_value_tag tag, const Sequence& value);
 
@@ -227,8 +228,7 @@ namespace registry
                                  explicitly convertible to `registry::string_view_type`.
         */
         template <typename InputIt,
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, 
-                                                                    std::iterator_traits<InputIt>::value_type>::value>
+                  typename = std::enable_if_t<details::is_string_viewable_v<std::iterator_traits<InputIt>::value_type>>
         >
         value(multi_sz_value_tag tag, InputIt first, InputIt last);
 
@@ -242,7 +242,7 @@ namespace registry
                           to `registry::string_view_type`.
         */
         template <typename T,
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, T>::value>
+                  typename = std::enable_if_t<details::is_string_viewable_v<T>>
         >
         value(multi_sz_value_tag tag, std::initializer_list<T> init);
 
@@ -399,8 +399,8 @@ namespace registry
                            `registry::string_view_type`.
         @return `*this`.
         */
-        template <typename Sequence,
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, Sequence::value_type>::value>
+        template <typename Sequence, 
+                  typename = std::enable_if_t<details::is_string_viewable_v<Sequence::value_type>>
         >
         value& assign(multi_sz_value_tag, const Sequence& value);
 
@@ -413,8 +413,7 @@ namespace registry
         @return `*this`.
         */
         template <typename InputIt,
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, 
-                                                                    std::iterator_traits<InputIt>::value_type>::value>
+                  typename = std::enable_if_t<details::is_string_viewable_v<std::iterator_traits<InputIt>::value_type>>
         >
         value& assign(multi_sz_value_tag, InputIt first, InputIt last);
 
@@ -427,7 +426,7 @@ namespace registry
         @return `*this`.
         */
         template <typename T,
-                  typename = std::enable_if_t<std::is_constructible<string_view_type, T>::value>
+                  typename = std::enable_if_t<details::is_string_viewable_v<T>>
         >
         value& assign(multi_sz_value_tag tag, std::initializer_list<T> init);
 
@@ -491,25 +490,18 @@ namespace registry
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
 
-    template <typename Sequence,
-              typename = std::enable_if_t<std::is_constructible<string_view_type, Sequence::value_type>::value>
-    >
+    template <typename Sequence, typename = std::enable_if_t<details::is_string_viewable_v<Sequence::value_type>>>
     inline value::value(multi_sz_value_tag tag, const Sequence& value) { assign(tag, value); }
 
     template <typename InputIt,
-              typename = std::enable_if_t<std::is_constructible<string_view_type, 
-                                                                std::iterator_traits<InputIt>::value_type>::value>
+              typename = std::enable_if_t<details::is_string_viewable_v<std::iterator_traits<InputIt>::value_type>>
     >
     inline value::value(multi_sz_value_tag tag, InputIt first, InputIt last) { assign(tag, first, last); }
 
-    template <typename T,
-              typename = std::enable_if_t<std::is_constructible<string_view_type, T>::value>
-    >
+    template <typename T, typename = std::enable_if_t<details::is_string_viewable_v<T>>>
     inline value::value(multi_sz_value_tag tag, std::initializer_list<T> init) { assign(tag, init); }
 
-    template <typename Sequence,
-              typename = std::enable_if_t<std::is_constructible<string_view_type, Sequence::value_type>::value>
-    >
+    template <typename Sequence, typename = std::enable_if_t<details::is_string_viewable_v<Sequence::value_type>>>
     inline value& value::assign(multi_sz_value_tag tag, const Sequence& value)
     {
         using std::begin; using std::end;
@@ -517,8 +509,7 @@ namespace registry
     }
 
     template <typename InputIt,
-              typename = std::enable_if_t<std::is_constructible<string_view_type, 
-                                                                std::iterator_traits<InputIt>::value_type>::value>
+              typename = std::enable_if_t<details::is_string_viewable_v<std::iterator_traits<InputIt>::value_type>>
     >
     inline value& value::assign(multi_sz_value_tag tag, InputIt first, InputIt last)
     {
@@ -528,9 +519,7 @@ namespace registry
         return assign(tag, strings);
     }
 
-    template <typename T,
-              typename = std::enable_if_t<std::is_constructible<string_view_type, T>::value>
-    >
+    template <typename T, typename = std::enable_if_t<details::is_string_viewable_v<T>>>
     inline value& value::assign(multi_sz_value_tag tag, std::initializer_list<T> init) 
     { return assign(tag, init.begin(), init.end()); }
 
