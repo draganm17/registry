@@ -6,7 +6,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/functional/hash.hpp>
 
-#include <registry/details/utils.impl.h>
+#include <registry/details/common_utility.impl.h>
 #include <registry/key_path.h>
 
 

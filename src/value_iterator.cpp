@@ -1,7 +1,7 @@
 #include <cassert>
 #include <Windows.h>
 
-#include <registry/details/utils.impl.h>
+#include <registry/details/common_utility.impl.h>
 #include <registry/exception.h>
 #include <registry/key.h>
 #include <registry/operations.h>

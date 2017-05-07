@@ -2,7 +2,7 @@
 #include <Windows.h>
 
 #include <registry/exception.h>
-#include <registry/details/utils.impl.h>
+#include <registry/details/common_utility.impl.h>
 #include <registry/key.h>
 #include <registry/key_path.h>
 #include <registry/operations.h>
