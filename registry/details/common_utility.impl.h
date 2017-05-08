@@ -1,11 +1,14 @@
+// TODO: move to *.cpp file ???
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
+#include <functional>
+#include <locale>
+#include <system_error>
 #include <time.h>
 #include <Windows.h>
-
-#include <boost/algorithm/string/predicate.hpp>
 
 #include <registry/exception.h>
 #include <registry/types.h>
@@ -22,6 +25,31 @@
 
 namespace registry {
 namespace details {
+
+    struct is_iless
+    {
+        std::locale locale = std::locale();
+
+        template< typename T1, typename T2>
+        bool operator()(const T1& arg1, const T2& arg2) const 
+        { return std::tolower(arg1, locale) < std::tolower(arg2, locale); }
+    };
+
+    struct is_iequal
+    {
+        std::locale locale = std::locale();
+
+        template< typename T1, typename T2>
+        bool operator()(const T1& arg1, const T2& arg2) const 
+        { return std::tolower(arg1, locale) == std::tolower(arg2, locale); }
+    };
+
+    template <class T>
+    inline void hash_combine(size_t& seed, const T& v)
+    {
+        std::hash<T> hasher;
+        seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
 
     template <class ...Args>
     inline void set_or_throw(std::error_code* ec_dst, const std::error_code& ec_src, const char* msg, Args&&... ex_args)
@@ -75,12 +103,20 @@ namespace details {
             key_map_value_type{ TEXT("HKEY_USERS"),                       key_id::users                       }
         };
 
-        using boost::iequals;
-        using boost::ilexicographical_compare;
-        auto it = std::lower_bound(key_map.begin(), key_map.end(), str,
-                                   [](auto&& lhs, auto&& rhs) { return ilexicographical_compare(lhs.first, rhs); });
+        static const auto cmp_less = [](auto&& lhs, auto&& rhs)
+        {
+            using std::begin; using std::end;
+            return std::lexicographical_compare(begin(lhs.first), end(lhs.first), begin(rhs), end(rhs), is_iless{});
+        };
 
-        return (it != key_map.end() && iequals((*it).first, str)) ? (*it).second : key_id::unknown;
+        static const auto cmp_equal = [](auto&& lhs, auto&& rhs)
+        {
+            using std::begin; using std::end;
+            return std::equal(begin(lhs.first), end(lhs.first), begin(rhs), end(rhs), is_iequal{});
+        };
+
+        auto it = std::lower_bound(key_map.begin(), key_map.end(), str, cmp_less);
+        return (it != key_map.end() && cmp_equal(*it, str)) ? it->second : key_id::unknown;
     }
 
 }} // namespace registry::details

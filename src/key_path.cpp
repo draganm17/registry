@@ -3,9 +3,6 @@
 #include <locale>
 #include <Windows.h>
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/functional/hash.hpp>
-
 #include <registry/details/common_utility.impl.h>
 #include <registry/key_path.h>
 
@@ -31,7 +28,7 @@ key_path& key_path::do_append(const key_path& src)
 
 key_path& key_path::do_append(string_view_type src)
 {
-    m_name.reserve(m_name.size() + src.size());
+    m_name.reserve(m_name.size() + src.size() + (!m_name.empty() && !src.empty() ? 1 : 0));
     for (auto it = details::key_name_iterator::begin(src); it != details::key_name_iterator::end(src); ++it)
     {
         if (!m_name.empty()) m_name.push_back(key_path::separator);
@@ -146,16 +143,11 @@ int key_path::compare(const key_path& other) const noexcept
         return m_view < other.m_view ? -1 : 1;
     }
 
-    auto beg_1 = details::key_name_iterator::begin(m_name);
-    const auto end_1 = details::key_name_iterator::end(m_name);
-    auto beg_2 = details::key_name_iterator::begin(other.m_name);
-    const auto end_2 = details::key_name_iterator::end(other.m_name);
-
-    for (; beg_1 != end_1 && beg_2 != end_2; ++beg_1, ++beg_2) {
-        if (boost::ilexicographical_compare(*beg_1, *beg_2)) return -1;
-        if (boost::ilexicographical_compare(*beg_2, *beg_1)) return  1;
-    }
-    return int(beg_2 == end_2) - int(beg_1 == end_1);
+    const auto beg1 = m_name.begin(),       end1 = m_name.end(),
+               beg2 = other.m_name.begin(), end2 = other.m_name.end();
+    if (std::lexicographical_compare(beg1, end1, beg2, end2, details::is_iless{})) return -1;
+    if (std::lexicographical_compare(beg2, end2, beg1, end1, details::is_iless{})) return  1;
+    return 0;
 }
 
 key_path::iterator key_path::begin() const
@@ -266,14 +258,11 @@ void key_path::iterator::swap(iterator& other) noexcept
 
 size_t hash_value(const key_path& path) noexcept
 {
-    const auto locale = std::locale();
-    size_t hash = std::hash<view>()(path.key_view());
+    const auto loc = std::locale();
+    const auto& key_name = path.key_name();
 
-    for (auto it = details::key_name_iterator::begin(path.key_name()); 
-              it != details::key_name_iterator::end(path.key_name()); ++it) 
-    {
-        std::for_each(it->begin(), it->end(), [&](auto c) { boost::hash_combine(hash, std::tolower(c, locale)); });
-    }
+    size_t hash = std::hash<view>()(path.key_view());
+    std::for_each(key_name.begin(), key_name.end(), [&](auto c) { details::hash_combine(hash, std::tolower(c, loc)); });
     return hash;
 }
 

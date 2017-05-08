@@ -4,8 +4,8 @@
 #include <Windows.h>
 
 #include <boost/endian/arithmetic.hpp>
-#include <boost/functional/hash.hpp>
 
+#include <registry/details/common_utility.impl.h>
 #include <registry/value.h>
 
 
@@ -271,9 +271,14 @@ void value::swap(value& other) noexcept
 
 size_t hash_value(const value& value) noexcept
 {
-    const auto data = value.data();
+    const size_t sz = value.data().size();
+    const unsigned char* ptr = value.data().data();
+
     size_t hash = std::hash<value_type>()(value.type());
-    return boost::hash_combine(hash, boost::hash_range(data.begin(), data.end())), hash;
+    for (auto i = sz % sizeof(long); i; --i, ++ptr) details::hash_combine(hash, *ptr);
+    for (auto i = sz / sizeof(long); i; --i, ptr += sizeof(long)) details::hash_combine(hash, *(const long*)ptr);
+
+    return hash;
 }
 
 }  // namespace registry

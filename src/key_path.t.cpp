@@ -121,9 +121,11 @@ TEST(KeyPath, Compare)
 
     EXPECT_TRUE(key_path(TEXT("AAA")).compare(key_path(TEXT("AAA"))) == 0);
 
+    EXPECT_TRUE(key_path(TEXT("AAA")).compare(key_path(TEXT("aAa"))) == 0);
+
     EXPECT_TRUE(key_path(TEXT("AAA\\BBB")).compare(key_path(TEXT("AAA\\BBB"))) == 0);
 
-    EXPECT_TRUE(key_path(TEXT("AAA\\BBB")).compare(key_path(TEXT("aAa\\\\bBb\\"))) == 0);
+    EXPECT_TRUE(key_path(TEXT("AAA\\BBB")).compare(key_path(TEXT("aAa\\bBb"))) == 0);
 
     EXPECT_TRUE(key_path(TEXT("AAA\\BBB")).compare(key_path(TEXT("AAA\\CCC"))) < 0);
 
