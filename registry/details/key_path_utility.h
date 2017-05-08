@@ -52,9 +52,9 @@ namespace details {
     public:
         key_name_iterator& operator++() noexcept
         {
-            auto first = m_element.end();
-            const auto end = m_key_name.end();
-            for (; first != end && *first == separator; ++first);
+            auto first = m_element.data() + m_element.size();
+            const auto end = m_key_name.data() + m_key_name.size();
+            for (;  first != end && *first == separator;  ++first);
 
             auto last = first;
             for (; last != end && *last != separator; ++last);
@@ -67,11 +67,11 @@ namespace details {
 
         key_name_iterator& operator--() noexcept
         {
-            auto last = m_element.begin() - 1;
-            for (; *last == separator;  --last);
+            auto last = m_element.data() - 1;
+            for (; *last == separator; --last);
 
             auto first = last;
-            auto rbeg = m_key_name.begin() - 1;
+            auto rbeg = m_key_name.data() - 1;
             for (; first != rbeg && *first != separator; --first);
 
             ++first; ++last;

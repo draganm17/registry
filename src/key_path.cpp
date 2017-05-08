@@ -106,7 +106,7 @@ key_path key_path::parent_path() const
     const auto first = details::key_name_iterator::begin(m_name);
 
     if (it == first || --it == first) return key_path(m_view);
-    return key_path(string_view_type(first->data(), (--it)->end() - first->begin()), m_view);
+    return key_path(string_view_type(first->data(), it->data() - first->data() - 1), m_view);
 }
 
 key_path key_path::relative_path() const
