@@ -33,7 +33,7 @@ namespace details {
 
         bool do_check(T* val) const noexcept { return static_cast<bool>(val); }
 
-        bool do_check(T &val) const noexcept { return true; }
+        bool do_check(T& val) const noexcept { return true; }
 
     public:
         possibly_ptr() noexcept : m_ptr(nullptr) { }
@@ -64,7 +64,7 @@ namespace details {
 
         explicit possibly_shared_ptr(T* ptr) noexcept : m_ptr(ptr) { }
 
-        explicit possibly_shared_ptr(const std::shared_ptr<T> &ptr) noexcept : m_ptr(ptr) { }
+        explicit possibly_shared_ptr(const std::shared_ptr<T>& ptr) noexcept : m_ptr(ptr) { }
 
     public:
         explicit operator bool() const noexcept { return VISIT([](auto&& v) { return static_cast<bool>(v); }, m_ptr); }

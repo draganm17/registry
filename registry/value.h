@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <initializer_list>
+#include <string>
 #include <typeinfo>
 #include <type_traits>
 #include <vector>
@@ -93,8 +94,9 @@ namespace registry
         // TODO: get rid of value_state ???
         struct value_state
         {
-            value_type       m_type = value_type::none;
-            byte_array_type  m_data;
+            value_type                        m_type = value_type::none;
+            std::basic_string<unsigned char>  m_data;
+            // NOTE: using std::basic_string as a container allows small data optimization
         };
     } //\endcond
 
@@ -166,7 +168,7 @@ namespace registry
         //! Constructs a value of type `value_type::binary`.
         /*!
         @post `type() == value_type::binary`.
-        @post `to_byte_array() == value`.
+        @post `to_bytes() == value`.
 
         @param[in] tag   - value type tag.
         @param[in] value - binary data to be stored in this value.
@@ -326,7 +328,7 @@ namespace registry
         /*!
         @throw `registry::bad_value_cast` if the value type is not `value_type::binary`.
         */
-        byte_array_type to_byte_array() const;
+        byte_array_type to_bytes() const;
 
     public:
         //! Replaces the contents of the value.

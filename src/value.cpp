@@ -3,7 +3,7 @@
 #include <numeric>
 #include <Windows.h>
 
-#include <boost/endian/arithmetic.hpp>
+#include <boost/endian/arithmetic.hpp> // TODO: get rid of that dependency
 
 #include <registry/details/common_utility.impl.h>
 #include <registry/value.h>
@@ -108,9 +108,10 @@ std::vector<string_type> value::to_strings() const
     throw bad_value_cast();
 }
 
-byte_array_type value::to_byte_array() const
+byte_array_type value::to_bytes() const
 {
-    return m_type == value_type::binary ? m_data : throw bad_value_cast();
+    if (m_type == value_type::binary) return byte_array_type(m_data.data(), m_data.data() + m_data.size());
+    throw bad_value_cast();
 }
 
 value& value::assign(none_value_tag) noexcept

@@ -230,67 +230,67 @@ TEST(Value, Cast)
     const std::vector<string_type> strings{ TEXT("test1"), TEXT("test2") };
 
     value v1;
-    EXPECT_THROW(v1.to_uint32(),     bad_value_cast);
-    EXPECT_THROW(v1.to_uint64(),     bad_value_cast);
-    EXPECT_THROW(v1.to_string(),     bad_value_cast);
-    EXPECT_THROW(v1.to_strings(),    bad_value_cast);
-    EXPECT_THROW(v1.to_byte_array(), bad_value_cast);
+    EXPECT_THROW(v1.to_uint32(),  bad_value_cast);
+    EXPECT_THROW(v1.to_uint64(),  bad_value_cast);
+    EXPECT_THROW(v1.to_string(),  bad_value_cast);
+    EXPECT_THROW(v1.to_strings(), bad_value_cast);
+    EXPECT_THROW(v1.to_bytes(),   bad_value_cast);
 
     value v2(sz_value_tag{}, TEXT("test"));
-    EXPECT_THROW(v2.to_uint32(),     bad_value_cast);
-    EXPECT_THROW(v2.to_uint64(),     bad_value_cast);
-    EXPECT_TRUE (v2.to_string() ==   TEXT("test"));
-    EXPECT_THROW(v2.to_strings(),    bad_value_cast);
-    EXPECT_THROW(v2.to_byte_array(), bad_value_cast);
+    EXPECT_THROW(v2.to_uint32(),   bad_value_cast);
+    EXPECT_THROW(v2.to_uint64(),   bad_value_cast);
+    EXPECT_TRUE (v2.to_string() == TEXT("test"));
+    EXPECT_THROW(v2.to_strings(),  bad_value_cast);
+    EXPECT_THROW(v2.to_bytes(),    bad_value_cast);
 
     value v3(expand_sz_value_tag{}, TEXT("test"));
-    EXPECT_THROW(v3.to_uint32(),     bad_value_cast);
-    EXPECT_THROW(v3.to_uint64(),     bad_value_cast);
-    EXPECT_TRUE (v3.to_string() ==   TEXT("test"));
-    EXPECT_THROW(v3.to_strings(),    bad_value_cast);
-    EXPECT_THROW(v3.to_byte_array(), bad_value_cast);
+    EXPECT_THROW(v3.to_uint32(),   bad_value_cast);
+    EXPECT_THROW(v3.to_uint64(),   bad_value_cast);
+    EXPECT_TRUE (v3.to_string() == TEXT("test"));
+    EXPECT_THROW(v3.to_strings(),  bad_value_cast);
+    EXPECT_THROW(v3.to_bytes(),    bad_value_cast);
 
     value v4(binary_value_tag{}, { bytes.data(), bytes.size() });
-    EXPECT_THROW(v4.to_uint32(),      bad_value_cast);
-    EXPECT_THROW(v4.to_uint64(),      bad_value_cast);
-    EXPECT_THROW(v4.to_string(),      bad_value_cast);
-    EXPECT_THROW(v4.to_strings(),     bad_value_cast);
-    EXPECT_TRUE(v4.to_byte_array() == bytes);
+    EXPECT_THROW(v4.to_uint32(),  bad_value_cast);
+    EXPECT_THROW(v4.to_uint64(),  bad_value_cast);
+    EXPECT_THROW(v4.to_string(),  bad_value_cast);
+    EXPECT_THROW(v4.to_strings(), bad_value_cast);
+    EXPECT_TRUE(v4.to_bytes() ==  bytes);
 
     value v5(dword_value_tag{}, 42);
-    EXPECT_TRUE (v5.to_uint32() ==   42);
-    EXPECT_TRUE (v5.to_uint64() ==   42);
-    EXPECT_THROW(v5.to_string(),     bad_value_cast);
-    EXPECT_THROW(v5.to_strings(),    bad_value_cast);
-    EXPECT_THROW(v5.to_byte_array(), bad_value_cast);
+    EXPECT_TRUE (v5.to_uint32() == 42);
+    EXPECT_TRUE (v5.to_uint64() == 42);
+    EXPECT_THROW(v5.to_string(),   bad_value_cast);
+    EXPECT_THROW(v5.to_strings(),  bad_value_cast);
+    EXPECT_THROW(v5.to_bytes(),    bad_value_cast);
 
     value v6(dword_big_endian_value_tag{}, 42);
-    EXPECT_TRUE (v6.to_uint32() ==   42);
-    EXPECT_TRUE (v6.to_uint64() ==   42);
-    EXPECT_THROW(v6.to_string(),     bad_value_cast);
-    EXPECT_THROW(v6.to_strings(),    bad_value_cast);
-    EXPECT_THROW(v6.to_byte_array(), bad_value_cast);
+    EXPECT_TRUE (v6.to_uint32() == 42);
+    EXPECT_TRUE (v6.to_uint64() == 42);
+    EXPECT_THROW(v6.to_string(),   bad_value_cast);
+    EXPECT_THROW(v6.to_strings(),  bad_value_cast);
+    EXPECT_THROW(v6.to_bytes(),    bad_value_cast);
 
     value v7(link_value_tag{}, TEXT("test"));
-    EXPECT_THROW(v7.to_uint32(),     bad_value_cast);
-    EXPECT_THROW(v7.to_uint64(),     bad_value_cast);
-    EXPECT_TRUE (v7.to_string() ==   TEXT("test"));
-    EXPECT_THROW(v7.to_strings(),    bad_value_cast);
-    EXPECT_THROW(v7.to_byte_array(), bad_value_cast);
+    EXPECT_THROW(v7.to_uint32(),   bad_value_cast);
+    EXPECT_THROW(v7.to_uint64(),   bad_value_cast);
+    EXPECT_TRUE (v7.to_string() == TEXT("test"));
+    EXPECT_THROW(v7.to_strings(),  bad_value_cast);
+    EXPECT_THROW(v7.to_bytes(),    bad_value_cast);
 
     value v8(multi_sz_value_tag{}, strings);
     EXPECT_THROW(v8.to_uint32(),       bad_value_cast);
     EXPECT_THROW(v8.to_uint64(),       bad_value_cast);
     EXPECT_THROW(v8.to_string(),       bad_value_cast);
     EXPECT_NO_THROW(v8.to_strings() == strings);
-    EXPECT_THROW(v8.to_byte_array(),   bad_value_cast);
+    EXPECT_THROW(v8.to_bytes(),        bad_value_cast);
 
     value v9(qword_value_tag{}, 42);
-    EXPECT_THROW(v9.to_uint32(),     bad_value_cast);
-    EXPECT_TRUE (v9.to_uint64() ==   42);
-    EXPECT_THROW(v9.to_string(),     bad_value_cast);
-    EXPECT_THROW(v9.to_strings(),    bad_value_cast);
-    EXPECT_THROW(v9.to_byte_array(), bad_value_cast);
+    EXPECT_THROW(v9.to_uint32(),   bad_value_cast);
+    EXPECT_TRUE (v9.to_uint64() == 42);
+    EXPECT_THROW(v9.to_string(),   bad_value_cast);
+    EXPECT_THROW(v9.to_strings(),  bad_value_cast);
+    EXPECT_THROW(v9.to_bytes(),    bad_value_cast);
 }
 
 TEST(Value, Swap)

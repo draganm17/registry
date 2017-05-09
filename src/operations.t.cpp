@@ -116,7 +116,7 @@ TEST(Operations, All)
         auto v04  = read_value(p, TEXT("val_04"));
         auto v04a = read_value(p, TEXT("val_04"), ec);
         EXPECT_TRUE(!ec && v04 == v04a);
-        EXPECT_TRUE(v04.type() == value_type::binary && (v04.to_byte_array() == byte_array_type{ 4, 2 }));
+        EXPECT_TRUE(v04.type() == value_type::binary && (v04.to_bytes() == byte_array_type{ 4, 2 }));
 
         auto v05  = read_value(p, TEXT("val_05"));
         auto v05a = read_value(p, TEXT("val_05"), ec);
