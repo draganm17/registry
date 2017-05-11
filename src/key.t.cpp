@@ -1,3 +1,4 @@
+#include <array>
 #include <Windows.h>
 
 #include <gmock/gmock.h>
@@ -293,7 +294,7 @@ TEST(Key, OperationsOnRegistry)
     // key::write_value(string_view_type, const value&, std::error_code&)
     {
         std::error_code ec;
-        const uint8_t bytes[] = { 4, 2};
+        const std::array<uint8_t, 2> bytes{ 4, 2};
         key k(open_only_tag{}, 
               TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\write"),
               access_rights::set_value | access_rights::query_value);
@@ -313,7 +314,7 @@ TEST(Key, OperationsOnRegistry)
         EXPECT_TRUE((k.write_value(TEXT("val_03a"), v03, ec), !ec));
         EXPECT_TRUE(k.read_value(TEXT("val_03")) == v03 && k.read_value(TEXT("val_03a")) == v03);
 
-        const value v04(binary_value_tag{}, { bytes, sizeof(bytes) });
+        const value v04(binary_value_tag{}, bytes.data(), bytes.size());
         k.write_value(TEXT("val_04"), v04);
         EXPECT_TRUE((k.write_value(TEXT("val_04a"), v04, ec), !ec));
         EXPECT_TRUE(k.read_value(TEXT("val_04")) == v04 && k.read_value(TEXT("val_04a")) == v04);

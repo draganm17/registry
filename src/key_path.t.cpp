@@ -68,11 +68,11 @@ TEST(KeyPath, Construct)
         key_path p12 = string_view_type();
         EXPECT_TRUE(p12.key_name().empty());
         //
-        wchar_t buf2[] = { TEXT('a'), TEXT('b') };
+        string_type::value_type buf2[] = { TEXT('a'), TEXT('b') };
         key_path p14 = string_view_type(buf2, _countof(buf2));
         EXPECT_TRUE(p14.key_name() == TEXT("ab"));
         //
-        wchar_t buf3[] = { TEXT('a'), TEXT('\\'), TEXT('b') };
+        string_type::value_type buf3[] = { TEXT('a'), TEXT('\\'), TEXT('b') };
         key_path p15 = string_view_type(buf3, _countof(buf3));
         EXPECT_TRUE(p15.key_name() == TEXT("a\\b"));
     }

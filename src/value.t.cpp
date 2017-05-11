@@ -129,9 +129,9 @@ TEST(Value, Assign)
     // assign(binary_value_tag, byte_array_view_type)
     {
         std::array<uint8_t, 2> bytes{ 4, 2 };
-        value v1(binary_value_tag{}, { bytes.data(), bytes.size() });
+        value v1(binary_value_tag{}, bytes.data(), bytes.size());
         value v2;
-        EXPECT_TRUE(v1 == v2.assign(binary_value_tag{}, { bytes.data(), bytes.size() }));
+        EXPECT_TRUE(v1 == v2.assign(binary_value_tag{}, bytes.data(), bytes.size()));
     }
 
     // assign(dword_value_tag, uint32_t)
@@ -250,7 +250,7 @@ TEST(Value, Cast)
     EXPECT_THROW(v3.to_strings(),  bad_value_cast);
     EXPECT_THROW(v3.to_bytes(),    bad_value_cast);
 
-    value v4(binary_value_tag{}, { bytes.data(), bytes.size() });
+    value v4(binary_value_tag{}, bytes.data(), bytes.size());
     EXPECT_THROW(v4.to_uint32(),  bad_value_cast);
     EXPECT_THROW(v4.to_uint64(),  bad_value_cast);
     EXPECT_THROW(v4.to_string(),  bad_value_cast);

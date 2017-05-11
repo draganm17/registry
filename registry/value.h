@@ -20,35 +20,42 @@ namespace registry
     enum class value_type : uint32_t
     {
         /*! No defined value type. */
-        none =                 0,
+        none =                        0,
 
         /*! A null-terminated string. */
-        sz =                   1,
+        sz =                          1,
         
         /*! A null-terminated string that contains unexpanded references to environment variables 
         (for example, "%PATH%"). */
-        expand_sz =            2,
+        expand_sz =                   2,
 
         /*! Binary data in any form. */
-        binary =               3,
+        binary =                      3,
         
         /*! A 32-bit number. */
-        dword =                4,
+        dword =                       4,
         
         /*! A 32-bit number in big-endian format. */
-        dword_big_endian =     5,
+        dword_big_endian =            5,
         
         /*! A null-terminated string that contains the target path of a symbolic link. */
-        link =                 6,
+        link =                        6,
         
         /*! A sequence of null-terminated strings, terminated by an empty string (\0). */
-        multi_sz =             7,
+        multi_sz =                    7,
+
+        /*! TODO: ... */
+        resource_list =               8,
+
+        /*! TODO: ... */
+        full_resource_descriptor =    9,
+
+        /*! TODO: ... */
+        resource_requirements_list =  10,
         
         /*! A 64-bit number. */
-        qword =                11
+        qword =                       11
     };
-    //TODO: Should I support REG_RESOURCE_LIST, REG_FULL_RESOURCE_DESCRIPTOR and REG_RESOURCE_REQUIREMENTS_LIST types ?
-    //      If not, should I specify an 'unknown' type in case such a value is readed into registry::value object ?
 
     //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct none_value_tag             { };
@@ -111,6 +118,9 @@ namespace registry
     or semantic aspects of the data. However, `registry::value` provides convenient constructors to help users create
     values that are suitable for correctly represent a registry value of a given type.
     */
+    // TODO: remove 'to_bytes()' method ???
+    //       remove 'binary_value_tag' constructor ans 'assign' overloads ???
+    //       
     class value 
         : private details::value_state
     {
@@ -171,10 +181,10 @@ namespace registry
         @post `to_bytes() == value`.
 
         @param[in] tag   - value type tag.
-        @param[in] value - binary data to be stored in this value.
+        @param[in] data - binary data to be stored in this value.
+        @param[in] size - the size of the binary data in bytes.
         */
-        // TODO: replace 'byte_array_view_type' by 'const uint8_t*' and 'size_t' ???
-        value(binary_value_tag tag, byte_array_view_type value);
+        value(binary_value_tag tag, const unsigned char* data, size_t size);
 
         //! Constructs a value of type `value_type::dword`.
         /*!
@@ -271,8 +281,9 @@ namespace registry
 
         @param[in] type - a value type identifier.
         @param[in] data - the binary data to be stored in this value.
+        @param[in] size - the size of the binary data in bytes.
         */
-        value(value_type type, byte_array_view_type data);
+        value(value_type type, const unsigned char* data, size_t size);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -294,9 +305,16 @@ namespace registry
         //! Returns the value type.
         value_type type() const noexcept;
 
-        //! Returns stored binary data if any.
-        byte_array_view_type data() const noexcept;
+        //! TODO: ...
+        //const unsigned char* data() const noexcept;
 
+        //! TODO: ...
+        //size_t size() const noexcept;
+
+        //! Returns stored binary data if any.
+        byte_array_view_type data() const noexcept; // TODO: replace by separate data() and size() methods
+
+    public:
         //! Converts the value to an unsigned 32-bit integer.
         /*!
         @throw `registry::bad_value_cast` if the value type is not one of `value_type::dword` or 
@@ -361,10 +379,11 @@ namespace registry
         /*!
         @post `*this == value(tag, value)`.
         @param[in] tag   - value type tag.
-        @param[in] value - binary data to be stored in this value.
+        @param[in] data - binary data to be stored in this value.
+        @param[in] size - the size of the binary data in bytes.
         @return `*this`.
         */
-        value& assign(binary_value_tag tag, byte_array_view_type value);
+        value& assign(binary_value_tag tag, const unsigned char* data, size_t size);
 
         //! Replaces the contents of the value.
         /*!
@@ -446,12 +465,13 @@ namespace registry
 
         //! Replaces the contents of the value.
         /*!
-        @post `*this == value(tag, value)`.
+        @post `*this == value(tag, value, size)`.
         @param[in] type - a value type identifier.
         @param[in] data - the binary data to be stored in this value.
+        @param[in] size - the size of the binary data in bytes.
         @return `*this`.
         */
-        value& assign(value_type type, byte_array_view_type data);
+        value& assign(value_type type, const unsigned char* data, size_t size);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(value& other) noexcept;

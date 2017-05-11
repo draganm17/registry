@@ -23,7 +23,7 @@ value::value(sz_value_tag tag, string_view_type value) { assign(tag, value); }
 
 value::value(expand_sz_value_tag tag, string_view_type value) { assign(tag, value); }
 
-value::value(binary_value_tag tag, byte_array_view_type value) { assign(tag, value); }
+value::value(binary_value_tag tag, const unsigned char* data, size_t size) { assign(tag, data, size); }
 
 value::value(dword_value_tag tag, uint32_t value) { assign(tag, value); }
 
@@ -35,13 +35,17 @@ value::value(link_value_tag tag, string_view_type value) { assign(tag, value); }
 
 value::value(qword_value_tag tag, uint64_t value) { assign(tag, value); }
 
-value::value(value_type type, byte_array_view_type data)
-    : details::value_state{ type, { data.data(), data.data() + data.size() } }
+value::value(value_type type, const unsigned char* data, size_t size)
+    : details::value_state{ type, { data, data + size } }
 { }
 
 value_type value::type() const noexcept { return m_type; }
 
 byte_array_view_type value::data() const noexcept { return byte_array_view_type{ m_data.data(), m_data.size() }; }
+
+//const unsigned char* value::data() const noexcept { return m_data.data(); }
+
+//size_t value::size() const noexcept { return m_data.size(); }
 
 uint32_t value::to_uint32() const
 {
@@ -152,11 +156,11 @@ value& value::assign(expand_sz_value_tag, string_view_type value)
     return *this;
 }
 
-value& value::assign(binary_value_tag, byte_array_view_type value)
+value& value::assign(binary_value_tag, const unsigned char* data, size_t size)
 {
-    m_data.resize(value.size());
+    m_data.resize(size);
     m_type = value_type::binary;
-    memcpy(m_data.data(), value.data(), value.size());
+    memcpy(m_data.data(), data, size);
 
     return *this;
 }
@@ -254,6 +258,15 @@ value& value::assign(qword_value_tag, uint64_t value)
     m_data.resize(sizeof(uint64_t));
     m_type = value_type::qword;
     memcpy(m_data.data(), &value, sizeof(uint64_t));
+
+    return *this;
+}
+
+value& value::assign(value_type type, const unsigned char* data, size_t size)
+{
+    m_data.resize(size);
+    m_type = type;
+    memcpy(m_data.data(), data, size);
 
     return *this;
 }

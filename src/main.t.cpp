@@ -103,8 +103,32 @@ void prepare_stage() noexcept
 
 int main(int argc, char** argv)
 {
+    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry");
+
+    auto rv1 = read_value(p, TEXT("test1"));
+    auto rv2 = read_value(p, TEXT("test2"));
+    auto rv3 = read_value(p, TEXT("test3"));
+    auto rv4 = read_value(p, TEXT("test4"));
+    //
+    auto cvt1 = rv1.to_string();
+    auto cvt2 = rv2.to_string();
+    auto cvt3 = rv3.to_string();
+    auto cvt4 = rv4.to_strings();
+
     prepare_stage();
     ::testing::InitGoogleMock(&argc, argv);
+
+
+    value val1(sz_value_tag{},        TEXT("test"));
+    value val2(expand_sz_value_tag{}, TEXT("test"));
+    value val3(link_value_tag{},      TEXT("test"));
+    value val4(multi_sz_value_tag{},  { TEXT("test") });
+
+    write_value(p, TEXT("test1"), val1);
+    write_value(p, TEXT("test2"), val2);
+    write_value(p, TEXT("test3"), val3);
+    write_value(p, TEXT("test4"), val4);
+
 
     const auto rc = RUN_ALL_TESTS();
 

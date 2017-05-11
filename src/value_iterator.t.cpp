@@ -18,13 +18,13 @@ namespace {
 void test_iteration(const std::function<value_iterator()>& get_iterator)
 {
     std::error_code ec;
-    const std::array<uint8_t, 2> data{ 4, 2 };
+    const std::array<uint8_t, 2> bytes{ 4, 2 };
 
     std::map<string_type, value> expected_values;
     expected_values.emplace(TEXT("val_01"), value(none_value_tag{}));
     expected_values.emplace(TEXT("val_02"), value(sz_value_tag{}, TEXT("42")));
     expected_values.emplace(TEXT("val_03"), value(expand_sz_value_tag{}, TEXT("42")));
-    expected_values.emplace(TEXT("val_04"), value(binary_value_tag{}, { data .data(), data .size()}));
+    expected_values.emplace(TEXT("val_04"), value(binary_value_tag{}, bytes.data(), bytes.size()));
     expected_values.emplace(TEXT("val_05"), value(dword_value_tag{}, 42));
     expected_values.emplace(TEXT("val_06"), value(dword_big_endian_value_tag{}, 42));
     expected_values.emplace(TEXT("val_07"), value(link_value_tag{}, TEXT("42")));
