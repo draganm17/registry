@@ -76,6 +76,13 @@ namespace details {
         static const char_type* data(const char_type* str) noexcept { return str; }
     };
 
+    // Specialization of 'string_traits' for char-arrays.
+    // Supported character types are the same as for the specialization for C-strings.
+    template <typename T, size_t N>
+    struct string_traits<T[N], typename std::enable_if_t<sizeof(typename string_traits<T*>::char_type)>>
+    : public string_traits<T*>
+    { };
+
     // Specialization of 'string_traits' for std::basic_string.
     // Supported character types are the same as for the specialization for C-strings.
     template <typename CharT, typename Traits, typename Alloc>
