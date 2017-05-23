@@ -1,27 +1,31 @@
 #pragma once
 
 #include <locale>
+#include <memory>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 
 namespace registry {
 namespace details {
 
+    // ASCII encoding on Windows.
     struct system_narrow_encoding
     {
         using char_type = char;
     };
 
+    // UTF-16 encoding on Windows.
     struct system_wide_encoding
     {
         using char_type = wchar_t;
     };
 
-    struct utf8_encoding
-    {
-        using char_type = char;
-    };
+    //struct utf8_encoding
+    //{
+    //    using char_type = char;
+    //};
 
     //struct utf16_encoding
     //{
@@ -33,12 +37,25 @@ namespace details {
     //    using char_type = char32_t;
     //};
 
+    // Platform specific native encoding type.
+    // Windows encoding is UTF-16, encoded in wchar_t characters.
     using native_encoding_type = system_wide_encoding;
 
-
+    // Helper class that provides useful information about strings.
     template <typename T, typename = void>
-    struct string_traits { };
+    struct string_traits 
+    {
+        static_assert(sizeof(T) == 0, "String type not supported.");
 
+        // using char_type =             /* string character type */
+        // using default_encoding_type = /* platform-specific default encoding the string is assumed to be in */
+
+        // static size_t size(const char_type* str)           { /* returns the string length */ }
+        // static const char_type* data(const char_type* str) { /* returns the string data */ }
+    };
+
+    // Specialization of 'string_traits' for C-strings.
+    // Supported character types are 'char' and 'wchar_t'.
     template <typename T>
     struct string_traits<T*, typename std::enable_if_t<std::is_same<std::remove_cv_t<T>, char>::value     ||
                                                        std::is_same<std::remove_cv_t<T>, wchar_t>::value
@@ -59,6 +76,8 @@ namespace details {
         static const char_type* data(const char_type* str) noexcept { return str; }
     };
 
+    // Specialization of 'string_traits' for std::basic_string.
+    // Supported character types are the same as for the specialization for C-strings.
     template <typename CharT, typename Traits, typename Alloc>
     struct string_traits<std::basic_string<CharT, Traits, Alloc>,
                          typename std::enable_if_t<sizeof(typename string_traits<CharT*>::char_type)>>
@@ -70,6 +89,8 @@ namespace details {
         static const char_type* data(const std::basic_string<CharT, Traits, Alloc>& str) noexcept { return str.data(); }
     };
 
+    // Specialization of 'string_traits' for std::basic_string_view.
+    // Supported character types are the same as for the specialization for C-strings.
     template <typename CharT, typename Traits>
     struct string_traits<std::basic_string_view<CharT, Traits>,
                          typename std::enable_if_t<sizeof(typename string_traits<CharT*>::char_type)>>
@@ -81,43 +102,61 @@ namespace details {
         static const char_type* data(const std::basic_string_view<CharT, Traits>& str) noexcept { return str.data(); }
     };
 
-
+    // The base class for all string codecs.
     template <typename Encoding,
               typename EncAlloc = std::allocator<typename Encoding::char_type>,
               typename DecAlloc = std::allocator<typename native_encoding_type::char_type>
     >
-    class codec_base
+    class string_codec_base
     {
     public:
+        // The type of the encoded string.
         using encoded_string_type = std::basic_string<typename Encoding::char_type,
                                                       std::char_traits<typename Encoding::char_type>, EncAlloc>;
 
+        // The type of the decoded string.
         using decoded_string_type = std::basic_string<typename native_encoding_type::char_type,
                                                       std::char_traits<typename native_encoding_type::char_type>, DecAlloc>;
 
     protected:
-        codec_base() = default;
+        string_codec_base() = default;
 
-        codec_base(const codec_base&) = delete;
+        string_codec_base(const string_codec_base&) = delete;
 
-        codec_base& operator=(const codec_base&) = delete;
+        string_codec_base& operator=(const string_codec_base&) = delete;
 
-        ~codec_base() = default;
+        ~string_codec_base() = default;
     };
 
+    // String codec.
+    // Encodes strings from the 'native_encoding_type' to 'Encoding' and back.
     template <typename Encoding,
               typename EncAlloc = std::allocator<typename Encoding::char_type>,
               typename DecAlloc = std::allocator<typename native_encoding_type::char_type>
     >
-    class codec /* : public codec_base<system_narrow_encoding, EncAlloc, DecAlloc> */
+    class string_codec : public string_codec_base<Encoding, EncAlloc, DecAlloc>
     {
-        // TODO: ...
          static_assert(sizeof(Encoding) == 0, "Encoding not supported.");
+
+         // encoded_string_type encode(const typename native_encoding_type::char_type* first,
+         //                            const typename native_encoding_type::char_type* last,
+         //                            const std::locale& loc = std::locale(), const EncAlloc& alloc = EncAlloc())
+         // {
+         //     /* Encodes a string in 'native_encoding_type' encoding to the 'Encoding' encoding. */
+         // }
+
+         // decoded_string_type decode(const typename Encoding::char_type* first,
+         //                            const typename Encoding::char_type* last,
+         //                            const std::locale& loc = std::locale(), const EncAlloc& alloc = EncAlloc());
+         // {
+         //     /* Decodes a string from 'Encoding' encoding to the 'native_encoding_type' encoding. */
+         // }
     };
 
+    // String codec specialization for 'system_narrow_encoding'.
     template <typename EncAlloc, typename DecAlloc>
-    class codec<system_narrow_encoding, EncAlloc, DecAlloc> 
-    : public codec_base<system_narrow_encoding, EncAlloc, DecAlloc>
+    class string_codec<system_narrow_encoding, EncAlloc, DecAlloc>
+    : public string_codec_base<system_narrow_encoding, EncAlloc, DecAlloc>
     {
     public:
         encoded_string_type encode(const wchar_t* first, const wchar_t* last,
@@ -143,9 +182,10 @@ namespace details {
         }
     };
 
+    // String codec specialization for 'system_wide_encoding'.
     template <typename EncAlloc, typename DecAlloc>
-    class codec<system_wide_encoding, EncAlloc, DecAlloc> 
-    : public codec_base<system_wide_encoding, EncAlloc, DecAlloc>
+    class string_codec<system_wide_encoding, EncAlloc, DecAlloc>
+    : public string_codec_base<system_wide_encoding, EncAlloc, DecAlloc>
     {
     public:
         encoded_string_type encode(const wchar_t* first, const wchar_t* last,
