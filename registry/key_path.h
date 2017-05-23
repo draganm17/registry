@@ -5,6 +5,7 @@
 #include <iterator>
 #include <type_traits>
 
+#include <registry/details/encoding.h>
 #include <registry/details/key_path_utility.h>
 #include <registry/details/type_traits_utility.h>
 #include <registry/types.h>
@@ -138,8 +139,8 @@ namespace registry
         @param[in] name - a key name. `Source` should be explicitly convertible to `registry::string_view_type`.
         @param[in] view - a registry view.
         */
-        template <typename Source, 
-                  typename = std::enable_if_t<details::is_string_viewable_v<Source>>
+        template <typename Source,
+                  typename = std::enable_if_t<details::is_string<Source>::value>
         >
         key_path(const Source& name, view view = view::view_default);
 
@@ -364,8 +365,8 @@ namespace registry
         void swap(key_path& other) noexcept;
 
     private:
-        view         m_view = view::view_default;
-        string_type  m_name;
+        view          m_view = view::view_default;
+        std::wstring  m_name;
 
     };
 
@@ -487,11 +488,20 @@ namespace registry
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
 
-    template <typename Source, 
-              typename = std::enable_if_t<details::is_string_viewable_v<Source>>
-    >
+    template <typename Source, typename = std::enable_if_t<details::is_string<Source>::value>>
     inline key_path::key_path(const Source& name, view view) 
-    : key_path(nullptr_t{}, static_cast<string_view_type>(name), view) { }
+    //: key_path(nullptr_t{}, static_cast<string_view_type>(name), view)
+    {
+        using Traits = details::string_traits<Source>;
+        using Codec =  details::string_codec<typename Traits::default_encoding_type>;
+
+        if (std::is_same<typename Traits::char_type, wchar_t>::value) {
+            key_path(nullptr_t{}, string_view_type(Traits::data(name), Traits::size(name)), view);
+        } else {
+            auto dec_name = Codec().decode(Traits::data(name), Traits::data(name) + Traits::size(name));
+            key_path(nullptr_t{}, string_view_type(dec_name.data(), dec_name.size()), view);
+        }
+    }
 
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path& key_path::operator/=(const Source& src) { return append(src); }

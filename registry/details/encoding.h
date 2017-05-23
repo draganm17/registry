@@ -45,7 +45,7 @@ namespace details {
     template <typename T, typename = void>
     struct string_traits 
     {
-        static_assert(sizeof(T) == 0, "String type not supported.");
+        //static_assert(sizeof(T) == 0, "String type not supported.");
 
         // using char_type =             /* string character type */
         // using default_encoding_type = /* platform-specific default encoding the string is assumed to be in */
@@ -76,12 +76,17 @@ namespace details {
         static const char_type* data(const char_type* str) noexcept { return str; }
     };
 
-    // Specialization of 'string_traits' for char-arrays.
+    // Specialization of 'string_traits' for null-terminated char-arrays.
     // Supported character types are the same as for the specialization for C-strings.
     template <typename T, size_t N>
     struct string_traits<T[N], typename std::enable_if_t<sizeof(typename string_traits<T*>::char_type)>>
-    : public string_traits<T*>
-    { };
+    {
+        using char_type = typename string_traits<T*>::char_type;
+        using default_encoding_type = typename string_traits<T*>::default_encoding_type;
+
+        static size_t size(const char_type str[N]) noexcept           { return N - 1; }
+        static const char_type* data(const char_type str[N]) noexcept { return str; }
+    };
 
     // Specialization of 'string_traits' for std::basic_string.
     // Supported character types are the same as for the specialization for C-strings.
@@ -108,6 +113,12 @@ namespace details {
         static size_t size(const std::basic_string_view<CharT, Traits>& str) noexcept           { return str.size(); }
         static const char_type* data(const std::basic_string_view<CharT, Traits>& str) noexcept { return str.data(); }
     };
+
+    template <typename T, typename = void> 
+    struct is_string : std::false_type { };
+
+    template <typename T> 
+    struct is_string<T, typename std::enable_if_t<sizeof(typename string_traits<T>::char_type)>> : std::true_type { };
 
     // The base class for all string codecs.
     template <typename Encoding,
@@ -143,7 +154,7 @@ namespace details {
     >
     class string_codec : public string_codec_base<Encoding, EncAlloc, DecAlloc>
     {
-         static_assert(sizeof(Encoding) == 0, "Encoding not supported.");
+         //static_assert(sizeof(Encoding) == 0, "Encoding not supported.");
 
          // encoded_string_type encode(const typename native_encoding_type::char_type* first,
          //                            const typename native_encoding_type::char_type* last,
