@@ -5,7 +5,8 @@
 #include <iterator>
 #include <type_traits>
 
-#include <registry/details/encoding.h>
+#include <registry/details/string_codec.h>
+#include <registry/details/string_traits.h>
 #include <registry/details/key_path_utility.h>
 #include <registry/details/type_traits_utility.h>
 #include <registry/types.h>
@@ -73,15 +74,9 @@ namespace registry
 
         key_path& do_append(const key_path& src);
 
-        key_path& do_append(string_view_type src);
-
         key_path& do_concat(const key_path& src);
 
-        key_path& do_concat(string_view_type src);
-
         key_path& do_replace_leaf_path(const key_path& src);
-
-        key_path& do_replace_leaf_path(string_view_type src);
 
     public:
         //! Constructs a path that identifies an predefined registry key.
@@ -140,7 +135,7 @@ namespace registry
         @param[in] view - a registry view.
         */
         template <typename Source,
-                  typename = std::enable_if_t<details::is_string<Source>::value>
+                  typename = std::enable_if_t<details::has_default_encoding<Source>::value>
         >
         key_path(const Source& name, view view = view::view_default);
 
@@ -295,8 +290,10 @@ namespace registry
 
         @return `*this`.
         */
-        // TODO: replace 'string_view_type' by template ???
-        key_path& assign(string_view_type name, view view = view::view_default);
+        template <typename Source,
+                  typename = std::enable_if_t<details::has_default_encoding<Source>::value>
+        >
+        key_path& assign(const Source& name, view view = view::view_default);
 
         //! Appends elements to the path with a key separator.
         /*!
@@ -488,19 +485,16 @@ namespace registry
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
 
-    template <typename Source, typename = std::enable_if_t<details::is_string<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::has_default_encoding<Source>::value>>
     inline key_path::key_path(const Source& name, view view) 
     //: key_path(nullptr_t{}, static_cast<string_view_type>(name), view)
     {
         using Traits = details::string_traits<Source>;
-        using Codec =  details::string_codec<typename Traits::default_encoding_type>;
+        auto dec_name = details::default_codec<Source>::type().decode(Traits::data(name), 
+                                                                      Traits::data(name) + Traits::size(name));
+        key_path(nullptr_t{}, dec_name, view);
 
-        if (std::is_same<typename Traits::char_type, wchar_t>::value) {
-            key_path(nullptr_t{}, string_view_type(Traits::data(name), Traits::size(name)), view);
-        } else {
-            auto dec_name = Codec().decode(Traits::data(name), Traits::data(name) + Traits::size(name));
-            key_path(nullptr_t{}, string_view_type(dec_name.data(), dec_name.size()), view);
-        }
+        // TODO: optimization for the case when the string is already in the native encoding.
     }
 
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
@@ -509,32 +503,33 @@ namespace registry
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path& key_path::operator+=(const Source& src) { return concat(src); }
 
+    template <typename Source, typename = std::enable_if_t<details::has_default_encoding<Source>::value>>
+    key_path& assign(const Source& name, view view)
+    {
+        // TODO: ...
+        return *this;
+    }
+
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path& key_path::append(const Source& src)
     {
-        using T = std::conditional_t<details::is_path_v<Source>, const key_path&,
-                  std::conditional_t<details::is_string_viewable_v<Source>, string_view_type, key_path>>;
-
-        return do_append(static_cast<T>(src));
+        return do_append(key_path(src));
+        // TODO: optimization : avoid to construct a new path
     }
 
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path& key_path::concat(const Source& src)
     {
-        using T = std::conditional_t<details::is_path_v<Source>, const key_path&,
-                  std::conditional_t<details::is_string_viewable_v<Source>, string_view_type, key_path>>;
-        
-        return do_concat(static_cast<T>(src));
+        return do_concat(key_path(src));
+        // TODO: optimization : avoid to construct a new path
     }
 
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path& key_path::replace_leaf_path(const Source& src)
     {
-        using T = std::conditional_t<details::is_path_v<Source>, const key_path&,
-                  std::conditional_t<details::is_string_viewable_v<Source>, string_view_type, key_path>>;
-
         assert(has_leaf_path());
-        return do_replace_leaf_path(static_cast<T>(src));
+        return do_replace_leaf_path(key_path(src));
+        // TODO: optimization : avoid to construct a new path
     }
 
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>

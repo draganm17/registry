@@ -21,51 +21,32 @@ key_path::key_path(nullptr_t, string_view_type name, view view)
 
 key_path& key_path::do_append(const key_path& src)
 {
-    do_append(static_cast<string_view_type>(src.key_name()));
-    if (src.m_view != view::view_default) m_view = src.m_view;
-    return *this;
-}
-
-key_path& key_path::do_append(string_view_type src)
-{
-    m_name.reserve(m_name.size() + src.size() + (!m_name.empty() && !src.empty() ? 1 : 0));
-    for (auto it = details::key_name_iterator::begin(src); it != details::key_name_iterator::end(src); ++it)
+    m_name.reserve(m_name.size() + src.m_name.size() + (!m_name.empty() && !src.m_name.empty() ? 1 : 0));
+    for (auto it = details::key_name_iterator::begin(src.m_name); it != details::key_name_iterator::end(src.m_name); ++it)
     {
         if (!m_name.empty()) m_name.push_back(key_path::separator);
         m_name.append(it->data(), it->size());
     }
+    if (src.m_view != view::view_default) m_view = src.m_view;
     return *this;
 }
 
 key_path& key_path::do_concat(const key_path& src)
 {
-    do_concat(static_cast<string_view_type>(src.key_name()));
-    if (src.m_view != view::view_default) m_view = src.m_view;
-    return *this;
-}
-
-key_path& key_path::do_concat(string_view_type src)
-{
-    m_name.reserve(m_name.size() + src.size());
-    for (auto it = details::key_name_iterator::begin(src); it != details::key_name_iterator::end(src); ++it)
+    m_name.reserve(m_name.size() + src.m_name.size());
+    for (auto it = details::key_name_iterator::begin(src.m_name); it != details::key_name_iterator::end(src.m_name); ++it)
     {
         m_name.append(it->data(), it->size());
         m_name.push_back(key_path::separator);
     }
     if (!m_name.empty() && m_name.back() == key_path::separator) m_name.pop_back();
+    if (src.m_view != view::view_default) m_view = src.m_view;
     return *this;
 }
 
 key_path& key_path::do_replace_leaf_path(const key_path& src)
 {
-    do_replace_leaf_path(static_cast<string_view_type>(src.key_name()));
-    if (src.m_view != view::view_default) m_view = src.m_view;
-    return *this;
-}
-
-key_path& key_path::do_replace_leaf_path(string_view_type src)
-{
-    return remove_leaf_path().append(src);
+    return remove_leaf_path().do_append(src);
 }
 
 key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_string(id)); }
@@ -170,13 +151,6 @@ key_path::iterator key_path::end() const noexcept
 key_path& key_path::assign(view view)
 {
     m_name.clear();
-    m_view = view;
-    return *this;
-}
-
-key_path& key_path::assign(string_view_type name, view view)
-{
-    m_name.assign(name.data(), name.size());
     m_view = view;
     return *this;
 }
