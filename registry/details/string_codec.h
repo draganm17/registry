@@ -45,8 +45,8 @@ namespace details {
     // Windows encoding is UTF-16, encoded in wchar_t characters.
     using native_encoding_type = system_wide_encoding;
 
-    // A trait that queries the default (presumed) encoding type for a given string or characted type.
-    // The default encoding type depends on the type of the character deduced from 'T' and is platform-specific.
+    // Deduces the encoding type for 'T', which is a string or characted type.
+    // The encoding type depends on the type of the character deduced from 'T' and is platform-specific.
     // For Windows character types are mapped to encoding types as follows:
     // - 'char'    : 'system_narrow_encoding';
     // - 'wchar_t' : 'system_wide_encoding';
@@ -54,21 +54,40 @@ namespace details {
     // - if 'is_character<T>::value == true', then 'C' is deduced as 'std::remove_cv_t<T>';
     // - if 'is_string<T>::value == true', then 'C' is deduced as 'string_traits<T>::char_type'.
     // Otherwise the expression is ill-formed.
-    template <typename T, typename = void> struct default_encoding;
+    template <typename T, typename = void> struct deduce_encoding;
  // {
-        // using type = /* default encoding type for 'T' */
+        // using type = /* deduced encoding type for 'T' */
  // };
 
-    // A traits that queries the default codec for 'T'.
-    // The default codec type is deduced as 'string_codec<default_encoding<T>::type>'.
-    template <typename T> struct default_codec;
+    // TODO: remove ???
+    // Deduces the codec type for 'T', which is a string or characted type.
+    // The codec type is deduced as 'string_codec<deduce_encoding<T>::type>'.
+    //template <typename T> struct deduce_codec;
  // {
-        // using type = /* default codec for 'T' */
+        // using type = /* deduced codec type for 'T' */
  // };
+
+    // Checks if 'T', which is a string (or characted type ???) encoded in 'native_encoding_type',
+    // be encoded to the 'Encoding' type.
+    // Derrives from 'std::true_type' if any of the following conditions is true:
+    // ...
+    // ...
+    // TODO: ...
+    template <typename T, typename Encoding, typename = void> struct is_encodable;
+
+    // Checks if 'T', which is a string (or characted type ???) encoded in 'Encoding',
+    // be decoded to the 'native_encoding_type' type.
+    // ...
+    // TODO: ...
+    template <typename T, typename Encoding = deduce_encoding_t<T>, typename = void> struct is_decodable;
+
+    // Helper types
+    template<typename T> using deduce_encoding_t = typename deduce_encoding<T>::type;
+    //template<typename T> using deduce_codec_t    = typename deduce_codec<T>::type; // TODO: remove ???
 
     // A traits that queries if 'T' has an default encoding type,
     // i.e. if the expression 'default_encoding<T>::type' is valid.
-    template <typename T, typename = void> struct has_default_encoding;
+    //template <typename T, typename = void> struct has_default_encoding;
 
     // The base class for all string codecs.
     template <typename Encoding,
@@ -78,6 +97,12 @@ namespace details {
     class string_codec_base
     {
     public:
+        using encoding_type = Encoding;
+
+        using encoding_allocator_type = EncAlloc;
+
+        using decoding_allocator_type = DecAlloc;
+
         // The type of the encoded string.
         using encoded_string_type = std::basic_string<typename Encoding::char_type,
                                                       std::char_traits<typename Encoding::char_type>, EncAlloc>;
@@ -128,10 +153,11 @@ namespace details {
     template< class... >
     using void_t = void;
 
-    template <typename T, typename = void> struct default_encoding { };
+    template <typename T, typename = void> struct deduce_encoding { };
 
     template <typename T>
-    struct default_encoding<T, std::enable_if_t<is_character<T>::value>>
+    struct deduce_encoding<T, std::enable_if_t<std::is_same<std::remove_cv_t<T>, char>::value ||
+                                               std::is_same<std::remove_cv_t<T>, wchar_t>::value>>
     {
     private:
         static auto get(char)     -> system_narrow_encoding;
@@ -144,21 +170,50 @@ namespace details {
     };
 
     template <typename T>
-    struct default_encoding<T, std::enable_if_t<is_string<T>::value>>
+    struct deduce_encoding<T, void_t<std::enable_if_t<is_string<T>::value>,
+                                     deduce_encoding_t<typename string_traits<T>::char_type>>>
     {
-        using type = typename default_encoding<typename string_traits<T>::char_type>::type;
+        using type = deduce_encoding_t<typename string_traits<T>::char_type>;
+    };
+    
+    //template <typename T> struct deduce_codec
+    //{
+    //    using type = string_codec<deduce_encoding_t<T>>;
+    //};
+
+    template <typename T, typename Encoding, typename = void>
+    struct is_encodable : std::false_type { };
+
+    template <typename T, typename Encoding>
+    struct is_encodable<T, Encoding, void_t<typename string_codec<Encoding>::encoding_type>> : std::true_type
+    {
+        static_assert (is_string<T>::value, "T must be a string.");
+        static_assert (std::is_same<typename string_traits<T>::char_type, 
+                                    typename native_encoding_type::char_type>::value,
+                       "T character type and native_encoding_type character type must be the same.");
     };
 
-    template <typename T> struct default_codec
+    template <typename T, typename Encoding = deduce_encoding_t<T>, typename = void>
+    struct is_decodable : std::false_type
     {
-        using type = string_codec<typename default_encoding<T>::type>;
+        static_assert (is_string<T>::value, "T must be a string.");
+        static_assert (std::is_same<typename string_traits<T>::char_type, typename Encoding::char_type>::value, 
+                       "T character type and Encoding character type must be the same.");
     };
 
-    template <typename T, typename = void>
-    struct has_default_encoding : std::false_type { };
+    template <typename T, typename Encoding>
+    struct is_decodable<T, Encoding, void_t<typename string_codec<Encoding>::encoding_type>> : std::true_type
+    {
+        static_assert (is_string<T>::value, "T must be a string.");
+        static_assert (std::is_same<typename string_traits<T>::char_type, typename Encoding::char_type>::value, 
+                       "T character type and Encoding character type must be the same.");
+    };
 
-    template <typename T>
-    struct has_default_encoding<T, void_t<typename default_encoding<T>::type>> : std::true_type { };
+    //template <typename T, typename = void>
+    //struct has_default_encoding : std::false_type { };
+
+    //template <typename T>
+    //struct has_default_encoding<T, void_t<typename default_encoding<T>::type>> : std::true_type { };
 
     template<typename CharT, typename OutStr, typename Codecvt, typename State, typename Fn>
     bool do_str_codecvt(const CharT* first, const CharT* last, OutStr& out,
@@ -266,5 +321,5 @@ namespace details {
             return out;
         }
     };
-
+    
 }} // namespace registry::details

@@ -1,7 +1,9 @@
 #pragma once
 
 #include <iterator>
+#include <type_traits>
 
+#include <registry/details/string_traits.h>
 #include <registry/types.h>
 
 
@@ -21,22 +23,44 @@ namespace details {
         using iterator_category = std::bidirectional_iterator_tag;
 
     public:
-        // NOTE: 'name' may not be null-terminated
-        static key_name_iterator begin(string_view_type name) noexcept
+        // TODO: remove ???
+        template <typename Source, 
+                  typename = std::enable_if_t<std::is_same<string_traits<Source>::char_type, wchar_t>::value>
+        >
+        static key_name_iterator begin(const Source& name) noexcept
         {
             key_name_iterator it;
-            it.m_key_name = name;
-            it.m_element = string_view_type(name.data(), 0);
+            it.m_key_name = string_view_type(string_traits<Source>::data(name), string_traits<Source>::size(name));
+            it.m_element  = string_view_type(string_traits<Source>::data(name), 0);
             return ++it;
         }
 
-        // NOTE: 'name' may not be null-terminated
-        static key_name_iterator end(string_view_type name) noexcept
+        // TODO: remove ???
+        template <typename Source, 
+                  typename = std::enable_if_t<std::is_same<string_traits<Source>::char_type, wchar_t>::value>
+        >
+        static key_name_iterator end(const Source& name) noexcept
         {
             key_name_iterator it;
-            it.m_key_name = name;
-            it.m_element = string_view_type(name.data() + name.size(), 0);
+            it.m_key_name = string_view_type(string_traits<Source>::data(name), string_traits<Source>::size(name));
+            it.m_element =  string_view_type(string_traits<Source>::data(name) + string_traits<Source>::size(name), 0);
             return it;
+        }
+
+        static key_name_iterator begin(const wchar_t* first, const wchar_t* last) noexcept
+        {
+            key_name_iterator it;
+            it.m_key_name = string_view_type(first, last - first);
+            it.m_element  = string_view_type(first, 0);
+            return ++it;
+        }
+
+        static key_name_iterator end(const wchar_t* first, const wchar_t* last) noexcept
+        {
+            key_name_iterator it;
+            it.m_key_name = string_view_type(first, last - first);
+            it.m_element  = string_view_type(last, 0);
+            return ++it;
         }
 
     public:

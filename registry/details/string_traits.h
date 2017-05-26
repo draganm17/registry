@@ -106,6 +106,8 @@ namespace details {
     template <typename T, typename = void>
     struct string_traits 
     {
+        // TODO: rename char_type to value_type ???
+
         // using char_type = /* string character type */
 
         // static size_t size(const T&)           { /* returns the string length */ }
@@ -126,7 +128,7 @@ namespace details {
     {
         using char_type = std::remove_cv_t<std::remove_extent_t<T>>;
 
-        static size_t size(const T& str) noexcept           { return N - 1; }
+        static size_t size(const T& str) noexcept           { return sizeof(T) / sizeof(std::remove_extent_t<T>) - 1; }
         static const char_type* data(const T& str) noexcept { return str; }
     };
 

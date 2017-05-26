@@ -13,40 +13,46 @@ namespace registry {
 //                                 class key_path                                     //
 //------------------------------------------------------------------------------------//
 
-key_path::key_path(nullptr_t, string_view_type name, view view)
+key_path::key_path(const string_type::value_type* first, const string_type::value_type* last, view view)
     : m_view(view)
 {
-    do_append(name);
+    do_append(first, last);
 }
 
-key_path& key_path::do_append(const key_path& src)
+key_path& key_path::do_append(const string_type::value_type* first, const string_type::value_type* last, view view)
 {
-    m_name.reserve(m_name.size() + src.m_name.size() + (!m_name.empty() && !src.m_name.empty() ? 1 : 0));
-    for (auto it = details::key_name_iterator::begin(src.m_name); it != details::key_name_iterator::end(src.m_name); ++it)
+    const size_t input_size = last - first;
+    m_name.reserve(m_name.size() + input_size + (!m_name.empty() && input_size ? 1 : 0));
+
+    for (auto it =  details::key_name_iterator::begin(first, last);
+              it != details::key_name_iterator::end  (first, last); ++it)
     {
         if (!m_name.empty()) m_name.push_back(key_path::separator);
         m_name.append(it->data(), it->size());
     }
-    if (src.m_view != view::view_default) m_view = src.m_view;
+    if (view != view::view_default) m_view = view;
     return *this;
 }
 
-key_path& key_path::do_concat(const key_path& src)
+key_path& key_path::do_concat(const string_type::value_type* first, const string_type::value_type* last, view view)
 {
-    m_name.reserve(m_name.size() + src.m_name.size());
-    for (auto it = details::key_name_iterator::begin(src.m_name); it != details::key_name_iterator::end(src.m_name); ++it)
+    const size_t input_size = last - first;
+    m_name.reserve(m_name.size() + input_size);
+    for (auto it =  details::key_name_iterator::begin(first, last);
+              it != details::key_name_iterator::end  (first, last); ++it)
     {
         m_name.append(it->data(), it->size());
         m_name.push_back(key_path::separator);
     }
     if (!m_name.empty() && m_name.back() == key_path::separator) m_name.pop_back();
-    if (src.m_view != view::view_default) m_view = src.m_view;
+    if (view != view::view_default) m_view = view;
     return *this;
 }
 
-key_path& key_path::do_replace_leaf_path(const key_path& src)
+key_path& key_path::do_replace_leaf_path(const string_type::value_type* first, 
+                                         const string_type::value_type* last, view view)
 {
-    return remove_leaf_path().do_append(src);
+    return remove_leaf_path().do_append(first, last, view);
 }
 
 key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_string(id)); }

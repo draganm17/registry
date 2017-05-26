@@ -70,13 +70,17 @@ namespace registry
         static constexpr string_type::value_type separator = string_type::value_type('\\');
 
     private:
-        key_path(nullptr_t, string_view_type name, view view);
+        key_path(const string_type::value_type* first, 
+                 const string_type::value_type* last, view view = view::view_default);
 
-        key_path& do_append(const key_path& src);
+        key_path& do_append(const string_type::value_type* first,
+                            const string_type::value_type* last,  view view = view::view_default);
 
-        key_path& do_concat(const key_path& src);
+        key_path& do_concat(const string_type::value_type*,
+                            const string_type::value_type* last, view view = view::view_default);
 
-        key_path& do_replace_leaf_path(const key_path& src);
+        key_path& do_replace_leaf_path(const string_type::value_type*,
+                                       const string_type::value_type* last, view view = view::view_default);
 
     public:
         //! Constructs a path that identifies an predefined registry key.
@@ -135,7 +139,7 @@ namespace registry
         @param[in] view - a registry view.
         */
         template <typename Source,
-                  typename = std::enable_if_t<details::has_default_encoding<Source>::value>
+                  typename = std::enable_if_t<details::is_decodable<Source>::value>
         >
         key_path(const Source& name, view view = view::view_default);
 
@@ -291,7 +295,7 @@ namespace registry
         @return `*this`.
         */
         template <typename Source,
-                  typename = std::enable_if_t<details::has_default_encoding<Source>::value>
+                  typename = std::enable_if_t<details::is_decodable<Source>::value>
         >
         key_path& assign(const Source& name, view view = view::view_default);
 
@@ -362,8 +366,8 @@ namespace registry
         void swap(key_path& other) noexcept;
 
     private:
-        view          m_view = view::view_default;
-        std::wstring  m_name;
+        view         m_view = view::view_default;
+        string_type  m_name;
 
     };
 
@@ -485,14 +489,13 @@ namespace registry
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
 
-    template <typename Source, typename = std::enable_if_t<details::has_default_encoding<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::is_decodable<Source>::value>>
     inline key_path::key_path(const Source& name, view view) 
-    //: key_path(nullptr_t{}, static_cast<string_view_type>(name), view)
     {
         using Traits = details::string_traits<Source>;
-        auto dec_name = details::default_codec<Source>::type().decode(Traits::data(name), 
-                                                                      Traits::data(name) + Traits::size(name));
-        key_path(nullptr_t{}, dec_name, view);
+        auto dec_name = details::deduce_codec_t<Source>().decode(Traits::data(name),
+                                                                 Traits::data(name) + Traits::size(name));
+        key_path(dec_name.data(), dec_name.data() + dec_name.size(), view);
 
         // TODO: optimization for the case when the string is already in the native encoding.
     }
@@ -503,7 +506,7 @@ namespace registry
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path& key_path::operator+=(const Source& src) { return concat(src); }
 
-    template <typename Source, typename = std::enable_if_t<details::has_default_encoding<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::is_decodable<Source>::value>>
     key_path& assign(const Source& name, view view)
     {
         // TODO: ...
@@ -513,14 +516,16 @@ namespace registry
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path& key_path::append(const Source& src)
     {
-        return do_append(key_path(src));
+        const key_path p(src);
+        return do_append(p.key_name().data(), p.key_name().data() + p.key_name().size(), p.key_view());
         // TODO: optimization : avoid to construct a new path
     }
 
     template <typename Source, typename = std::enable_if_t<details::is_pathable_v<Source>>>
     inline key_path& key_path::concat(const Source& src)
     {
-        return do_concat(key_path(src));
+        const key_path p(src);
+        return do_concat(p.key_name().data(), p.key_name().data() + p.key_name().size(), p.key_view());
         // TODO: optimization : avoid to construct a new path
     }
 
@@ -528,7 +533,8 @@ namespace registry
     inline key_path& key_path::replace_leaf_path(const Source& src)
     {
         assert(has_leaf_path());
-        return do_replace_leaf_path(key_path(src));
+        const key_path p(src);
+        return do_replace_leaf_path(p.key_name().data(), p.key_name().data() + p.key_name().size(), p.key_view());
         // TODO: optimization : avoid to construct a new path
     }
 
