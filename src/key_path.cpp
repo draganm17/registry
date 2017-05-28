@@ -13,10 +13,18 @@ namespace registry {
 //                                 class key_path                                     //
 //------------------------------------------------------------------------------------//
 
-key_path::key_path(const string_type::value_type* first, const string_type::value_type* last, view view)
+key_path::key_path(details::encoding::native_encoding_type,
+                   const string_type::value_type* first, const string_type::value_type* last, view view)
     : m_view(view)
 {
-    do_append(first, last);
+    do_append(first, last, view);
+}
+
+key_path& key_path::do_assign(const string_type::value_type* first, const string_type::value_type* last, view view)
+{
+    m_view = view;
+    m_name.clear();
+    return do_append(first, last, view);
 }
 
 key_path& key_path::do_append(const string_type::value_type* first, const string_type::value_type* last, view view)
@@ -92,8 +100,8 @@ key_path key_path::parent_path() const
     auto it = details::key_name_iterator::end(m_name);
     const auto first = details::key_name_iterator::begin(m_name);
 
-    if (it == first || --it == first) return key_path(m_view);
-    return key_path(string_view_type(first->data(), it->data() - first->data() - 1), m_view);
+    return (it == first || --it == first) 
+    ? key_path(m_view) : key_path(details::encoding::native_encoding_type{}, first->data(), it->data(), m_view);
 }
 
 key_path key_path::relative_path() const

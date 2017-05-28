@@ -25,29 +25,31 @@ namespace details {
     public:
         // TODO: remove ???
         template <typename Source, 
-                  typename = std::enable_if_t<std::is_same<string_traits<Source>::char_type, wchar_t>::value>
+                  typename = std::enable_if_t<encoding::is_deducible_to<Source, encoding::native_encoding_type>::value>
         >
         static key_name_iterator begin(const Source& name) noexcept
         {
             key_name_iterator it;
-            it.m_key_name = string_view_type(string_traits<Source>::data(name), string_traits<Source>::size(name));
-            it.m_element  = string_view_type(string_traits<Source>::data(name), 0);
+            using ST = encoding::string_traits<Source>;
+            it.m_key_name = string_view_type(ST::data(name), ST::size(name));
+            it.m_element  = string_view_type(ST::data(name), 0);
             return ++it;
         }
 
         // TODO: remove ???
         template <typename Source, 
-                  typename = std::enable_if_t<std::is_same<string_traits<Source>::char_type, wchar_t>::value>
+                  typename = std::enable_if_t<encoding::is_deducible_to<Source, encoding::native_encoding_type>::value>
         >
         static key_name_iterator end(const Source& name) noexcept
         {
             key_name_iterator it;
-            it.m_key_name = string_view_type(string_traits<Source>::data(name), string_traits<Source>::size(name));
-            it.m_element =  string_view_type(string_traits<Source>::data(name) + string_traits<Source>::size(name), 0);
+            using ST = encoding::string_traits<Source>;
+            it.m_key_name = string_view_type(ST::data(name), ST::size(name));
+            it.m_element =  string_view_type(ST::data(name) + ST::size(name), 0);
             return it;
         }
 
-        static key_name_iterator begin(const wchar_t* first, const wchar_t* last) noexcept
+        static key_name_iterator begin(const string_type::value_type* first, const string_type::value_type* last) noexcept
         {
             key_name_iterator it;
             it.m_key_name = string_view_type(first, last - first);
@@ -55,7 +57,7 @@ namespace details {
             return ++it;
         }
 
-        static key_name_iterator end(const wchar_t* first, const wchar_t* last) noexcept
+        static key_name_iterator end(const string_type::value_type* first, const string_type::value_type* last) noexcept
         {
             key_name_iterator it;
             it.m_key_name = string_view_type(first, last - first);
