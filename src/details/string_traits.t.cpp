@@ -7,8 +7,7 @@
 
 #include <registry/details/string_traits.h>
 
-using namespace registry;
-using namespace registry::details;
+using namespace registry::details::encoding;
 
 namespace {
 
@@ -184,12 +183,12 @@ namespace {
                std::is_same<string_traits<                std::basic_string_view<const          CharT> >::char_type, CharT>::value &&
                std::is_same<string_traits<                std::basic_string_view<      volatile CharT> >::char_type, CharT>::value &&
                std::is_same<string_traits<                std::basic_string_view<const volatile CharT> >::char_type, CharT>::value;
-         
     }
-}
+
+} // anonymous namespace
 
 
-TEST(Details, IsCharacter)
+TEST(Encoding, IsCharacter)
 {
     EXPECT_TRUE(test_is_character<char>());
     EXPECT_TRUE(test_is_character<signed char>());
@@ -200,7 +199,7 @@ TEST(Details, IsCharacter)
     EXPECT_FALSE(test_is_character<int>());
 }
 
-TEST(Details, IsString)
+TEST(Encoding, IsString)
 {
     // character pointer
     {
@@ -247,7 +246,7 @@ TEST(Details, IsString)
     }
 }
 
-TEST(Details_StringTraits, All)
+TEST(Encoding, StringTraits)
 {
     // character pointer specialization
     {
