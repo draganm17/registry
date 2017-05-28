@@ -140,7 +140,9 @@ namespace encoding {
 
     // String codec.
     // Converts strings from 'native_encoding_type' to 'Encoding' and back.
+    //
     // Enabled specializations should derrive from 'codec_base' and provide members as shown below.
+    //
     // NOTE: This class should have an enabled specialization for each
     //       type 'T' for which 'is_encoding<T>' specialization is enabled.
     template <typename Encoding,
