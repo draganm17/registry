@@ -35,13 +35,22 @@ namespace encoding {
 
     // Checks whether 'T' is an encoding type.
     // Can be used as a customization point.
+    //
     // Enabled specializations should derrive from 'std::true_type'.
     // Specializations are already enabled for 'narrow_encoding' and 'wide_encoding'.
-    // NOTE: TODO: ...
+    //
+    // NOTE: for each enabled specialization of 'is_encoding<T>' an specialization of 'codec<T>' should be provided.
     template <typename T, typename Enable = void>
     struct is_encoding : std::false_type { };
 
-    // TODO: ...
+    // The default policy used to deduce the encoding from a given character type.
+    //
+    // On Windows the deduction rules are the follow:
+    // - 'char'    -> 'narrow_encoding';
+    // - 'wchar_t' -> 'wide_encoding';
+    //
+    // NOTE: Users can provide their own deduction policies. Each policy
+    //       should provide a template member typedef 'encoding_type' as shown below.
     struct default_deduction_policy;
  // {
         // template<typename CharT>
@@ -50,10 +59,11 @@ namespace encoding {
 
     // Checks whether an encoding type can be deduced for 'T', which
     // is a string or a character type, using the 'DP' deduction policy.
+    //
     // Derrives from 'std::true_type' if all of the following conditions are true:
-    // - 'T' is a string or a character type,
+    // - 'T' is a string or a character type.
     //   i.e. 'is_string<T>::value || is_character<T>::value' is true;
-    // - 'DP' is an deduction policy that produces an valid encoding type,
+    // - 'DP' is an deduction policy that produces an valid encoding type.
     //   i.e. 'is_encoding<typename DP::template encoding_type<character_type_t<T>>>::value' is true.
     // Otherwise, derrives from 'std::false type'.
     template <typename T,
@@ -64,10 +74,13 @@ namespace encoding {
 
     // Checks whether an encoding type deduced for 'T' (if any) using
     // the 'DP' deduction policy is the same as 'E', which in encoding type.
+    //
     // Derrives from 'std::true_type' if all of the following conditions are true:
-    // - 'DP' is able to deduce an encoding type fro 'T', i.e. 'is_deducible<T, DP>::value' is true;
-    // - 'E' is an encoding type, i.e. 'is_encoding<E>::value' is true;
-    // - The encoding type deduced by 'DP' is equal to 'E', 
+    // - 'DP' is able to deduce an encoding type fro 'T'.
+    //   i.e. 'is_deducible<T, DP>::value' is true;
+    // - 'E' is an encoding type.
+    //   i.e. 'is_encoding<E>::value' is true;
+    // - The encoding type deduced by 'DP' is equal to 'E'.
     //   i.e. 'std::is_same<typename DP::template encoding_type<character_type_t<T>>, E>::value' is true.
     // Otherwise, derrives from 'std::false type'.
     template <typename T,
@@ -77,19 +90,8 @@ namespace encoding {
     >
     struct is_deducible_to : std::false_type { };
 
-    // Deduces the encoding type for 'T', which is a string or characted type.
-    // The encoding type depends on the type of the character deduced from 'T' and is platform-specific.
-    // For Windows character types are mapped to encoding types as follows:
-    // - 'char'    : 'narrow_encoding';
-    // - 'wchar_t' : 'wide_encoding';
-    // The character type 'C' is deduced from 'T' as follows:
-    // - if 'is_character<T>::value == true', then 'C' is deduced as 'std::remove_cv_t<T>';
-    // - if 'is_string<T>::value == true', then 'C' is deduced as 'string_traits<T>::char_type'.
-    // Otherwise the expression is ill-formed.
-    
-    // Deduces the encoding type for 'T', which is a string or characted type.
-    // - ...
-    // TODO: ...
+    // Deduces the encoding type for 'T', which is a
+    // string or characted type, using the 'DP' deduction policy.
     template <typename T,
               typename DP = default_deduction_policy
     >
@@ -99,7 +101,9 @@ namespace encoding {
     };
 
     // Helper type
-    template<typename T, typename DP = default_deduction_policy>
+    template<typename T, 
+             typename DP = default_deduction_policy
+    >
     using deduce_t = typename deduce<T>::type;
 
     // The base class for all enabled specializations of 'codec'.

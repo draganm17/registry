@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#if _HAS_CXX17
 #include <string_view>
+#endif
 #include <type_traits>
 
 
@@ -15,6 +17,7 @@ namespace encoding {
 
     // Checks whether 'T' is a character type.
     // Can be used as a customization point.
+    //
     // Enabled specializations should derrive from 'std::true_type'.
     // Specializations are already enabled for cv-qualified variants of those types:
     // 'char', 'signed char', 'unsigned char', 'wchar_t', 'char16_t' and 'char32_t'.
@@ -23,17 +26,24 @@ namespace encoding {
 
     // Checks whether 'T' is a string type.
     // Can be used as a customization point.
+    //
     // Enabled specializations should derrive from 'std::true_type'.
     // Specializations are already enabled for:
-    // - Character pointers (i.e. 'T' is a pointer to 'C', and 'is_character<C>::value == true');
-    // - Character arrays (i.e. 'T' is an array of 'C', and 'is_character<C>::value == true');
-    // - Standart strings (i.e. 'std::remove_cv_t<T>' is an 'std::basic_string<C, T, A>', and 'is_character<C>::value == true');
-    // - Standart string views (i.e. 'std::remove_cv_t<T>' is an 'std::basic_string_view<C, T>', and 'is_character<C>::value == true').
+    // - Character pointers.
+    //   i.e. 'T' is a pointer to 'C', and 'is_character<C>::value' is true;
+    // - Character arrays.
+    //   i.e. 'T' is an array of 'C', and 'is_character<C>::value' is true;
+    // - Standart strings, which character types are supported.
+    //   i.e. 'T' is an (possibly cv-qualified) 'std::basic_string<C, T, A>', and 'is_character<C>::value' is true;
+    // - Standart string views, which character types are supported. (Only if C++17 is supported).
+    //   i.e. 'T' is an (possibly cv-qualified) 'std::basic_string_view<C, T>', and 'is_character<C>::value' is true.
+    //
     // NOTE: for each enabled specialization of 'is_string<T>' an specialization of 'string_traits<T>' should be provided.
     template <typename T, typename Enable = void>
     struct is_string : std::false_type { };
 
     // Determines the character type of 'T', which is a string or character type.
+    //
     // If 'is_character<T>::value' is true, the member typedef 'type' is 'std::remove_cv_t<T>'.
     // Otherwise, if 'is_string<T>::value' is true, the member typedef 'type' is 'string_traits<T>::char_type'.
     // Otherwise, the expression 'character_type<T>::type' is ill-formed.
@@ -48,7 +58,9 @@ namespace encoding {
     using character_type_t = typename character_type<T>::type;
 
     // A useful traits for strings.
+    //
     // Enabled specializations should provide members as shown below.
+    //
     // NOTE: This class should have an enabled specialization for each
     //       type 'T' for which 'is_string<T>' specialization is enabled.
     template <typename T, typename Enable = void>
@@ -74,14 +86,11 @@ namespace encoding {
                                             std::is_same<std::remove_cv_t<T>, char32_t>::value>>
     : std::true_type { };
 
-
-    template <typename T, typename = void>
-    struct is_character_pointer : std::false_type { };
-
     template <typename T>
-    struct is_character_pointer<T, typename std::enable_if_t<std::is_pointer<T>::value && 
-                                                             is_character<std::remove_pointer_t<T>>::value>>
-    : std::true_type { };
+    struct is_character_pointer 
+    : std::conditional_t<std::is_pointer<T>::value && 
+                         is_character<std::remove_pointer_t<T>>::value, std::true_type, std::false_type>
+    { };
 
     template <typename T, typename = void>
     struct is_character_array : std::false_type { };
@@ -100,6 +109,7 @@ namespace encoding {
     template <typename T>
     struct is_std_character_string : is_std_character_string_impl<std::remove_cv_t<T>> { };
 
+#if _HAS_CXX17
     template <typename T, typename = void>
     struct is_std_character_string_view_impl : std::false_type { };
 
@@ -110,13 +120,16 @@ namespace encoding {
 
     template <typename T>
     struct is_std_character_string_view : is_std_character_string_view_impl<std::remove_cv_t<T>> { };
+#endif
 
     template <typename T>
-    struct is_string<T, std::enable_if_t<is_character_pointer<T>::value    ||
-                                         is_character_array<T>::value      ||
-                                         is_std_character_string<T>::value ||
-                                         is_std_character_string_view<T>::value>>
-    : std::true_type { };
+    struct is_string<T, std::enable_if_t<is_character_pointer<T>::value
+                                      || is_character_array<T>::value
+                                      || is_std_character_string<T>::value
+#if _HAS_CXX17
+                                      || is_std_character_string_view<T>::value
+#endif
+    >> : std::true_type { };
 
     template <typename T>
     struct character_type<T, std::enable_if_t<is_character<T>::value>>
@@ -149,8 +162,11 @@ namespace encoding {
     };
 
     template <typename T>
-    struct string_traits<T, typename std::enable_if_t<is_std_character_string<T>::value || 
-                                                      is_std_character_string_view<T>::value>>
+    struct string_traits<T, typename std::enable_if_t<is_std_character_string<T>::value
+#if _HAS_CXX17
+                                                   || is_std_character_string_view<T>::value
+#endif
+    >>
     {
         using char_type = std::remove_cv_t<typename T::value_type>;
 
