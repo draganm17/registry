@@ -19,9 +19,14 @@ value::value(none_value_tag tag) noexcept
     : details::value_state{ value_type::none }
 { }
 
-value::value(sz_value_tag tag, string_view_type value) { assign(tag, value); }
+value::value(nullptr_t, sz_value_tag, const string_type::value_type* data, size_t size)
+{ do_assign(sz_value_tag{}, data, size); }
 
-value::value(expand_sz_value_tag tag, string_view_type value) { assign(tag, value); }
+value::value(nullptr_t, expand_sz_value_tag, const string_type::value_type* data, size_t size)
+{ do_assign(expand_sz_value_tag{}, data, size); }
+
+value::value(nullptr_t, link_value_tag, const string_type::value_type* data, size_t size)
+{ do_assign(link_value_tag{}, data, size); }
 
 value::value(binary_value_tag tag, const unsigned char* data, size_t size) { assign(tag, data, size); }
 
@@ -29,7 +34,50 @@ value::value(dword_value_tag tag, uint32_t value) { assign(tag, value); }
 
 value::value(dword_big_endian_value_tag tag, uint32_t value) { assign(tag, value); }
 
-value::value(link_value_tag tag, string_view_type value) { assign(tag, value); }
+value& value::do_assign(sz_value_tag, const string_type::value_type* data, size_t size)
+{
+    static constexpr auto null_teminator = TEXT('\0');
+    const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
+    const auto data_size = size * sizeof(string_view_type::value_type);
+
+    m_data.resize(data_size + sizeof(null_teminator));
+    m_type = value_type::sz;
+
+    memcpy(m_data.data(), data_ptr, data_size);
+    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
+
+    return *this;
+}
+
+value& value::do_assign(expand_sz_value_tag, const string_type::value_type* data, size_t size)
+{
+    static constexpr auto null_teminator = TEXT('\0');
+    const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
+    const auto data_size = size * sizeof(string_view_type::value_type);
+
+    m_data.resize(data_size + sizeof(null_teminator));
+    m_type = value_type::expand_sz;
+
+    memcpy(m_data.data(), data_ptr, data_size);
+    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
+
+    return *this;
+}
+
+value& value::do_assign(link_value_tag, const string_type::value_type* data, size_t size)
+{
+    static constexpr auto null_teminator = TEXT('\0');
+    const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
+    const auto data_size = size * sizeof(string_view_type::value_type);
+
+    m_data.resize(data_size + sizeof(null_teminator));
+    m_type = value_type::link;
+
+    memcpy(m_data.data(), data_ptr, data_size);
+    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
+
+    return *this;
+}
 
 //value::value(multi_sz_value_tag tag, const std::vector<string_view_type>& value) { assign(tag, value); }
 
@@ -79,21 +127,45 @@ uint64_t value::to_uint64() const
     throw bad_value_cast();
 }
 
-string_type value::to_string() const
+std::string value::to_string() const
 {
     if (m_type == value_type::sz || m_type == value_type::expand_sz || m_type == value_type::link)
     {
-        const auto chars = m_data.size() / sizeof(string_type::value_type);
-        const auto str_ptr = reinterpret_cast<const string_type::value_type*>(m_data.data());
-        return chars ? string_type(str_ptr, chars - (str_ptr[chars - 1] ? 0 : 1)) : string_type{};
+        using namespace details::encoding;
+        using CharT = typename native_encoding_type::char_type;
+        const size_t char_count = m_data.size() / sizeof(CharT);
+        const CharT* char_ptr = reinterpret_cast<const CharT*>(m_data.data());
+        const bool is_null_terminated = char_count && char_ptr[char_count - 1];
+
+        return codec<deduce_t<std::string::value_type>>()
+               .encode(char_ptr, char_ptr + char_count - static_cast<int>(is_null_terminated));
     }
     throw bad_value_cast();
 }
 
-std::vector<string_type> value::to_strings() const
+std::wstring value::to_wstring() const
+{
+    if (m_type == value_type::sz || m_type == value_type::expand_sz || m_type == value_type::link)
+    {
+        using namespace details::encoding;
+        using CharT = typename native_encoding_type::char_type;
+        const size_t char_count = m_data.size() / sizeof(CharT);
+        const CharT* char_ptr = reinterpret_cast<const CharT*>(m_data.data());
+        const bool is_null_terminated = char_count && char_ptr[char_count - 1];
+
+        return codec<deduce_t<std::wstring::value_type>>()
+               .encode(char_ptr, char_ptr + char_count - static_cast<int>(is_null_terminated));
+    }
+    throw bad_value_cast();
+}
+
+std::vector<std::string> value::to_strings() const
 {
     if (m_type == value_type::multi_sz)
     {
+        // TODO: ...
+
+        /*
         std::vector<string_type> result;
         const auto chars = m_data.size() / sizeof(string_type::value_type);
         const auto str_ptr = reinterpret_cast<const string_type::value_type*>(m_data.data());
@@ -107,6 +179,18 @@ std::vector<string_type> value::to_strings() const
                 first = last;
             }
         }
+        return result;
+        */
+    }
+    throw bad_value_cast();
+}
+
+std::vector<std::wstring> value::to_wstrings() const
+{
+    if (m_type == value_type::multi_sz)
+    {
+        std::vector<std::wstring> result;
+        // TODO: ...
         return result;
     }
     throw bad_value_cast();
@@ -122,36 +206,6 @@ value& value::assign(none_value_tag) noexcept
 {
     m_data.clear();
     m_type = value_type::none;
-
-    return *this;
-}
-
-value& value::assign(sz_value_tag, string_view_type value)
-{
-    static constexpr auto null_teminator = TEXT('\0');
-    const auto data_ptr = reinterpret_cast<const uint8_t*>(value.data());
-    const auto data_size = value.size() * sizeof(string_view_type::value_type);
-
-    m_data.resize(data_size + sizeof(null_teminator));
-    m_type = value_type::sz;
-
-    memcpy(m_data.data(), data_ptr, data_size);
-    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
-
-    return *this;
-}
-
-value& value::assign(expand_sz_value_tag, string_view_type value)
-{
-    static constexpr auto null_teminator = TEXT('\0');
-    const auto data_ptr = reinterpret_cast<const uint8_t*>(value.data());
-    const auto data_size = value.size() * sizeof(string_view_type::value_type);
-
-    m_data.resize(data_size + sizeof(null_teminator));
-    m_type = value_type::expand_sz;
-
-    memcpy(m_data.data(), data_ptr, data_size);
-    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
 
     return *this;
 }
@@ -181,21 +235,6 @@ value& value::assign(dword_big_endian_value_tag, uint32_t value)
 
     boost::endian::big_uint32_t value_copy = value;
     memcpy(m_data.data(), value_copy.data(), sizeof(uint32_t));
-
-    return *this;
-}
-
-value& value::assign(link_value_tag, string_view_type value)
-{
-    static constexpr auto null_teminator = TEXT('\0');
-    const auto data_ptr = reinterpret_cast<const uint8_t*>(value.data());
-    const auto data_size = value.size() * sizeof(string_view_type::value_type);
-
-    m_data.resize(data_size + sizeof(null_teminator));
-    m_type = value_type::link;
-
-    memcpy(m_data.data(), data_ptr, data_size);
-    memcpy(m_data.data() + data_size, &null_teminator, sizeof(null_teminator));
 
     return *this;
 }
