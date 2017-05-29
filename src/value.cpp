@@ -85,12 +85,6 @@ value& value::do_assign(multi_sz_value_tag, const std::vector<std::pair<const wc
     return *this;
 }
 
-value::value(none_value_tag tag) noexcept
-    : details::value_state{ value_type::none }
-{ }
-
-value::value(binary_value_tag tag, const unsigned char* data, size_t size) { assign(tag, data, size); }
-
 value::value(dword_value_tag tag, uint32_t value) { assign(tag, value); }
 
 value::value(dword_big_endian_value_tag tag, uint32_t value) { assign(tag, value); }
@@ -105,7 +99,9 @@ value::value(value_type type, const unsigned char* data, size_t size)
 
 value_type value::type() const noexcept { return m_type; }
 
-byte_array_view_type value::data() const noexcept { return byte_array_view_type{ m_data.data(), m_data.size() }; }
+const unsigned char* value::data() const noexcept { return m_data.size() ? m_data.data() : nullptr; }
+
+size_t value::size() const noexcept { return m_data.size(); }
 
 //const unsigned char* value::data() const noexcept { return m_data.data(); }
 
@@ -205,29 +201,6 @@ std::vector<std::wstring> value::to_wstrings() const
     throw bad_value_cast();
 }
 
-byte_array_type value::to_bytes() const
-{
-    if (m_type == value_type::binary) return byte_array_type(m_data.data(), m_data.data() + m_data.size());
-    throw bad_value_cast();
-}
-
-value& value::assign(none_value_tag) noexcept
-{
-    m_data.clear();
-    m_type = value_type::none;
-
-    return *this;
-}
-
-value& value::assign(binary_value_tag, const unsigned char* data, size_t size)
-{
-    m_data.resize(size);
-    m_type = value_type::binary;
-    memcpy(m_data.data(), data, size);
-
-    return *this;
-}
-
 value& value::assign(dword_value_tag, uint32_t value)
 {
     m_data.resize(sizeof(uint32_t));
@@ -308,8 +281,8 @@ void value::swap(value& other) noexcept
 
 size_t hash_value(const value& value) noexcept
 {
-    const size_t sz = value.data().size();
-    const unsigned char* ptr = value.data().data();
+    const size_t sz = value.size();
+    const unsigned char* ptr = value.data();
 
     size_t hash = std::hash<value_type>()(value.type());
     for (auto i = sz % sizeof(long); i; --i, ++ptr) details::hash_combine(hash, *ptr);

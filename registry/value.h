@@ -59,16 +59,10 @@ namespace registry
     };
 
     //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
-    struct none_value_tag             { };
-
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct sz_value_tag               { };
 
     //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct expand_sz_value_tag        { };
-
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
-    struct binary_value_tag           { };
 
     //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
     struct dword_value_tag            { };
@@ -119,9 +113,7 @@ namespace registry
     or semantic aspects of the data. However, `registry::value` provides convenient constructors to help users create
     values that are suitable for correctly represent a registry value of a given type.
     */
-    // TODO: remove 'to_bytes()' method ???
-    //       remove 'binary_value_tag' constructor ans 'assign' overloads ???
-    //       
+    // TODO: rewrite the main description
     class value 
         : private details::value_state
     {
@@ -151,7 +143,8 @@ namespace registry
         //! Default constructor.
         /*!
         @post `type() == value_type::none`.
-        @post `data().empty()`.
+        @post `data() == nullptr`.
+        @post `size() == 0`.
         */
         value() noexcept = default;
 
@@ -168,15 +161,6 @@ namespace registry
         @post `*this` has the original value of `other`.
         */
         value(value&& other) noexcept = default;
-
-        //! Constructs a value of type `value_type::none`.
-        /*!
-        @post `type() == value_type::none`.
-        @post `data().empty()`.
-
-        @param[in] tag - value type tag.
-        */
-        explicit value(none_value_tag tag) noexcept;
 
         //! Constructs a value of type `value_type::sz`.
         /*!
@@ -207,17 +191,6 @@ namespace registry
                                               details::encoding::is_deducible<Source>::value>
         >
         value(expand_sz_value_tag tag, const Source& value);
-
-        //! Constructs a value of type `value_type::binary`.
-        /*!
-        @post `type() == value_type::binary`.
-        @post `to_bytes() == value`.
-
-        @param[in] tag   - value type tag.
-        @param[in] data - binary data to be stored in this value.
-        @param[in] size - the size of the binary data in bytes.
-        */
-        value(binary_value_tag tag, const unsigned char* data, size_t size);
 
         //! Constructs a value of type `value_type::dword`.
         /*!
@@ -322,7 +295,7 @@ namespace registry
         providing the null terminator character is desirable but not necessary.
 
         @post `this->type() == type`.
-        @post `this->data() == data`.
+        @post TODO: ...
 
         @param[in] type - a value type identifier.
         @param[in] data - the binary data to be stored in this value.
@@ -351,13 +324,10 @@ namespace registry
         value_type type() const noexcept;
 
         //! TODO: ...
-        //const unsigned char* data() const noexcept;
+        const unsigned char* data() const noexcept;
 
         //! TODO: ...
-        //size_t size() const noexcept;
-
-        //! Returns stored binary data if any.
-        byte_array_view_type data() const noexcept; // TODO: replace by separate data() and size() methods
+        size_t size() const noexcept;
 
     public:
         //! Converts the value to an unsigned 32-bit integer.
@@ -397,21 +367,7 @@ namespace registry
         //! TODO: ...
         std::vector<std::wstring> to_wstrings() const;
 
-        //! Converts the value to a binary data array.
-        /*!
-        @throw `registry::bad_value_cast` if the value type is not `value_type::binary`.
-        */
-        byte_array_type to_bytes() const;
-
     public:
-        //! Replaces the contents of the value.
-        /*!
-        @post `*this == value(tag)`.
-        @param[in] tag - value type tag.
-        @return `*this`.
-        */
-        value& assign(none_value_tag tag) noexcept;
-
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
@@ -440,15 +396,6 @@ namespace registry
         >
         value& assign(expand_sz_value_tag tag, const Source& value);
 
-        //! Replaces the contents of the value.
-        /*!
-        @post `*this == value(tag, value)`.
-        @param[in] tag   - value type tag.
-        @param[in] data - binary data to be stored in this value.
-        @param[in] size - the size of the binary data in bytes.
-        @return `*this`.
-        */
-        value& assign(binary_value_tag tag, const unsigned char* data, size_t size);
 
         //! Replaces the contents of the value.
         /*!
