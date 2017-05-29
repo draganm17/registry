@@ -497,12 +497,15 @@ namespace registry
     {
         using namespace details;
         const auto name = encoding::codec<encoding::deduce_t<CharT>>().decode(first, last);
-        key_path(encoding::native_encoding_type{}, name.data(), name.data() + name.size(), view).swap(*this);
+        key_path(name.data(), name.data() + name.size(), view).swap(*this);
     }
 
     template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value && 
                                                            details::encoding::is_deducible<Source>::value>>
     inline key_path::key_path(const Source& name, view view)
+    //: key_path(details::path_source_traits<Source>::key_name_data(name),
+    //           details::path_source_traits<Source>::key_name_data(name) + details::path_source_traits<Source>::key_name_size(name),
+    //           view)
     : key_path(details::encoding::string_traits<Source>::data(name),
                details::encoding::string_traits<Source>::data(name) + details::encoding::string_traits<Source>::size(name),
                view)
