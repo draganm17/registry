@@ -126,35 +126,26 @@ namespace registry
         : private details::value_state
     {
     private:
-        value(nullptr_t, sz_value_tag, const wchar_t* data, size_t size);
-
-        // decodes the string and calls the first overload
-        template <typename CharT> value(nullptr_t, sz_value_tag, const CharT* data, size_t size);
-
-        value(nullptr_t, expand_sz_value_tag, const wchar_t* data, size_t size);
-
-        // decodes the string and calls the first overload
-        template <typename CharT> value(nullptr_t, expand_sz_value_tag, const CharT* data, size_t size);
-
-        value(nullptr_t, link_value_tag, const wchar_t* data, size_t size);
-
-        // decodes the string and calls the first overload
-        template <typename CharT> value(nullptr_t, link_value_tag, const CharT* data, size_t size);
-
         value& do_assign(sz_value_tag, const wchar_t* data, size_t size);
 
-        // decodes the string and calls the first overload
+        // converts the string to Unicode and calls the first overload
         template <typename CharT> value& do_assign(sz_value_tag, const CharT* data, size_t size);
 
         value& do_assign(expand_sz_value_tag, const wchar_t* data, size_t size);
 
-        // decodes the string and calls the first overload
+        // converts the string to Unicode and calls the first overload
         template <typename CharT> value& do_assign(expand_sz_value_tag, const CharT* data, size_t size);
 
         value& do_assign(link_value_tag, const wchar_t* data, size_t size);
 
-        // decodes the string and calls the first overload
+        // converts the string to Unicode and calls the first overload
         template <typename CharT> value& do_assign(link_value_tag, const CharT* data, size_t size);
+
+        value& do_assign(multi_sz_value_tag, const std::vector<std::pair<const wchar_t*, size_t>>& value);
+
+        // converts the strings to Unicode and calls the first overload
+        template <typename CharT>
+        value& do_assign(multi_sz_value_tag, const std::vector<std::pair<const CharT*, size_t>>& value);
 
     public:
         //! Default constructor.
@@ -537,9 +528,6 @@ namespace registry
         >
         value& assign(multi_sz_value_tag tag, std::initializer_list<T> init);
 
-        // TODO: ...
-        value& assign(multi_sz_value_tag, const std::vector<string_view_type>& value);
-
         //! Replaces the contents of the value.
         /*!
         @post `*this == value(tag, value)`.
@@ -599,73 +587,55 @@ namespace registry
     //------------------------------------------------------------------------------------//
 
     template <typename CharT>
-    inline value::value(nullptr_t, sz_value_tag tag, const CharT* data, size_t size)
+    inline value& value::do_assign(sz_value_tag, const CharT* data, size_t size)
     {
         using namespace details::encoding;
-        const auto string = codec<deduce_t<CharT>>().decode(data, data + size);
-        value(nullptr_t{}, tag, string.data(), string.size()).swap(*this);
-    }
-
-    template <typename CharT>
-    inline value::value(nullptr_t, expand_sz_value_tag tag, const CharT* data, size_t size)
-    {
-        using namespace details::encoding;
-        const auto string = codec<deduce_t<CharT>>().decode(data, data + size);
-        value(nullptr_t{}, tag, string.data(), string.size()).swap(*this);
-    }
-
-    template <typename CharT>
-    inline value::value(nullptr_t, link_value_tag tag, const CharT* data, size_t size)
-    {
-        using namespace details::encoding;
-        const auto string = codec<deduce_t<CharT>>().decode(data, data + size);
-        value(nullptr_t{}, tag, string.data(), string.size()).swap(*this);
-    }
-
-    template <typename CharT>
-    inline value& do_assign(sz_value_tag, const CharT* data, size_t size)
-    {
-        using namespace details::encoding;
-        const auto string = codec<deduce_t<CharT>>().decode(data, data + size);
+        const std::wstring string = codec<deduce_t<CharT>>().decode(data, data + size);
         return do_assign(tag, string.data(), string.size());
     }
 
     template <typename CharT>
-    inline value& do_assign(expand_sz_value_tag, const CharT* data, size_t size)
+    inline value& value::do_assign(expand_sz_value_tag, const CharT* data, size_t size)
     {
         using namespace details::encoding;
-        const auto string = codec<deduce_t<CharT>>().decode(data, data + size);
+        const std::wstring string = codec<deduce_t<CharT>>().decode(data, data + size);
         return do_assign(tag, string.data(), string.size());
     }
 
     template <typename CharT>
-    inline value& do_assign(link_value_tag, const CharT* data, size_t size)
+    inline value& value::do_assign(link_value_tag, const CharT* data, size_t size)
     {
         using namespace details::encoding;
-        const auto string = codec<deduce_t<CharT>>().decode(data, data + size);
+        const std::wstring string = codec<deduce_t<CharT>>().decode(data, data + size);
         return do_assign(tag, string.data(), string.size());
+    }
+
+    template <typename CharT>
+    inline value& value::do_assign(multi_sz_value_tag, const std::vector<std::pair<const CharT*, size_t>>& value)
+    {
+        std::vector<std::wstring> buffer;
+        details::encoding::codec<details::encoding::deduce_t<CharT>> codec;
+        std::transform(value.begin(), value.end(), std::back_inserter(buffer),
+                       [&](const auto& el) { return codec.decode(el.firt, el.first + el.second); });
+
+        std::vector<std::pair<wchar_t*, size_t>> strings;
+        std::transform(buffer.begin(), buffer.end(), std::back_inserter(strings),
+                       [&](const auto& el) { return std::make_pair(el.data(), el.size()); });
+
+        return do_assign(tag, strings);
     }
 
     template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
                                                            details::encoding::is_deducible<Source>::value>>
-    inline value::value(sz_value_tag tag, const Source& value)
-    : value(nullptr_t{}, tag,
-            details::encoding::string_traits<Source>::data(value), details::encoding::string_traits<Source>::size(value))
-    { }
+    inline value::value(sz_value_tag tag, const Source& value) { assign(tag, value); }
 
     template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
                                                            details::encoding::is_deducible<Source>::value>>
-    inline value::value(expand_sz_value_tag tag, const Source& value)
-    : value(nullptr_t{}, tag,
-            details::encoding::string_traits<Source>::data(value), details::encoding::string_traits<Source>::size(value))
-    { }
+    inline value::value(expand_sz_value_tag tag, const Source& value) { assign(tag, value); }
 
     template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
                                                            details::encoding::is_deducible<Source>::value>>
-    inline value::value(link_value_tag tag, const Source& value)
-    : value(nullptr_t{}, tag,
-            details::encoding::string_traits<Source>::data(value), details::encoding::string_traits<Source>::size(value))
-    { }
+    inline value::value(link_value_tag tag, const Source& value) { assign(tag, value); }
 
     template <typename Sequence,
               typename = std::enable_if_t<details::encoding::is_string<typename Sequence::value_type>::value &&
@@ -721,10 +691,13 @@ namespace registry
                   details::encoding::is_deducible<typename std::iterator_traits<InputIt>::value_type>::value>>
     inline value& value::assign(multi_sz_value_tag tag, InputIt first, InputIt last)
     {
-        std::vector<string_view_type> strings;
+        using namespace details::encoding;
+        using Traits = string_traits<typename std::iterator_traits<InputIt>::value_type>;
+
+        std::vector<std::pair<typename Traits::char_type, size_t>> strings;
         std::transform(first, last, std::back_inserter(strings),
-                       [](const auto& el) { return string_view_type(el); });
-        return assign(tag, strings);
+                       [](const auto& el) { return std::make_pair(Traits::data(el), Traits::size(el)); });
+        return do_assign(tag, strings);
     }
 
     template <typename T, typename = std::enable_if_t<details::encoding::is_string<T>::value &&

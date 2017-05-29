@@ -15,25 +15,6 @@ namespace registry {
 //                                 class value                                        //
 //------------------------------------------------------------------------------------//
 
-value::value(none_value_tag tag) noexcept
-    : details::value_state{ value_type::none }
-{ }
-
-value::value(nullptr_t, sz_value_tag, const wchar_t* data, size_t size)
-{ do_assign(sz_value_tag{}, data, size); }
-
-value::value(nullptr_t, expand_sz_value_tag, const wchar_t* data, size_t size)
-{ do_assign(expand_sz_value_tag{}, data, size); }
-
-value::value(nullptr_t, link_value_tag, const wchar_t* data, size_t size)
-{ do_assign(link_value_tag{}, data, size); }
-
-value::value(binary_value_tag tag, const unsigned char* data, size_t size) { assign(tag, data, size); }
-
-value::value(dword_value_tag tag, uint32_t value) { assign(tag, value); }
-
-value::value(dword_big_endian_value_tag tag, uint32_t value) { assign(tag, value); }
-
 value& value::do_assign(sz_value_tag, const wchar_t* data, size_t size)
 {
     static constexpr wchar_t null_teminator{};
@@ -78,6 +59,41 @@ value& value::do_assign(link_value_tag, const wchar_t* data, size_t size)
 
     return *this;
 }
+
+value& value::do_assign(multi_sz_value_tag, const std::vector<std::pair<const wchar_t*, size_t>>& value)
+{
+    static constexpr wchar_t null_teminator{};
+    const auto buffer_size = std::accumulate(value.begin(), value.end(), size_t(0),
+                                             [](size_t sz, const auto& val)
+                                             { return sz + val.second * sizeof(wchar_t) + sizeof(null_teminator); }
+    ) + sizeof(null_teminator);
+
+    m_data.resize(buffer_size);
+    m_type = value_type::multi_sz;
+
+    size_t offset = 0;
+    std::for_each(value.begin(), value.end(), [&](const auto& val) noexcept
+    {
+        const auto data_size = val.second * sizeof(wchar_t);
+        const auto data_ptr = reinterpret_cast<const uint8_t*>(val.first);
+
+        memcpy(m_data.data() + offset, data_ptr, data_size);
+        memcpy(m_data.data() + data_size + offset, &null_teminator, sizeof(null_teminator));
+        offset += data_size + sizeof(null_teminator);
+    });
+    memcpy(m_data.data() + offset, &null_teminator, sizeof(null_teminator));
+    return *this;
+}
+
+value::value(none_value_tag tag) noexcept
+    : details::value_state{ value_type::none }
+{ }
+
+value::value(binary_value_tag tag, const unsigned char* data, size_t size) { assign(tag, data, size); }
+
+value::value(dword_value_tag tag, uint32_t value) { assign(tag, value); }
+
+value::value(dword_big_endian_value_tag tag, uint32_t value) { assign(tag, value); }
 
 //value::value(multi_sz_value_tag tag, const std::vector<string_view_type>& value) { assign(tag, value); }
 
@@ -161,23 +177,6 @@ std::vector<std::string> value::to_strings() const
     if (m_type == value_type::multi_sz)
     {
         // TODO: ...
-
-        /*
-        std::vector<string_type> result;
-        const auto chars = m_data.size() / sizeof(string_type::value_type);
-        const auto str_ptr = reinterpret_cast<const string_type::value_type*>(m_data.data());
-        
-        auto first = str_ptr, last = str_ptr, end = &str_ptr[chars];
-        while (last != end) {
-            if (!(*last++) || last == end) {
-                if (!(last == end && last - first == 1 && *first == TEXT('\0'))) {
-                    result.emplace_back(first, last - (last == end ? 0 : 1));
-                }
-                first = last;
-            }
-        }
-        return result;
-        */
     }
     throw bad_value_cast();
 }
@@ -186,8 +185,21 @@ std::vector<std::wstring> value::to_wstrings() const
 {
     if (m_type == value_type::multi_sz)
     {
+        // NOTE: no encoding is done.
+
         std::vector<std::wstring> result;
-        // TODO: ...
+        const auto size = m_data.size() / sizeof(wchar_t);
+        const auto data = reinterpret_cast<const wchar_t*>(m_data.data());
+        
+        auto first = data, last = data, end = data + size;
+        while (last != end) {
+            if (!(*last++) || last == end) {
+                if (!(last == end && last - first == 1 && !*first)) {
+                    result.emplace_back(first, last - (last == end ? 0 : 1));
+                }
+                first = last;
+            }
+        }
         return result;
     }
     throw bad_value_cast();
@@ -236,31 +248,6 @@ value& value::assign(dword_big_endian_value_tag, uint32_t value)
     return *this;
 }
 
-value& value::assign(multi_sz_value_tag, const std::vector<string_view_type>& value)
-{
-    static constexpr string_type::value_type null_teminator{};
-
-    const auto buffer_size = std::accumulate(value.begin(), value.end(), size_t(0), [](size_t sz, const auto& value) {
-        return sz + value.size() * sizeof(string_type::value_type) + sizeof(null_teminator);
-    }) + sizeof(null_teminator);
-
-    m_data.resize(buffer_size);
-    m_type = value_type::multi_sz;
-
-    size_t offset = 0;
-    std::for_each(value.begin(), value.end(), [&](const auto& value) noexcept
-    {
-        const auto data_ptr = reinterpret_cast<const uint8_t*>(value.data());
-        const auto data_size = value.size() * sizeof(string_view_type::value_type);
-
-        memcpy(m_data.data() + offset, data_ptr, data_size);
-        memcpy(m_data.data() + data_size + offset, &null_teminator, sizeof(null_teminator));
-        offset += data_size + sizeof(null_teminator);
-    });
-    memcpy(m_data.data() + offset, &null_teminator, sizeof(null_teminator));
-
-    return *this;
-}
 /*
 value& value::assign_impl(multi_sz_value_tag, const std::function<bool(string_view_type&)>& enumerator)
 {
