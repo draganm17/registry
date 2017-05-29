@@ -36,7 +36,7 @@ value::value(dword_big_endian_value_tag tag, uint32_t value) { assign(tag, value
 
 value& value::do_assign(sz_value_tag, const string_type::value_type* data, size_t size)
 {
-    static constexpr auto null_teminator = TEXT('\0');
+    static constexpr string_type::value_type null_teminator{};
     const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
     const auto data_size = size * sizeof(string_view_type::value_type);
 
@@ -51,7 +51,7 @@ value& value::do_assign(sz_value_tag, const string_type::value_type* data, size_
 
 value& value::do_assign(expand_sz_value_tag, const string_type::value_type* data, size_t size)
 {
-    static constexpr auto null_teminator = TEXT('\0');
+    static constexpr string_type::value_type null_teminator{};
     const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
     const auto data_size = size * sizeof(string_view_type::value_type);
 
@@ -66,7 +66,7 @@ value& value::do_assign(expand_sz_value_tag, const string_type::value_type* data
 
 value& value::do_assign(link_value_tag, const string_type::value_type* data, size_t size)
 {
-    static constexpr auto null_teminator = TEXT('\0');
+    static constexpr string_type::value_type null_teminator{};
     const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
     const auto data_size = size * sizeof(string_view_type::value_type);
 
@@ -241,7 +241,7 @@ value& value::assign(dword_big_endian_value_tag, uint32_t value)
 
 value& value::assign(multi_sz_value_tag, const std::vector<string_view_type>& value)
 {
-    static constexpr auto null_teminator = TEXT('\0');
+    static constexpr string_type::value_type null_teminator{};
 
     const auto buffer_size = std::accumulate(value.begin(), value.end(), size_t(0), [](size_t sz, const auto& value) {
         return sz + value.size() * sizeof(string_type::value_type) + sizeof(null_teminator);
@@ -270,7 +270,7 @@ value& value::assign_impl(multi_sz_value_tag, const std::function<bool(string_vi
     string_view_type value;
     auto enumerator_copy = enumerator;
     size_t offset = 0, buffer_size = 0;
-    static constexpr auto null_teminator = TEXT('\0');
+    static constexpr string_type::value_type null_teminator{};
 
     while (enumerator(value)) {
         buffer_size += value.size() * sizeof(string_type::value_type) + sizeof(null_teminator);
