@@ -8,7 +8,6 @@
 #include <type_traits>
 #include <vector>
 
-#include <registry/details/type_traits_utility.h>
 #include <registry/types.h>
 
 
@@ -512,7 +511,7 @@ namespace registry
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
 
-    template <typename Sequence, typename = std::enable_if_t<details::is_string_viewable_v<Sequence::value_type>>>
+    template <typename Sequence, typename = std::enable_if_t<details::is_string_viewable_v<Sequence::value_type>>
     inline value::value(multi_sz_value_tag tag, const Sequence& value) { assign(tag, value); }
 
     template <typename InputIt,

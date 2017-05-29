@@ -8,7 +8,6 @@
 #include <registry/details/string_codec.h>
 #include <registry/details/string_traits.h>
 #include <registry/details/key_path_utility.h>
-#include <registry/details/type_traits_utility.h>
 #include <registry/types.h>
 
 
@@ -70,11 +69,10 @@ namespace registry
         static constexpr string_type::value_type separator = string_type::value_type('\\');
 
     private:
-        key_path(details::encoding::native_encoding_type, 
-                 const string_type::value_type* first, const string_type::value_type* last, view view);
+        template <typename CharT>
+        key_path(const CharT* first, const CharT* last, view view);
 
-        template <typename CharT, typename Encoding>
-        key_path(Encoding, const CharT* first, const CharT* last, view view);
+        key_path(const string_type::value_type* first, const string_type::value_type* last, view view);
 
         key_path& do_assign(const string_type::value_type* first, const string_type::value_type* last, view view);
 
@@ -170,7 +168,7 @@ namespace registry
         @return `*this`.
         */
         template <typename Source, 
-                  typename = std::enable_if_t<details::is_pathable<Source>::value>
+                  typename = std::enable_if_t<std::is_constructible<key_path, T>::value>
         >
         key_path& operator/=(const Source& src);
 
@@ -182,7 +180,7 @@ namespace registry
         @return `*this`.
         */
         template <typename Source, 
-                  typename = std::enable_if_t<details::is_pathable<Source>::value>
+                  typename = std::enable_if_t<std::is_constructible<key_path, T>::value>
         >
         key_path& operator+=(const Source& src);
 
@@ -318,7 +316,7 @@ namespace registry
         @return `*this`.
         */
         template <typename Source, 
-                  typename = std::enable_if_t<details::is_pathable<Source>::value>
+                  typename = std::enable_if_t<std::is_constructible<key_path, T>::value>
         >
         key_path& append(const Source& src);
 
@@ -334,7 +332,7 @@ namespace registry
         @return `*this`.
         */
         template <typename Source, 
-                  typename = std::enable_if_t<details::is_pathable<Source>::value>
+                  typename = std::enable_if_t<std::is_constructible<key_path, T>::value>
         >
         key_path& concat(const Source& src);
 
@@ -358,7 +356,7 @@ namespace registry
         @return `*this`.
         */
         template <typename Source, 
-                  typename = std::enable_if_t<details::is_pathable<Source>::value>
+                  typename = std::enable_if_t<std::is_constructible<key_path, T>::value>
         >
         key_path& replace_leaf_path(const Source& src);
 
@@ -459,7 +457,7 @@ namespace registry
     @param[in] rhs - the rights hand side. `Source` should be explicitly convertible to `registry::key_path`.
     */
     template <typename Source, 
-              typename = std::enable_if_t<details::is_pathable<Source>::value>
+              typename = std::enable_if_t<std::is_constructible<key_path, T>::value>
     >
     key_path operator/(const key_path& lhs, const Source& rhs);
 
@@ -494,26 +492,26 @@ namespace registry
     //                              INLINE DEFINITIONS                                    //
     //------------------------------------------------------------------------------------//
 
-    template <typename CharT, typename Encoding>
-    key_path::key_path(Encoding, const CharT* first, const CharT* last, view view)
+    template <typename CharT>
+    key_path::key_path(const CharT* first, const CharT* last, view view)
     {
-        const auto name = details::encoding::codec<Encoding>().decode(first, last);
-        key_path(details::encoding::native_encoding_type{}, name.data(), name.data() + name.size(), view).swap(*this);
+        using namespace details;
+        const auto name = encoding::codec<encoding::deduce_t<CharT>>().decode(first, last);
+        key_path(encoding::native_encoding_type{}, name.data(), name.data() + name.size(), view).swap(*this);
     }
 
     template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value && 
                                                            details::encoding::is_deducible<Source>::value>>
     inline key_path::key_path(const Source& name, view view)
-    : key_path(details::encoding::deduce_t<Source>{},
-               details::encoding::string_traits<Source>::data(name),
+    : key_path(details::encoding::string_traits<Source>::data(name),
                details::encoding::string_traits<Source>::data(name) + details::encoding::string_traits<Source>::size(name),
                view)
     { }
 
-    template <typename Source, typename = std::enable_if_t<details::is_pathable<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<std::is_constructible<key_path, T>::value>>
     inline key_path& key_path::operator/=(const Source& src) { return append(src); }
 
-    template <typename Source, typename = std::enable_if_t<details::is_pathable<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<std::is_constructible<key_path, T>::value>>
     inline key_path& key_path::operator+=(const Source& src) { return concat(src); }
 
     template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value && 
@@ -529,7 +527,7 @@ namespace registry
         // TODO: optimization for the case when the string is already in the native encoding.
     }
 
-    template <typename Source, typename = std::enable_if_t<details::is_pathable<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<std::is_constructible<key_path, T>::value>>
     inline key_path& key_path::append(const Source& src)
     {
         const key_path p(src);
@@ -537,7 +535,7 @@ namespace registry
         // TODO: optimization : avoid to construct a new path
     }
 
-    template <typename Source, typename = std::enable_if_t<details::is_pathable<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<std::is_constructible<key_path, T>::value>>
     inline key_path& key_path::concat(const Source& src)
     {
         const key_path p(src);
@@ -545,7 +543,7 @@ namespace registry
         // TODO: optimization : avoid to construct a new path
     }
 
-    template <typename Source, typename = std::enable_if_t<details::is_pathable<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<std::is_constructible<key_path, T>::value>>
     inline key_path& key_path::replace_leaf_path(const Source& src)
     {
         assert(has_leaf_path());
@@ -554,7 +552,7 @@ namespace registry
         // TODO: optimization : avoid to construct a new path
     }
 
-    template <typename Source, typename = std::enable_if_t<details::is_pathable<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<std::is_constructible<key_path, T>::value>>
     inline key_path operator/(const key_path& lhs, const Source& rhs) { return key_path(lhs).append(rhs); }
 
     inline bool operator==(const key_path& lhs, const key_path& rhs) noexcept { return lhs.compare(rhs) == 0; }
