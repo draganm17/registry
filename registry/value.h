@@ -126,35 +126,35 @@ namespace registry
         : private details::value_state
     {
     private:
-        // decodes the string and invokes the second overload
+        value(nullptr_t, sz_value_tag, const wchar_t* data, size_t size);
+
+        // decodes the string and calls the first overload
         template <typename CharT> value(nullptr_t, sz_value_tag, const CharT* data, size_t size);
 
-        value(nullptr_t, sz_value_tag, const string_type::value_type* data, size_t size);
+        value(nullptr_t, expand_sz_value_tag, const wchar_t* data, size_t size);
 
-        // decodes the string and invokes the second overload
+        // decodes the string and calls the first overload
         template <typename CharT> value(nullptr_t, expand_sz_value_tag, const CharT* data, size_t size);
 
-        value(nullptr_t, expand_sz_value_tag, const string_type::value_type* data, size_t size);
+        value(nullptr_t, link_value_tag, const wchar_t* data, size_t size);
 
-        // decodes the string and invokes the second overload
+        // decodes the string and calls the first overload
         template <typename CharT> value(nullptr_t, link_value_tag, const CharT* data, size_t size);
 
-        value(nullptr_t, link_value_tag, const string_type::value_type* data, size_t size);
+        value& do_assign(sz_value_tag, const wchar_t* data, size_t size);
 
-        // decodes the string and invokes the second overload
+        // decodes the string and calls the first overload
         template <typename CharT> value& do_assign(sz_value_tag, const CharT* data, size_t size);
 
-        value& do_assign(sz_value_tag, const string_type::value_type* data, size_t size);
+        value& do_assign(expand_sz_value_tag, const wchar_t* data, size_t size);
 
-        // decodes the string and invokes the second overload
+        // decodes the string and calls the first overload
         template <typename CharT> value& do_assign(expand_sz_value_tag, const CharT* data, size_t size);
 
-        value& do_assign(expand_sz_value_tag, const string_type::value_type* data, size_t size);
+        value& do_assign(link_value_tag, const wchar_t* data, size_t size);
 
-        // decodes the string and invokes the second overload
+        // decodes the string and calls the first overload
         template <typename CharT> value& do_assign(link_value_tag, const CharT* data, size_t size);
-
-        value& do_assign(link_value_tag, const string_type::value_type* data, size_t size);
 
     public:
         //! Default constructor.

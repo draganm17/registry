@@ -19,13 +19,13 @@ value::value(none_value_tag tag) noexcept
     : details::value_state{ value_type::none }
 { }
 
-value::value(nullptr_t, sz_value_tag, const string_type::value_type* data, size_t size)
+value::value(nullptr_t, sz_value_tag, const wchar_t* data, size_t size)
 { do_assign(sz_value_tag{}, data, size); }
 
-value::value(nullptr_t, expand_sz_value_tag, const string_type::value_type* data, size_t size)
+value::value(nullptr_t, expand_sz_value_tag, const wchar_t* data, size_t size)
 { do_assign(expand_sz_value_tag{}, data, size); }
 
-value::value(nullptr_t, link_value_tag, const string_type::value_type* data, size_t size)
+value::value(nullptr_t, link_value_tag, const wchar_t* data, size_t size)
 { do_assign(link_value_tag{}, data, size); }
 
 value::value(binary_value_tag tag, const unsigned char* data, size_t size) { assign(tag, data, size); }
@@ -34,11 +34,11 @@ value::value(dword_value_tag tag, uint32_t value) { assign(tag, value); }
 
 value::value(dword_big_endian_value_tag tag, uint32_t value) { assign(tag, value); }
 
-value& value::do_assign(sz_value_tag, const string_type::value_type* data, size_t size)
+value& value::do_assign(sz_value_tag, const wchar_t* data, size_t size)
 {
-    static constexpr string_type::value_type null_teminator{};
+    static constexpr wchar_t null_teminator{};
+    const auto data_size = size * sizeof(wchar_t);
     const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
-    const auto data_size = size * sizeof(string_view_type::value_type);
 
     m_data.resize(data_size + sizeof(null_teminator));
     m_type = value_type::sz;
@@ -49,11 +49,11 @@ value& value::do_assign(sz_value_tag, const string_type::value_type* data, size_
     return *this;
 }
 
-value& value::do_assign(expand_sz_value_tag, const string_type::value_type* data, size_t size)
+value& value::do_assign(expand_sz_value_tag, const wchar_t* data, size_t size)
 {
-    static constexpr string_type::value_type null_teminator{};
+    static constexpr wchar_t null_teminator{};
+    const auto data_size = size * sizeof(wchar_t);
     const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
-    const auto data_size = size * sizeof(string_view_type::value_type);
 
     m_data.resize(data_size + sizeof(null_teminator));
     m_type = value_type::expand_sz;
@@ -64,11 +64,11 @@ value& value::do_assign(expand_sz_value_tag, const string_type::value_type* data
     return *this;
 }
 
-value& value::do_assign(link_value_tag, const string_type::value_type* data, size_t size)
+value& value::do_assign(link_value_tag, const wchar_t* data, size_t size)
 {
-    static constexpr string_type::value_type null_teminator{};
+    static constexpr wchar_t null_teminator{};
+    const auto data_size = size * sizeof(wchar_t);
     const auto data_ptr = reinterpret_cast<const uint8_t*>(data);
-    const auto data_size = size * sizeof(string_view_type::value_type);
 
     m_data.resize(data_size + sizeof(null_teminator));
     m_type = value_type::link;
@@ -131,14 +131,13 @@ std::string value::to_string() const
 {
     if (m_type == value_type::sz || m_type == value_type::expand_sz || m_type == value_type::link)
     {
-        using namespace details::encoding;
-        using CharT = typename native_encoding_type::char_type;
-        const size_t char_count = m_data.size() / sizeof(CharT);
-        const CharT* char_ptr = reinterpret_cast<const CharT*>(m_data.data());
-        const bool is_null_terminated = char_count && char_ptr[char_count - 1];
+        const size_t size             = m_data.size() / sizeof(wchar_t);
+        const wchar_t* data           = reinterpret_cast<const wchar_t*>(m_data.data());
+        const bool is_null_terminated = size && data[size - 1];
 
-        return codec<deduce_t<std::string::value_type>>()
-               .encode(char_ptr, char_ptr + char_count - static_cast<int>(is_null_terminated));
+        // Encode the string to ASCII.
+        using namespace details::encoding;
+        return codec<narrow_encoding>().encode(data, data + size - static_cast<int>(is_null_terminated));
     }
     throw bad_value_cast();
 }
@@ -147,14 +146,12 @@ std::wstring value::to_wstring() const
 {
     if (m_type == value_type::sz || m_type == value_type::expand_sz || m_type == value_type::link)
     {
-        using namespace details::encoding;
-        using CharT = typename native_encoding_type::char_type;
-        const size_t char_count = m_data.size() / sizeof(CharT);
-        const CharT* char_ptr = reinterpret_cast<const CharT*>(m_data.data());
-        const bool is_null_terminated = char_count && char_ptr[char_count - 1];
+        const size_t size             = m_data.size() / sizeof(wchar_t);
+        const wchar_t* data           = reinterpret_cast<const wchar_t*>(m_data.data());
+        const bool is_null_terminated = size && data[size - 1];
 
-        return codec<deduce_t<std::wstring::value_type>>()
-               .encode(char_ptr, char_ptr + char_count - static_cast<int>(is_null_terminated));
+        // The string should already be in Unicode. No encoding is done.
+        return std::wstring(data, data + size - static_cast<int>(is_null_terminated));
     }
     throw bad_value_cast();
 }
