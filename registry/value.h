@@ -8,8 +8,7 @@
 #include <type_traits>
 #include <vector>
 
-#include <registry/details/string_codec.h>
-#include <registry/details/string_traits.h>
+#include <registry/details/encoding.h>
 #include <registry/types.h>
 
 
@@ -172,8 +171,7 @@ namespace registry
         */
         // TODO: document the template
         template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                              details::encoding::is_deducible<Source>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
         >
         value(sz_value_tag tag, const Source& value);
 
@@ -187,8 +185,7 @@ namespace registry
         */
         // TODO: document the template
         template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                              details::encoding::is_deducible<Source>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
         >
         value(expand_sz_value_tag tag, const Source& value);
 
@@ -222,8 +219,7 @@ namespace registry
         */
         // TODO: document the template
         template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                              details::encoding::is_deducible<Source>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
         >
         value(link_value_tag tag, const Source& value);
 
@@ -238,8 +234,7 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename Sequence,
-                  typename = std::enable_if_t<details::encoding::is_string<typename Sequence::value_type>::value &&
-                                              details::encoding::is_deducible<typename Sequence::value_type>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<typename Sequence::value_type>::value>
         >
         value(multi_sz_value_tag tag, const Sequence& value);
 
@@ -254,9 +249,8 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename InputIt,
-                  typename = std::enable_if_t<
-                      details::encoding::is_string<typename std::iterator_traits<InputIt>::value_type>::value &&
-                      details::encoding::is_deducible<typename std::iterator_traits<InputIt>::value_type>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<
+                             typename std::iterator_traits<InputIt>::value_type>::value>
         >
         value(multi_sz_value_tag tag, InputIt first, InputIt last);
 
@@ -271,8 +265,7 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename T,
-                  typename = std::enable_if_t<details::encoding::is_string<T>::value &&
-                                              details::encoding::is_deducible<T>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<T>::value>
         >
         value(multi_sz_value_tag tag, std::initializer_list<T> init);
 
@@ -377,8 +370,7 @@ namespace registry
         */
         // TODO: document the template
         template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                              details::encoding::is_deducible<Source>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
         >
         value& assign(sz_value_tag tag, const Source& value);
 
@@ -391,8 +383,7 @@ namespace registry
         */
         // TODO: document the template
         template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                              details::encoding::is_deducible<Source>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
         >
         value& assign(expand_sz_value_tag tag, const Source& value);
 
@@ -424,8 +415,7 @@ namespace registry
         */
         // TODO: document the template
         template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                              details::encoding::is_deducible<Source>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
         >
         value& assign(link_value_tag tag, const Source& value);
 
@@ -439,8 +429,7 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename Sequence,
-                  typename = std::enable_if_t<details::encoding::is_string<typename Sequence::value_type>::value &&
-                                              details::encoding::is_deducible<typename Sequence::value_type>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<typename Sequence::value_type>::value>
         >
         value& assign(multi_sz_value_tag, const Sequence& value);
 
@@ -454,9 +443,8 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename InputIt,
-                  typename = std::enable_if_t<
-                      details::encoding::is_string<typename std::iterator_traits<InputIt>::value_type>::value &&
-                      details::encoding::is_deducible<typename std::iterator_traits<InputIt>::value_type>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<
+                             typename std::iterator_traits<InputIt>::value_type>::value>
         >
         value& assign(multi_sz_value_tag, InputIt first, InputIt last);
 
@@ -470,8 +458,7 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename T,
-                  typename = std::enable_if_t<details::encoding::is_string<T>::value &&
-                                              details::encoding::is_deducible<T>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<T>::value>
         >
         value& assign(multi_sz_value_tag tag, std::initializer_list<T> init);
 
@@ -537,7 +524,7 @@ namespace registry
     inline value& value::do_assign(sz_value_tag, const CharT* data, size_t size)
     {
         using namespace details::encoding;
-        const std::wstring string = codec<deduce_t<CharT>>().decode(data, data + size);
+        const std::wstring string = codec<encoding_type_t<CharT>>().decode(data, data + size);
         return do_assign(tag, string.data(), string.size());
     }
 
@@ -545,7 +532,7 @@ namespace registry
     inline value& value::do_assign(expand_sz_value_tag, const CharT* data, size_t size)
     {
         using namespace details::encoding;
-        const std::wstring string = codec<deduce_t<CharT>>().decode(data, data + size);
+        const std::wstring string = codec<encoding_type_t<CharT>>().decode(data, data + size);
         return do_assign(tag, string.data(), string.size());
     }
 
@@ -553,7 +540,7 @@ namespace registry
     inline value& value::do_assign(link_value_tag, const CharT* data, size_t size)
     {
         using namespace details::encoding;
-        const std::wstring string = codec<deduce_t<CharT>>().decode(data, data + size);
+        const std::wstring string = codec<encoding_type_t<CharT>>().decode(data, data + size);
         return do_assign(tag, string.data(), string.size());
     }
 
@@ -561,7 +548,7 @@ namespace registry
     inline value& value::do_assign(multi_sz_value_tag, const std::vector<std::pair<const CharT*, size_t>>& value)
     {
         std::vector<std::wstring> buffer;
-        details::encoding::codec<details::encoding::deduce_t<CharT>> codec;
+        details::encoding::codec<details::encoding::encoding_type_t<CharT>> codec;
         std::transform(value.begin(), value.end(), std::back_inserter(buffer),
                        [&](const auto& el) { return codec.decode(el.firt, el.first + el.second); });
 
@@ -572,51 +559,42 @@ namespace registry
         return do_assign(tag, strings);
     }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                                           details::encoding::is_deducible<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
     inline value::value(sz_value_tag tag, const Source& value) { assign(tag, value); }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                                           details::encoding::is_deducible<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
     inline value::value(expand_sz_value_tag tag, const Source& value) { assign(tag, value); }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                                           details::encoding::is_deducible<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
     inline value::value(link_value_tag tag, const Source& value) { assign(tag, value); }
 
     template <typename Sequence,
-              typename = std::enable_if_t<details::encoding::is_string<typename Sequence::value_type>::value &&
-                                          details::encoding::is_deducible<typename Sequence::value_type>::value>>
+              typename = std::enable_if_t<details::encoding::is_encoded_string<typename Sequence::value_type>::value>>
     inline value::value(multi_sz_value_tag tag, const Sequence& value) { assign(tag, value); }
 
     template <typename InputIt,
-              typename = std::enable_if_t<
-                  details::encoding::is_string<typename std::iterator_traits<InputIt>::value_type>::value &&
-                  details::encoding::is_deducible<typename std::iterator_traits<InputIt>::value_type>::value>>
+              typename = std::enable_if_t<details::encoding::is_encoded_string<
+                         typename std::iterator_traits<InputIt>::value_type>::value>>
     inline value::value(multi_sz_value_tag tag, InputIt first, InputIt last) { assign(tag, first, last); }
 
-    template <typename T, typename = std::enable_if_t<details::encoding::is_string<T>::value &&
-                                                      details::encoding::is_deducible<T>::value>>
+    template <typename T, typename = std::enable_if_t<details::encoding::is_encoded_string<T>::value>>
     inline value::value(multi_sz_value_tag tag, std::initializer_list<T> init) { assign(tag, init); }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                                           details::encoding::is_deducible<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
     inline value& value::assign(sz_value_tag tag, const Source& value)
     {
         using namespace details::encoding;
         return do_assign(tag, string_traits<Source>::data(value), string_traits<Source>::size(value));
     }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                                           details::encoding::is_deducible<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
     inline value& value::assign(expand_sz_value_tag tag, const Source& value)
     {
         using namespace details::encoding;
         return do_assign(tag, string_traits<Source>::data(value), string_traits<Source>::size(value));
     }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value &&
-                                                           details::encoding::is_deducible<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
     inline value& value::assign(link_value_tag tag, const Source& value)
     {
         using namespace details::encoding;
@@ -624,8 +602,7 @@ namespace registry
     }
 
     template <typename Sequence,
-              typename = std::enable_if_t<details::encoding::is_string<typename Sequence::value_type>::value &&
-                                          details::encoding::is_deducible<typename Sequence::value_type>::value>>
+              typename = std::enable_if_t<details::encoding::is_encoded_string<typename Sequence::value_type>::value>>
     inline value& value::assign(multi_sz_value_tag tag, const Sequence& value)
     {
         using std::begin; using std::end;
@@ -633,9 +610,8 @@ namespace registry
     }
 
     template <typename InputIt,
-              typename = std::enable_if_t<
-                  details::encoding::is_string<typename std::iterator_traits<InputIt>::value_type>::value &&
-                  details::encoding::is_deducible<typename std::iterator_traits<InputIt>::value_type>::value>>
+              typename = std::enable_if_t<details::encoding::is_encoded_string<
+                         typename std::iterator_traits<InputIt>::value_type>::value>>
     inline value& value::assign(multi_sz_value_tag tag, InputIt first, InputIt last)
     {
         using namespace details::encoding;
@@ -647,8 +623,7 @@ namespace registry
         return do_assign(tag, strings);
     }
 
-    template <typename T, typename = std::enable_if_t<details::encoding::is_string<T>::value &&
-                                                      details::encoding::is_deducible<T>::value>>
+    template <typename T, typename = std::enable_if_t<details::encoding::is_encoded_string<T>::value>>
     inline value& value::assign(multi_sz_value_tag tag, std::initializer_list<T> init) 
     { return assign(tag, init.begin(), init.end()); }
 
