@@ -3,7 +3,7 @@
 #include <iterator>
 #include <type_traits>
 
-#include <registry/details/string_traits.h>
+#include <registry/details/encoding.h>
 #include <registry/types.h>
 
 
@@ -25,7 +25,7 @@ namespace details {
     public:
         // TODO: remove ???
         template <typename Source, 
-                  typename = std::enable_if_t<encoding::is_deducible_to<Source, encoding::native_encoding_type>::value>
+                  typename = std::enable_if_t<encoding::encoding_type_is<Source, encoding::native_encoding_type>::value>
         >
         static key_name_iterator begin(const Source& name) noexcept
         {
@@ -38,7 +38,7 @@ namespace details {
 
         // TODO: remove ???
         template <typename Source, 
-                  typename = std::enable_if_t<encoding::is_deducible_to<Source, encoding::native_encoding_type>::value>
+                  typename = std::enable_if_t<encoding::encoding_type_is<Source, encoding::native_encoding_type>::value>
         >
         static key_name_iterator end(const Source& name) noexcept
         {

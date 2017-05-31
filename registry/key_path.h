@@ -5,8 +5,7 @@
 #include <iterator>
 #include <type_traits>
 
-#include <registry/details/string_codec.h>
-#include <registry/details/string_traits.h>
+#include <registry/details/encoding.h>
 #include <registry/details/key_path_utility.h>
 #include <registry/types.h>
 
@@ -139,8 +138,7 @@ namespace registry
         @param[in] view - a registry view.
         */
         template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_string<Source>::value && 
-                                              details::encoding::is_deducible<Source>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
         >
         key_path(const Source& name, view view = view::view_default);
 
@@ -296,8 +294,7 @@ namespace registry
         @return `*this`.
         */
         template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_string<Source>::value && 
-                                              details::encoding::is_deducible<Source>::value>
+                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
         >
         key_path& assign(const Source& name, view view = view::view_default);
 
@@ -495,13 +492,12 @@ namespace registry
     template <typename CharT>
     key_path::key_path(const CharT* first, const CharT* last, view view)
     {
-        using namespace details;
-        const auto name = encoding::codec<encoding::deduce_t<CharT>>().decode(first, last);
+        using namespace details::encoding;
+        const auto name = codec<encoding_type_t<CharT>>().decode(first, last);
         key_path(name.data(), name.data() + name.size(), view).swap(*this);
     }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value && 
-                                                           details::encoding::is_deducible<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
     inline key_path::key_path(const Source& name, view view)
     //: key_path(details::path_source_traits<Source>::key_name_data(name),
     //           details::path_source_traits<Source>::key_name_data(name) + details::path_source_traits<Source>::key_name_size(name),
@@ -517,12 +513,11 @@ namespace registry
     template <typename Source, typename = std::enable_if_t<std::is_constructible<key_path, T>::value>>
     inline key_path& key_path::operator+=(const Source& src) { return concat(src); }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_string<Source>::value && 
-                                                           details::encoding::is_deducible<Source>::value>>
+    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
     key_path& key_path::assign(const Source& name, view view)
     {
         using ST = details::encoding::string_traits<Source>;
-        using Codec = details::encoding::codec<details::encoding::deduce_t<Source>>;
+        using Codec = details::encoding::codec<details::encoding::encoding_type_t<Source>>;
 
         auto dec_name = Codec().decode(ST::data(name), ST::data(name) + ST::size(name));
         return do_assign(dec_name.data(), dec_name.data() + dec_name.size(), view);
