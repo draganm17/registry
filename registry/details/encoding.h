@@ -17,6 +17,9 @@ namespace encoding {
     //                                  INTERFACE                                         //
     //------------------------------------------------------------------------------------//
 
+    // NOTE: Encodings ...
+    // TODO: ^^^
+
     // Platform-specific narrow characters encoding.
     // ASCII on Windows.
     struct narrow_encoding
@@ -55,25 +58,11 @@ namespace encoding {
         // using encoding_type = /* dedcued encoding type for 'CharT' */
  // };
 
-    // Checks whether 'T' is an encoding type.
-    //
-    // Users can specialize this class if they wish to support custom
-    // encoding types. Specializations should derrive from 'std::true_type'.
-    //
-    // The following specializations are already provided by the library:
-    // - 'is_encoding<narrow_encoding>';
-    // - 'is_encoding<wide_encoding>'.
-    //
-    // NOTE: For each specialization of 'is_encoding' an corresponding specialization of 'codec' should be provided.
-    template <typename T>
-    struct is_encoding : std::false_type { };
-
     // Checks whether 'T' is an encoded character type, i.e. a type of
     // character which encoding can be deduced by the 'DP' deduction policy.
     // The const-volatile qualification of 'T' is dropped when passed to 'DP'.
     //
-    // Derrives from 'std::true_type' if 
-    // 'is_encoding<typename DP::template encoding_type<std::remove_cv_t<T>>>::value' is true.
+    // Derrives from 'std::true_type' if 'DP::encoding_type<std::remove_cv_t<T>>' is well-formed.
     // Otherwise, derrives from 'std::false type'.
     template <typename T, 
               typename DP = default_deduction_policy
@@ -81,12 +70,13 @@ namespace encoding {
     struct is_encoded_character;
 
     // Checks whether 'T' is an encoded string type, i.e. a type of string which character
-    // type 'C' (a) can be deduced by 'string_traits', and (b) is an encoded character type.
+    // type 'C' (a) can be deduced by 'string_traits', and (b) is an encoded character type,
+    // i.e. the encoding type for 'C' can be deduced by the 'DP' deduction policy.
     // The const-volatile qualification of 'T' is dropped when passed to 'string_traits'.
     // The const-volatile qualification of 'C' is dropped when passed to 'DP'.
     //
-    // Derrives from 'std::true_type' if
-    // 'is_encoded_character<typename string_traits<std::remove_cv_t<T>>::char_type, DP>::value' is true.
+    // Derrives from 'std::true_type' if 'string_traits<std::remove_cv_t<T>>::char_type' is well-formed
+    // and 'is_encoded_character<string_traits<std::remove_cv_t<T>>::char_type, DP>::value' is true.
     // Otherwise, derrives from 'std::false type'.
     template <typename T, 
               typename DP = default_deduction_policy
@@ -112,16 +102,11 @@ namespace encoding {
     >
     using encoding_type_t = typename encoding_type<T>::type;
 
-    // Checks whether the encoding type deduced for 'T', which is an encoded string or an encoded
-    // character type, by 'DP', which is an deduction policy, is the same as 'E', which is in encoding type.
+    // Checks whether the encoding type deduced for 'T', which is an encoded string or
+    // an encoded character type, by 'DP', which is an deduction policy, is the same as 'E'.
     //
-    // Derrives from 'std::true_type' if all of the following conditions are true:
-    // - 'T' is eather an encoded character or an encoded string type.
-    //   i.e. 'is_encoded_character<T, DP>::value || is_encoded_string<T, DP>::value' is true;
-    // - 'E' is an encoding type.
-    //   i.e. 'is_encoding<E>::value' is true;
-    // - The encoding type deduced by 'DP' is the same as 'E'.
-    //   i.e. 'std::is_same<encoding_type_t<T, DP>, E>::value' is true.
+    // Derrives from 'std::true_type' if 'encoding_type<T, DP>::type' is
+    // well-formed and 'std::is_same<encoding_type<T, DP>::type, E>::value' is true.
     // Otherwise, derrives from 'std::false type'.
     template <typename T,
               typename E,
@@ -194,8 +179,6 @@ namespace encoding {
     // - 'codec<wide_encoding>'.
     //
     // Specializations should derrive from 'codec_base' and provide members as shown below.
-    //
-    // NOTE: This class should have a specialization for each type 'T' for which 'is_encoding' is specialized.
     template <typename Encoding,
               typename EncAlloc = std::allocator<typename Encoding::char_type>,
               typename DecAlloc = std::allocator<typename native_encoding_type::char_type>,
@@ -234,22 +217,15 @@ namespace encoding {
         template <> struct get<wchar_t>  { using type = wide_encoding; };
 
     public:
-        template<typename CharT>
+        template <typename CharT>
         using encoding_type = typename get<CharT>::type;
     };
-
-    template <>
-    struct is_encoding<narrow_encoding> : std::true_type { };
-
-    template <>
-    struct is_encoding<wide_encoding> : std::true_type { };
 
     template <typename T, typename DP, typename = void>
     struct is_encoded_character_impl : std::false_type { };
 
     template <typename T, typename DP>
-    struct is_encoded_character_impl<T, DP, 
-                                     std::enable_if_t<is_encoding<typename DP::template encoding_type<T>>::value>>
+    struct is_encoded_character_impl<T, DP, void_t<typename DP::template encoding_type<T>>>
     : std::true_type { };
 
     template <typename T, typename DP = default_deduction_policy>
@@ -272,26 +248,23 @@ namespace encoding {
     template <typename T, typename DP>
     struct encoding_type_impl<T, DP, std::enable_if_t<is_encoded_character<T, DP>::value>>
     {
-        using type = typename DP::template encoding_type<std::remove_cv_t<T>>;
+        using type = typename DP::template encoding_type<T>;
     };
 
     template <typename T, typename DP>
     struct encoding_type_impl<T, DP, std::enable_if_t<is_encoded_string<T, DP>::value>>
     {
-        using type = typename DP::template encoding_type<
-                     std::remove_cv_t<typename string_traits<std::remove_cv_t<T>>::char_type>>;
+        using type = typename DP::template encoding_type<std::remove_cv_t<typename string_traits<T>::char_type>>;
     };
 
     template <typename T, typename DP = default_deduction_policy>
-    struct encoding_type : encoding_type_impl<T, DP> { };
+    struct encoding_type : encoding_type_impl<std::remove_cv_t<T>, DP> { };
 
     template <typename T, typename E, typename DP, typename = void>
     struct encoding_type_is_impl : std::false_type { };
 
     template <typename T, typename E, typename DP>
-    struct encoding_type_is_impl<T, E, DP, 
-                                 std::enable_if_t<(is_encoded_character<T, DP>::value || is_encoded_string<T, DP>::value) &&
-                                                   is_encoding<E>::value && std::is_same<encoding_type_t<T, DP>, E>::value>>
+    struct encoding_type_is_impl<T, E, DP, std::enable_if_t<std::is_same<typename encoding_type<T, DP>::type, E>::value>>
     : std::true_type { };
 
     template <typename T, typename E, typename DP = default_deduction_policy>

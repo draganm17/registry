@@ -13,13 +13,7 @@ namespace {
 
     struct not_encoding { };
 
-    struct invalid_deduction_policy_1 { };
-
-    struct invalid_deduction_policy_2
-    {
-        template <typename T>
-        using encoding_type = not_encoding;
-    };
+    struct invalid_deduction_policy { };
 
     template <typename CharT, typename DP = default_deduction_policy>
     inline bool test_is_encoded_character()
@@ -160,13 +154,6 @@ TEST(Encoding, DefaultDeductionPolicy)
     EXPECT_TRUE((std::is_same<typename default_deduction_policy::encoding_type<wchar_t>, wide_encoding>::value));
 }
 
-TEST(Encoding, IsEncoding)
-{
-    EXPECT_TRUE(is_encoding<narrow_encoding>::value);
-    EXPECT_TRUE(is_encoding<wide_encoding>::value);
-    EXPECT_FALSE(is_encoding<not_encoding>::value);
-}
-
 TEST(Encoding, IsEncodedCharacter)
 {
     // default deduction policy
@@ -175,13 +162,9 @@ TEST(Encoding, IsEncodedCharacter)
     EXPECT_FALSE(test_is_encoded_character<int>());
 
     // invalid deduction policy
-    EXPECT_FALSE((test_is_encoded_character<char,    invalid_deduction_policy_1>()));
-    EXPECT_FALSE((test_is_encoded_character<wchar_t, invalid_deduction_policy_1>()));
-    EXPECT_FALSE((test_is_encoded_character<int,     invalid_deduction_policy_1>()));
-    //
-    EXPECT_FALSE((test_is_encoded_character<char,    invalid_deduction_policy_2>()));
-    EXPECT_FALSE((test_is_encoded_character<wchar_t, invalid_deduction_policy_2>()));
-    EXPECT_FALSE((test_is_encoded_character<int,     invalid_deduction_policy_2>()));
+    EXPECT_FALSE((test_is_encoded_character<char,    invalid_deduction_policy>()));
+    EXPECT_FALSE((test_is_encoded_character<wchar_t, invalid_deduction_policy>()));
+    EXPECT_FALSE((test_is_encoded_character<int,     invalid_deduction_policy>()));
 }
 
 TEST(Encoding, IsEncodedString)
@@ -194,13 +177,9 @@ TEST(Encoding, IsEncodedString)
         EXPECT_FALSE(test_is_encoded_string_char_ptr<int>());
 
         // invalid deduction policy
-        EXPECT_FALSE((test_is_encoded_string_char_ptr<char,    invalid_deduction_policy_1>()));
-        EXPECT_FALSE((test_is_encoded_string_char_ptr<wchar_t, invalid_deduction_policy_1>()));
-        EXPECT_FALSE((test_is_encoded_string_char_ptr<int,     invalid_deduction_policy_1>()));
-        //
-        EXPECT_FALSE((test_is_encoded_string_char_ptr<char,    invalid_deduction_policy_2>()));
-        EXPECT_FALSE((test_is_encoded_string_char_ptr<wchar_t, invalid_deduction_policy_2>()));
-        EXPECT_FALSE((test_is_encoded_string_char_ptr<int,     invalid_deduction_policy_2>()));
+        EXPECT_FALSE((test_is_encoded_string_char_ptr<char,    invalid_deduction_policy>()));
+        EXPECT_FALSE((test_is_encoded_string_char_ptr<wchar_t, invalid_deduction_policy>()));
+        EXPECT_FALSE((test_is_encoded_string_char_ptr<int,     invalid_deduction_policy>()));
     }
     
     // character array
@@ -211,13 +190,9 @@ TEST(Encoding, IsEncodedString)
         EXPECT_FALSE(test_is_encoded_string_char_arr<int>());
 
         // invalid deduction policy
-        EXPECT_FALSE((test_is_encoded_string_char_arr<char,    invalid_deduction_policy_1>()));
-        EXPECT_FALSE((test_is_encoded_string_char_arr<wchar_t, invalid_deduction_policy_1>()));
-        EXPECT_FALSE((test_is_encoded_string_char_arr<int,     invalid_deduction_policy_1>()));
-        //
-        EXPECT_FALSE((test_is_encoded_string_char_arr<char,    invalid_deduction_policy_2>()));
-        EXPECT_FALSE((test_is_encoded_string_char_arr<wchar_t, invalid_deduction_policy_2>()));
-        EXPECT_FALSE((test_is_encoded_string_char_arr<int,     invalid_deduction_policy_2>()));
+        EXPECT_FALSE((test_is_encoded_string_char_arr<char,    invalid_deduction_policy>()));
+        EXPECT_FALSE((test_is_encoded_string_char_arr<wchar_t, invalid_deduction_policy>()));
+        EXPECT_FALSE((test_is_encoded_string_char_arr<int,     invalid_deduction_policy>()));
     }
     
     // std::basic_string
@@ -228,13 +203,9 @@ TEST(Encoding, IsEncodedString)
         EXPECT_FALSE(test_is_encoded_string_std_basic_string<int>());
 
         // invalid deduction policy
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string<char,    invalid_deduction_policy_1>()));
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string<wchar_t, invalid_deduction_policy_1>()));
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string<int,     invalid_deduction_policy_1>()));
-        //
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string<char,    invalid_deduction_policy_2>()));
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string<wchar_t, invalid_deduction_policy_2>()));
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string<int,     invalid_deduction_policy_2>()));
+        EXPECT_FALSE((test_is_encoded_string_std_basic_string<char,    invalid_deduction_policy>()));
+        EXPECT_FALSE((test_is_encoded_string_std_basic_string<wchar_t, invalid_deduction_policy>()));
+        EXPECT_FALSE((test_is_encoded_string_std_basic_string<int,     invalid_deduction_policy>()));
     }
     
     // std::basic_string_view
@@ -245,31 +216,10 @@ TEST(Encoding, IsEncodedString)
         EXPECT_FALSE(test_is_encoded_string_std_basic_string_view<int>());
 
         // invalid deduction policy
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<char,    invalid_deduction_policy_1>()));
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<wchar_t, invalid_deduction_policy_1>()));
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<int,     invalid_deduction_policy_1>()));
-        //
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<char,    invalid_deduction_policy_2>()));
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<wchar_t, invalid_deduction_policy_2>()));
-        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<int,     invalid_deduction_policy_2>()));
+        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<char,    invalid_deduction_policy>()));
+        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<wchar_t, invalid_deduction_policy>()));
+        EXPECT_FALSE((test_is_encoded_string_std_basic_string_view<int,     invalid_deduction_policy>()));
     }
-}
-
-TEST(Encoding, EncodedCharacterType)
-{
-    // from character
-    //EXPECT_TRUE((std::is_same<encoded_character_type_t<char>, char>::value));
-    //EXPECT_TRUE((std::is_same<encoded_character_type_t<const char>, const char>::value));
-    //
-    //EXPECT_TRUE((std::is_same<encoded_character_type_t<wchar_t>, wchar_t>::value));
-    //EXPECT_TRUE((std::is_same<encoded_character_type_t<const wchar_t>, const wchar_t>::value));
-
-    // from string
-    //EXPECT_TRUE((std::is_same<encoded_character_type_t<char*>, char>::value));
-    //EXPECT_TRUE((std::is_same<encoded_character_type_t<const char*>, const char>::value));
-    //
-    //EXPECT_TRUE((std::is_same<encoded_character_type_t<wchar_t*>, wchar_t>::value));
-    //EXPECT_TRUE((std::is_same<encoded_character_type_t<const wchar_t*>, const wchar_t>::value));
 }
 
 TEST(Encoding, EncodingType)
@@ -300,12 +250,7 @@ TEST(Encoding, EncodingTypeIs)
 
     // not an encoded string or character
     EXPECT_FALSE((encoding_type_is<int, narrow_encoding>::value));
-    EXPECT_FALSE((encoding_type_is<char, narrow_encoding, invalid_deduction_policy_1>::value));
-    EXPECT_FALSE((encoding_type_is<char, narrow_encoding, invalid_deduction_policy_2>::value));
-
-    // not an encoding
-    EXPECT_FALSE((encoding_type_is<char, not_encoding>::value));
-    EXPECT_FALSE((encoding_type_is<char, not_encoding, invalid_deduction_policy_2>::value));
+    EXPECT_FALSE((encoding_type_is<char, narrow_encoding, invalid_deduction_policy>::value));
 }
 
 TEST(Encoding, StringTraits)
