@@ -9,30 +9,21 @@
 
 namespace registry {
 
-//------------------------------------------------------------------------------------//
-//                                 class key_path                                     //
-//------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------//
+//                                     class key_path                                        //
+//-------------------------------------------------------------------------------------------//
 
-key_path::key_path(const string_type::value_type* first, const string_type::value_type* last, view view)
-    : m_view(view)
+key_path::key_path(std::wstring&& name, view view)
+: m_view(view)
+, m_name(std::move(name))
+{ }
+
+key_path& key_path::do_append(std::wstring&& name, view view)
 {
-    do_append(first, last, view);
-}
+    m_name.reserve(m_name.size() + name.size() + (!m_name.empty() && name.size() ? 1 : 0));
 
-key_path& key_path::do_assign(const string_type::value_type* first, const string_type::value_type* last, view view)
-{
-    m_view = view;
-    m_name.clear();
-    return do_append(first, last, view);
-}
-
-key_path& key_path::do_append(const string_type::value_type* first, const string_type::value_type* last, view view)
-{
-    const size_t input_size = last - first;
-    m_name.reserve(m_name.size() + input_size + (!m_name.empty() && input_size ? 1 : 0));
-
-    for (auto it =  details::key_name_iterator::begin(first, last);
-              it != details::key_name_iterator::end  (first, last); ++it)
+    for (auto it =  details::key_name_iterator::begin(name);
+              it != details::key_name_iterator::end  (name); ++it)
     {
         if (!m_name.empty()) m_name.push_back(key_path::separator);
         m_name.append(it->data(), it->size());
@@ -41,12 +32,11 @@ key_path& key_path::do_append(const string_type::value_type* first, const string
     return *this;
 }
 
-key_path& key_path::do_concat(const string_type::value_type* first, const string_type::value_type* last, view view)
+key_path& key_path::do_concat(std::wstring&& name, view view)
 {
-    const size_t input_size = last - first;
-    m_name.reserve(m_name.size() + input_size);
-    for (auto it =  details::key_name_iterator::begin(first, last);
-              it != details::key_name_iterator::end  (first, last); ++it)
+    m_name.reserve(m_name.size() + name.size());
+    for (auto it =  details::key_name_iterator::begin(name);
+              it != details::key_name_iterator::end  (name); ++it)
     {
         m_name.append(it->data(), it->size());
         m_name.push_back(key_path::separator);
@@ -56,21 +46,41 @@ key_path& key_path::do_concat(const string_type::value_type* first, const string
     return *this;
 }
 
-key_path& key_path::do_replace_leaf_path(const string_type::value_type* first, 
-                                         const string_type::value_type* last, view view)
+key_path& key_path::do_replace_leaf_path(std::wstring&& name, view view)
 {
-    return remove_leaf_path().do_append(first, last, view);
+    return remove_leaf_path().do_append(std::move(name), view);
 }
 
-key_path key_path::from_key_id(key_id id) { return key_path(details::key_id_to_string(id)); }
+key_path key_path::from_key_id(key_id id)
+{
+    return key_path(details::key_id_to_string(id));
+}
 
 key_path::key_path(view view)
-    : m_view(view)
+: m_view(view)
 { }
 
-const string_type& key_path::key_name() const noexcept { return m_name; }
+const string_type& key_path::key_name() const noexcept
+{
+    return m_name;
+}
 
-view key_path::key_view() const noexcept { return m_view; }
+view key_path::key_view() const noexcept
+{
+    return m_view;
+}
+
+std::string key_path::key_name_string(const std::locale& loc) const
+{
+    // TODO: ...
+    throw 0;
+}
+
+std::wstring key_path::key_name_wstring() const
+{
+    // TODO: ...
+    throw 0;
+}
 
 key_path key_path::root_path() const
 {
@@ -111,13 +121,21 @@ key_path key_path::relative_path() const
                                                          : key_path(it->data(), m_view);
 }
 
-bool key_path::has_root_path() const noexcept { return root_key_id() != key_id::unknown; }
+bool key_path::has_root_path() const noexcept
+{
+    return root_key_id() != key_id::unknown;
+}
 
 bool key_path::has_leaf_path() const noexcept 
-{ return details::key_name_iterator::begin(m_name) != details::key_name_iterator::end(m_name); }
+{
+    return details::key_name_iterator::begin(m_name) != details::key_name_iterator::end(m_name);
+}
 
 bool key_path::has_parent_path() const noexcept
-{ return std::distance(details::key_name_iterator::begin(m_name), details::key_name_iterator::end(m_name)) > 1; }
+{
+    return std::distance(details::key_name_iterator::begin(m_name),
+                         details::key_name_iterator::end(m_name)) > 1;
+}
 
 bool key_path::has_relative_path() const noexcept 
 {
@@ -127,9 +145,15 @@ bool key_path::has_relative_path() const noexcept
     return (has_root && ++first != last) || (!has_root && first != last);
 }
 
-bool key_path::is_absolute() const noexcept { return has_root_path(); }
+bool key_path::is_absolute() const noexcept
+{
+    return has_root_path();
+}
 
-bool key_path::is_relative() const noexcept { return !is_absolute(); }
+bool key_path::is_relative() const noexcept
+{
+    return !is_absolute();
+}
 
 int key_path::compare(const key_path& other) const noexcept
 {
@@ -139,8 +163,8 @@ int key_path::compare(const key_path& other) const noexcept
 
     const auto beg1 = m_name.begin(),       end1 = m_name.end(),
                beg2 = other.m_name.begin(), end2 = other.m_name.end();
-    if (std::lexicographical_compare(beg1, end1, beg2, end2, details::is_iless{})) return -1;
-    if (std::lexicographical_compare(beg2, end2, beg1, end1, details::is_iless{})) return  1;
+    if (std::lexicographical_compare(beg1, end1, beg2, end2, details::is_iless())) return -1;
+    if (std::lexicographical_compare(beg2, end2, beg1, end1, details::is_iless())) return  1;
     return 0;
 }
 
@@ -149,7 +173,10 @@ key_path::iterator key_path::begin() const
     iterator it;
     it.m_path_ptr = this;
     it.m_name_it = details::key_name_iterator::begin(m_name);
-    if (it.m_name_it != details::key_name_iterator::end(m_name)) it.m_element.assign(*it.m_name_it, key_view());
+
+    if (it.m_name_it != details::key_name_iterator::end(m_name)) {
+        it.m_element.assign(*it.m_name_it, key_view());
+    }
     return it;
 }
 
@@ -163,15 +190,15 @@ key_path::iterator key_path::end() const noexcept
 
 key_path& key_path::assign(view view)
 {
-    m_name.clear();
     m_view = view;
+    m_name.clear();
     return *this;
 }
 
 key_path& key_path::remove_leaf_path()
 {
     auto first = details::key_name_iterator::begin(m_name);
-    auto last = details::key_name_iterator::end(m_name);
+    auto last  = details::key_name_iterator::end(m_name);
 
     if (first != last) {
         auto it = --last;
@@ -187,14 +214,20 @@ void key_path::swap(key_path& other) noexcept
     swap(m_name, other.m_name);
 }
 
-bool key_path::iterator::operator==(const iterator& rhs) const noexcept { return m_name_it == rhs.m_name_it; }
+bool key_path::iterator::operator==(const iterator& rhs) const noexcept
+{
+    return m_name_it == rhs.m_name_it;
+}
 
-bool key_path::iterator::operator!=(const iterator& rhs) const noexcept { return !(*this == rhs); }
+bool key_path::iterator::operator!=(const iterator& rhs) const noexcept
+{
+    return !(*this == rhs);
+}
 
 
-//------------------------------------------------------------------------------------//
-//                           class key_path::iterator                                 //
-//------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------//
+//                                class key_path::iterator                                   //
+//-------------------------------------------------------------------------------------------//
 
 key_path::iterator::reference key_path::iterator::operator*() const noexcept
 {
@@ -217,7 +250,10 @@ key_path::iterator& key_path::iterator::operator++()
     return *this;
 }
 
-key_path::iterator key_path::iterator::operator++(int) { auto tmp = *this; ++*this; return tmp; }
+key_path::iterator key_path::iterator::operator++(int)
+{
+    auto tmp = *this; ++*this; return tmp;
+}
 
 key_path::iterator& key_path::iterator::operator--()
 {
@@ -228,7 +264,10 @@ key_path::iterator& key_path::iterator::operator--()
     return *this;
 }
 
-key_path::iterator key_path::iterator::operator--(int) { auto tmp = *this; --*this; return tmp; }
+key_path::iterator key_path::iterator::operator--(int)
+{
+    auto tmp = *this; --*this; return tmp;
+}
 
 void key_path::iterator::swap(iterator& other) noexcept
 {
@@ -238,19 +277,24 @@ void key_path::iterator::swap(iterator& other) noexcept
     swap(m_path_ptr, other.m_path_ptr);
 }
 
+} // namespace registry
 
-//------------------------------------------------------------------------------------//
-//                             NON-MEMBER FUNCTIONS                                   //
-//------------------------------------------------------------------------------------//
 
-size_t hash_value(const key_path& path) noexcept
+namespace std {
+
+//-------------------------------------------------------------------------------------------//
+//                             class hash<registry::key_path>                                //
+//-------------------------------------------------------------------------------------------//
+
+size_t hash<registry::key_path>::operator()(const registry::key_path& val) const noexcept
 {
     const auto loc = std::locale();
-    const auto& key_name = path.key_name();
+    const auto& key_name = val.key_name();
 
-    size_t hash = std::hash<view>()(path.key_view());
-    std::for_each(key_name.begin(), key_name.end(), [&](auto c) { details::hash_combine(hash, std::tolower(c, loc)); });
+    size_t hash = std::hash<registry::view>()(val.key_view());
+    std::for_each(key_name.begin(), key_name.end(), 
+                  [&](auto c) { registry::details::hash_combine(hash, std::tolower(c, loc)); });
     return hash;
 }
 
-}  // namespace registry
+} // namespace std

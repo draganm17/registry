@@ -2,21 +2,23 @@
 #pragma once
 
 #include <cstdint>
-#include <initializer_list>
+#include <locale>
 #include <string>
 #include <typeinfo>
-#include <type_traits>
+//#include <type_traits> // TODO: ???
 #include <vector>
 
 #include <registry/details/encoding.h>
-#include <registry/types.h>
+//#include <registry/types.h>  // TODO: ???
 
 
 namespace registry
 {
-    /*! A registry value can store data in various formats. When you store data under a registry value, you can
-    specify one of the following values to indicate the type of data being stored. For more information see: 
-    https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms724884 */
+    //! The type of a registry value.
+    /*! A registry value can store data in various formats. When you store data under a registry
+    //  value, you can specify one of the following values to indicate the type of data being stored.
+    //  For more information see: https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms724884
+    */
     enum class value_type : uint32_t
     {
         /*! No defined value type. */
@@ -26,7 +28,7 @@ namespace registry
         sz =                          1,
         
         /*! A null-terminated string that contains unexpanded references to environment variables 
-        (for example, "%PATH%"). */
+            (for example, "%PATH%"). */
         expand_sz =                   2,
 
         /*! Binary data in any form. */
@@ -57,258 +59,299 @@ namespace registry
         qword =                       11
     };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
     struct sz_value_tag               { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
     struct expand_sz_value_tag        { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
     struct dword_value_tag            { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
     struct dword_big_endian_value_tag { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
     struct link_value_tag             { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
     struct multi_sz_value_tag         { };
 
-    //! Defines a type of object to be used to select an overload of registry::value constructor or `assign` function.
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
     struct qword_value_tag            { };
 
-    //------------------------------------------------------------------------------------//
-    //                             class bad_value_cast                                   //
-    //------------------------------------------------------------------------------------//
+
+    //-------------------------------------------------------------------------------------------//
+    //                                  class bad_value_cast                                     //
+    //-------------------------------------------------------------------------------------------//
 
     //! Defines a type of object to be thrown by `registry::value` conversion functions on failure.
     class bad_value_cast : public std::bad_cast
     {
     public:
-        const char* what() const noexcept override { return "registry::bad_value_cast"; }
+        const char* what() const noexcept override;
     };
 
     //\cond HIDDEN_SYMBOLS
     namespace details
     {
-        // TODO: get rid of value_state ???
-        struct value_state
+        template <typename Sequence>
+        std::vector<std::wstring> to_natives(const Sequence& src, const std::locale& loc)
         {
-            value_type                        m_type = value_type::none;
-            std::basic_string<unsigned char>  m_data;
-            // NOTE: using std::basic_string as a container allows small data optimization
-        };
+            throw 0;
+            // TODO: ...
+        }
+
+        template <typename InputIt>
+        std::vector<std::wstring> to_natives(InputIt first, InputIt last, const std::locale& loc)
+        {
+            throw 0;
+            // TODO: ...
+        }
     } //\endcond
 
-    //------------------------------------------------------------------------------------//
-    //                                 class value                                        //
-    //------------------------------------------------------------------------------------//
+    //-------------------------------------------------------------------------------------------//
+    //                                       class value                                         //
+    //-------------------------------------------------------------------------------------------//
 
     //! Represents the content of a registry value.
-    /*!
-    Objects of type `registry::value` represent a typed piece of data that can be written to or readed from the
-    Windows registry by using the registry library API. Values are raw-data storages that does not handle syntactic
-    or semantic aspects of the data. However, `registry::value` provides convenient constructors to help users create
-    values that are suitable for correctly represent a registry value of a given type.
+    /*! Objects of type `registry::value` represent a typed piece of data that can be written to
+    //  or readed from the Windows registry by using the registry library API. Values are raw-data 
+    //  storages that does not handle syntactic or semantic aspects of the data. However,
+    //  `registry::value` provides convenient constructors to help users create values that are 
+    //  suitable for correctly represent a registry value of a given type.
     */
     // TODO: rewrite the main description
-    class value 
-        : private details::value_state
+    class value
     {
     private:
-        value& do_assign(sz_value_tag, const wchar_t* data, size_t size);
+        value(value_type type, const std::wstring& val);
 
-        // converts the string to Unicode and calls the first overload
-        template <typename CharT> value& do_assign(sz_value_tag, const CharT* data, size_t size);
-
-        value& do_assign(expand_sz_value_tag, const wchar_t* data, size_t size);
-
-        // converts the string to Unicode and calls the first overload
-        template <typename CharT> value& do_assign(expand_sz_value_tag, const CharT* data, size_t size);
-
-        value& do_assign(link_value_tag, const wchar_t* data, size_t size);
-
-        // converts the string to Unicode and calls the first overload
-        template <typename CharT> value& do_assign(link_value_tag, const CharT* data, size_t size);
-
-        value& do_assign(multi_sz_value_tag, const std::vector<std::pair<const wchar_t*, size_t>>& value);
-
-        // converts the strings to Unicode and calls the first overload
-        template <typename CharT>
-        value& do_assign(multi_sz_value_tag, const std::vector<std::pair<const CharT*, size_t>>& value);
+        value(value_type type, const std::vector<std::wstring>& val);
 
     public:
         //! Default constructor.
         /*!
-        @post `type() == value_type::none`.
-        @post `data() == nullptr`.
-        @post `size() == 0`.
+        //  @post `type() == value_type::none`.
+        //
+        //  @post `data() == nullptr`.
+        //
+        //  @post `size() == 0`.
         */
         value() noexcept = default;
 
         //! Constructs the value with the copy of the contents of `other`.
         /*!
-        @post `*this == other`.
+        //  @post `*this == other`.
         */
         value(const value& other) = default;
 
         /*! \brief
-        Constructs the value with the contents of `other` using move semantics. `other` is left in a valid but 
-        unspecified state. */
+        //  Constructs the value with the contents of `other` using move semantics. `other` is left
+        //  in a valid but unspecified state. */
         /*!
-        @post `*this` has the original value of `other`.
+        //  @post `*this` has the original value of `other`.
         */
         value(value&& other) noexcept = default;
 
         //! Constructs a value of type `value_type::sz`.
         /*!
-        @post `type() == value_type::sz`.
-        @post `to_string() == value`.
-
-        @param[in] tag   - value type tag.
-        @param[in] value - a string to be stored in this value.
+        //  @tparam Source - TODO: ...
+        //
+        //  @post `type() == value_type::sz`.
+        //
+        //  @param[in] tag - value type tag.
+        //
+        //  @param[in] val - a string to be stored in this value.
+        //
+        //  @param[in] loc - TODO: ...
         */
-        // TODO: document the template
-        template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
-        >
-        value(sz_value_tag tag, const Source& value);
+        template <typename Source>
+        value(sz_value_tag, const Source& val, const std::locale& loc = std::locale(""));
+
+        //! Constructs a value of type `value_type::sz`.
+        /*!
+        //  @tparam InputIt - TODO: ...
+        //
+        //  @post `type() == value_type::sz`.
+        //
+        //  @param[in] first, last - TODO: ...
+        //
+        //  @param[in] loc         - TODO: ...
+        */
+        template <typename InputIt>
+        value(sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
 
         //! Constructs a value of type `value_type::expand_sz`.
         /*!
-        @post `type() == value_type::expand_sz`.
-        @post `to_string() == value`.
-
-        @param[in] tag   - value type tag.
-        @param[in] value - a string to be stored in this value.
+        //  @tparam Source - TODO: ...
+        //
+        //  @post `type() == value_type::expand_sz`.
+        //
+        //  @param[in] first, last - a string to be stored in this value.
+        //
+        //  @param[in] loc         - TODO: ...
         */
         // TODO: document the template
-        template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
-        >
-        value(expand_sz_value_tag tag, const Source& value);
+        template <typename Source>
+        value(expand_sz_value_tag, const Source& val, const std::locale& loc = std::locale(""));
+
+        //! Constructs a value of type `value_type::expand_sz`.
+        /*!
+        //  @tparam InputIt - TODO: ...
+        //
+        //  @post `type() == value_type::expand_sz`.
+        //
+        //  @param[in] first, last - TODO: ...
+        //
+        //  @param[in] loc         - TODO: ...
+        */
+        template <typename InputIt>
+        value(expand_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
 
         //! Constructs a value of type `value_type::dword`.
         /*!
-        @post `type() == value_type::dword`.
-        @post `to_uint32() == value && to_uint64() == value`.
-
-        @param[in] tag   - value type tag.
-        @param[in] value - an unsigned 32-bit integer to be stored in this value.
+        //  @post `type() == value_type::dword`.
+        //
+        //  @post `to_uint32() == value`.
+        //
+        //  @param[in] val - an unsigned 32-bit integer to be stored in this value.
         */
-        value(dword_value_tag tag, uint32_t value);
+        value(dword_value_tag, uint32_t val);
 
         //! Constructs a value of type `value_type::dword_big_endian`.
         /*!
-        @post `type() == value_type::dword_big_endian`.
-        @post `to_uint32() == value && to_uint64() == value`.
-
-        @param[in] tag   - value type tag.
-        @param[in] value - an unsigned 32-bit integer to be stored in this value.
+        //  @post `type() == value_type::dword_big_endian`.
+        //
+        //  @post `to_uint32() == value`.
+        //
+        //  @param[in] val - an unsigned 32-bit integer to be stored in this value.
         */
-        value(dword_big_endian_value_tag tag, uint32_t value);
+        value(dword_big_endian_value_tag, uint32_t val);
 
         //! Constructs a value of type `value_type::link`.
         /*!
-        @post `type() == value_type::link`.
-        @post `to_string() == value`.
-
-        @param[in] tag   - value type tag.
-        @param[in] value - a string to be stored in this value.
+        //  @tparam Source - TODO: ...
+        //
+        //  @post `type() == value_type::link`.
+        //
+        //  @param[in] val - a string to be stored in this value.
+        //
+        //  @param[in] loc - TODO: ...
         */
-        // TODO: document the template
-        template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
-        >
-        value(link_value_tag tag, const Source& value);
+        template <typename Source>
+        value(link_value_tag, const Source& val, const std::locale& loc = std::locale(""));
+
+        //! Constructs a value of type `value_type::link`.
+        /*!
+        //  @tparam InputIt - TODO: ...
+        //
+        //  @post `type() == value_type::link`.
+        //
+        //  @param[in] first, last - TODO: ...
+        //
+        //  @param[in] loc         - TODO: ...
+        */
+        template <typename InputIt>
+        value(link_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
 
         //! Constructs a value of type `value_type::multi_sz`.
         /*!
-        @post `type() == value_type::multi_sz`.
-        @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), BEGIN(value), END(value))`.
-
-        @param[in] tag   - value type tag.
-        @param[in] value - a container, such as `Sequence::value_type` should be explicitly convertible to 
-                           `registry::string_view_type`.
+        //  @tparam Sequence - TODO: ...
+        //
+        //  @post `type() == value_type::multi_sz`.
+        //
+        //  @param[in] val - a container, such as `Sequence::value_type` should be explicitly
+        //                     convertible to `registry::string_view_type`.
+        //
+        //  @param[in] loc - TODO: ...
         */
         // TODO: rewrite description
-        template <typename Sequence,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<typename Sequence::value_type>::value>
-        >
-        value(multi_sz_value_tag tag, const Sequence& value);
+        template <typename Sequence>
+        value(multi_sz_value_tag, const Sequence& val, const std::locale& loc = std::locale(""));
 
         //! Constructs a value of type `value_type::multi_sz`.
         /*!
-        @post `type() == value_type::multi_sz`.
-        @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), first, last)`.
-
-        @param[in] tag         - value type tag.
-        @param[in] first, last - input iterators, such as `std::iterator_traits<InputIt>::value_type` should be 
-                                 explicitly convertible to `registry::string_view_type`.
+        //  @tparam InputIt - TODO: ...
+        //
+        //  @post `type() == value_type::multi_sz`.
+        //
+        //  @param[in] first, last - input iterators, such as `std::iterator_traits<InputIt>::value_type`
+        //                           should be explicitly convertible to `registry::string_view_type`.
+        //
+        //  @param[in] loc         - TODO: ...
         */
         // TODO: rewrite description
-        template <typename InputIt,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<
-                             typename std::iterator_traits<InputIt>::value_type>::value>
-        >
-        value(multi_sz_value_tag tag, InputIt first, InputIt last);
-
-        //! Constructs a value of type `value_type::multi_sz`.
-        /*!
-        @post `type() == value_type::multi_sz`.
-        @post Let `seq = to_strings()`, then `std::equal(seq.begin(), seq.end(), init.begin(), init.end())`.
-
-        @param[in] tag  - value type tag.
-        @param[in] init - an object of type `std::initializer_list<T>`, such as `T` should be explicitly convertible
-                          to `registry::string_view_type`.
-        */
-        // TODO: rewrite description
-        template <typename T,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<T>::value>
-        >
-        value(multi_sz_value_tag tag, std::initializer_list<T> init);
+        template <typename InputIt>
+        value(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
 
         //! Constructs a value of type `value_type::qword`.
         /*!
-        @post `type() == value_type::qword`.
-        @post `to_uint64() == value`.
-
-        @param[in] tag   - value type tag.
-        @param[in] value - an unsigned 64-bit integer to be stored in this value.
+        //  @post `type() == value_type::qword`.
+        //
+        //  @post `to_uint64() == value`.
+        //
+        //  @param[in] val - an unsigned 64-bit integer to be stored in this value.
         */
-        value(qword_value_tag tag, uint64_t value);
+        value(qword_value_tag, uint64_t val);
 
         //! Constructs the value from a value type identifier and binary data.
         /*!
-        Any byte sequence is legal, the format of the data is not checked over the value type. However, if the stored
-        byte sequence is not suitable for representing a value of a given type, then calling a conversion function may
-        produce a valid but undefined result. \n
-        If the value type is one of value_type::sz, value_type::expand_sz, value_type::link or value_type::multi_sz, 
-        providing the null terminator character is desirable but not necessary.
-
-        @post `this->type() == type`.
-        @post TODO: ...
-
-        @param[in] type - a value type identifier.
-        @param[in] data - the binary data to be stored in this value.
-        @param[in] size - the size of the binary data in bytes.
+        //  Any byte sequence is legal, the format of the data is not checked over the value type.
+        //  However, if the stored byte sequence is not suitable for representing a value of a given
+        //  type, then calling a conversion function may produce a valid but undefined result. \n
+        //  If the value type is one of `value_type::sz`, `value_type::expand_sz`, `value_type::link` 
+        //  or `value_type::multi_sz`, providing the null terminator character is desirable but not
+        //  necessary.
+        //
+        //  @post `this->type() == type`.
+        //
+        //  @post TODO: ...
+        //
+        //  @param[in] type - a value type identifier.
+        //
+        //  @param[in] data - the binary data to be stored in this value.
+        //
+        //  @param[in] size - the size of the binary data in bytes.
         */
         value(value_type type, const unsigned char* data, size_t size);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
-        @post `*this == other`.
-        @return `*this`.
+        //  @post `*this == other`.
+        //
+        //  @return `*this`.
         */
         value& operator=(const value& other) = default;
 
         /*! \brief
-        Replaces the contents of `*this` with those of `other` using move semantics. `other` is left in a valid, but 
-        unspecified state. */
+            Replaces the contents of `*this` with those of `other` using move semantics. `other` is 
+            left in a valid, but unspecified state. */
         /*!
-        @post `*this` has the original value of `other`.
-        @return `*this`.
+        //  @post `*this` has the original value of `other`.
+        //
+        //  @return `*this`.
         */
         value& operator=(value&& other) noexcept = default;
 
@@ -325,169 +368,198 @@ namespace registry
     public:
         //! Converts the value to an unsigned 32-bit integer.
         /*!
-        @throw `registry::bad_value_cast` if the value type is not one of `value_type::dword` or 
-               `value_type::dword_big_endian`.
+        //  @throw `registry::bad_value_cast` if the value type is not one of `value_type::dword` 
+                   or `value_type::dword_big_endian`.
         */
         uint32_t to_uint32() const;
 
         //! Converts the value to an unsigned 64-bit integer.
         /*!
-        @throw `registry::bad_value_cast` if the value type is not one of `value_type::dword`, 
-               `value_type::dword_big_endian` or `value_type::qword`.
+        //  @throw `registry::bad_value_cast` if the value type is not one of `value_type::dword`, 
+                   `value_type::dword_big_endian` or `value_type::qword`.
         */
         uint64_t to_uint64() const;
 
         //! Converts the value to a string.
         /*!
-        @throw `registry::bad_value_cast` if the value type is not one of `value_type::sz`, `value_type::expand_sz`
-               or `value_type::link`.
+        //  @throw `registry::bad_value_cast` if the value type is not one of `value_type::sz`,
+                   `value_type::expand_sz` or `value_type::link`.
         */
         // TODO: rewrite description
         //       ad the descr. of all members that reffer to 'to_string()'
-        std::string to_string() const;
+        std::string to_string(const std::locale& loc = std::locale("")) const;
 
         //! TODO: ...
         std::wstring to_wstring() const;
 
         //! Converts the value to an array of strings.
         /*!
-        @throw `registry::bad_value_cast` if the value type is not `value_type::multi_sz`.
+        //  @throw `registry::bad_value_cast` if the value type is not `value_type::multi_sz`.
         */
-        // TODO: rewrite description
-        //       ad the descr. of all members that reffer to 'to_strings()'
-        std::vector<std::string> to_strings() const;
+        std::vector<std::string> to_strings(const std::locale& loc = std::locale("")) const;
 
         //! TODO: ...
         std::vector<std::wstring> to_wstrings() const;
 
     public:
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(tag, val, loc).swap(*this)`.
         /*!
-        @post `*this == value(tag, value)`.
-        @param[in] tag   - value type tag.
-        @param[in] value - a string to be stored in this value.
-        @return `*this`.
+        //  @tparam Source - TODO: ...
+        //
+        //  @param[in] val   - a string to be stored in this value.
+        //
+        //  @param[in] loc   - TODO: ...
+        //
+        //  @return `*this`.
         */
-        // TODO: document the template
-        template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
-        >
-        value& assign(sz_value_tag tag, const Source& value);
+        template <typename Source>
+        value& assign(sz_value_tag tag, const Source& val, const std::locale& loc = std::locale(""));
 
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(tag, first, last, loc).swap(*this)`.
         /*!
-        @post `*this == value(tag, value)`.
-        @param[in] tag   - value type tag.
-        @param[in] value - a string to be stored in this value.
-        @return `*this`.
+        //  @tparam InputIt - TODO: ...
+        //
+        //  @param[in] first, last - a string to be stored in this value.
+        //
+        //  @param[in] loc         - TODO: ...
+        //
+        //  @return `*this`.
         */
-        // TODO: document the template
-        template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
-        >
-        value& assign(expand_sz_value_tag tag, const Source& value);
+        template <typename InputIt>
+        value& assign(sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
 
-
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(tag, val, loc).swap(*this)`.
         /*!
-        @post `*this == value(tag, value)`.
-        @param[in] tag   - value type tag.
-        @param[in] value - an unsigned 32-bit integer to be stored in this value.
-        @return `*this`.
+        //  @tparam Source - TODO: ...
+        //
+        //  @param[in] val - a string to be stored in this value.
+        //
+        //  @param[in] loc - TODO: ...
+        //
+        //  @return `*this`.
         */
-        value& assign(dword_value_tag tag, uint32_t value);
+        template <typename Source>
+        value& assign(expand_sz_value_tag tag, const Source& val, const std::locale& loc = std::locale(""));
 
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(tag, first, last, loc).swap(*this)`.
         /*!
-        @post `*this == value(tag, value)`.
-        @param[in] tag   - value type tag.
-        @param[in] value - an unsigned 32-bit integer to be stored in this value.
-        @return `*this`.
+        //  @tparam InputIt - TODO: ...
+        //
+        //  @param[in] first, last - a string to be stored in this value.
+        //
+        //  @param[in] loc         - TODO: ...
+        //
+        //  @return `*this`.
         */
-        value& assign(dword_big_endian_value_tag tag, uint32_t value);
+        template <typename InputIt>
+        value& assign(expand_sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
 
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(tag, val).swap(*this)`.
         /*!
-        @post `*this == value(tag, value)`.
-        @param[in] tag   - value type tag.
-        @param[in] value - a string to be stored in this value.
-        @return `*this`.
+        //  @param[in] val - an unsigned 32-bit integer to be stored in this value.
+        //
+        //  @return `*this`.
         */
-        // TODO: document the template
-        template <typename Source,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>
-        >
-        value& assign(link_value_tag tag, const Source& value);
+        value& assign(dword_value_tag tag, uint32_t val);
 
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(tag, val).swap(*this)`.
         /*!
-        @post `*this == value(tag, value)`.
-        @param[in] tag   - value type tag.
-        @param[in] value - a container, such as `Sequence::value_type` should be explicitly convertible to 
-                           `registry::string_view_type`.
-        @return `*this`.
+        //  @param[in] val - an unsigned 32-bit integer to be stored in this value.
+        //
+        //  @return `*this`.
+        */
+        value& assign(dword_big_endian_value_tag tag, uint32_t val);
+
+        //! Replaces the contents of the value as if by `value(tag, val, loc).swap(*this)`.
+        /*!
+        //  @tparam Source - TODO: ...
+        //
+        //  @param[in] val - a string to be stored in this value.
+        //
+        //  @param[in] loc - TODO: ...
+        //
+        //  @return `*this`.
+        */
+        template <typename Source>
+        value& assign(link_value_tag tag, const Source& val, const std::locale& loc = std::locale(""));
+
+        //! Replaces the contents of the value as if by `value(tag, first, last, loc).swap(*this)`.
+        /*!
+        //  @tparam InputIt - TODO: ...
+        //
+        //  @param[in] first, last - a string to be stored in this value.
+        //
+        //  @param[in] loc         - TODO: ...
+        //
+        //  @return `*this`.
+        */
+        template <typename InputIt>
+        value& assign(link_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+
+        //! Replaces the contents of the value as if by `value(tag, val, loc).swap(*this)`.
+        /*!
+        //  @tparam Sequence - TODO: ...
+        //
+        //  @param[in] val - a container, such as `Sequence::value_type` should be explicitly
+        //                   convertible to `registry::string_view_type`.
+        //
+        //  @param[in] loc - TODO: ...
+        //
+        //  @return `*this`.
         */
         // TODO: rewrite description
-        template <typename Sequence,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<typename Sequence::value_type>::value>
-        >
-        value& assign(multi_sz_value_tag, const Sequence& value);
+        template <typename Sequence>
+        value& assign(multi_sz_value_tag, const Sequence& val, const std::locale& loc = std::locale(""));
 
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(tag, first, last, loc).swap(*this)`.
         /*!
-        @post `*this == value(tag, first, last)`.
-        @param[in] tag         - value type tag.
-        @param[in] first, last - input iterators, such as `std::iterator_traits<InputIt>::value_type` should be 
-                                 explicitly convertible to `registry::string_view_type`.
-        @return `*this`.
+        //  @tparam InputIt - TODO: ...
+        //
+        //  @param[in] first, last - input iterators, such as `std::iterator_traits<InputIt>::value_type` 
+        //                           should be explicitly convertible to `registry::string_view_type`.
+        //
+        //  @param[in] loc         - TODO: ...
+        //
+        //  @return `*this`.
         */
         // TODO: rewrite description
-        template <typename InputIt,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<
-                             typename std::iterator_traits<InputIt>::value_type>::value>
-        >
-        value& assign(multi_sz_value_tag, InputIt first, InputIt last);
+        template <typename InputIt>
+        value& assign(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
 
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(tag, val).swap(*this)`.
         /*!
-        @post `*this == value(tag, init)`.
-        @param[in] tag  - value type tag.
-        @param[in] init - an object of type `std::initializer_list<T>`, such as `T` should be explicitly convertible
-                          to `registry::string_view_type`.
-        @return `*this`.
+        //  @param[in] val - an unsigned 64-bit integer to be stored in this value.
+        //
+        //  @return `*this`.
         */
-        // TODO: rewrite description
-        template <typename T,
-                  typename = std::enable_if_t<details::encoding::is_encoded_string<T>::value>
-        >
-        value& assign(multi_sz_value_tag tag, std::initializer_list<T> init);
+        value& assign(qword_value_tag, uint64_t val);
 
-        //! Replaces the contents of the value.
+        //! Replaces the contents of the value as if by `value(type, data, size).swap(*this)`.
         /*!
-        @post `*this == value(tag, value)`.
-        @param[in] tag   - value type tag.
-        @param[in] value - an unsigned 64-bit integer to be stored in this value.
-        @return `*this`.
-        */
-        value& assign(qword_value_tag, uint64_t value);
-
-        //! Replaces the contents of the value.
-        /*!
-        @post `*this == value(tag, value, size)`.
-        @param[in] type - a value type identifier.
-        @param[in] data - the binary data to be stored in this value.
-        @param[in] size - the size of the binary data in bytes.
-        @return `*this`.
+        //  @param[in] type - a value type identifier.
+        //
+        //  @param[in] data - the binary data to be stored in this value.
+        //
+        //  @param[in] size - the size of the binary data in bytes.
+        //
+        //  @return `*this`.
         */
         value& assign(value_type type, const unsigned char* data, size_t size);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(value& other) noexcept;
+
+    private:
+        value_type                        m_type = value_type::none;
+      
+        std::basic_string<unsigned char>  m_data;
+        // NOTE: using std::basic_string as a container allows small data optimization.
     };
 
-    //------------------------------------------------------------------------------------//
-    //                             NON-MEMBER FUNCTIONS                                   //
-    //------------------------------------------------------------------------------------//
+
+    //-------------------------------------------------------------------------------------------//
+    //                                   NON-MEMBER FUNCTIONS                                    //
+    //-------------------------------------------------------------------------------------------//
 
     //! Checks whether `lhs` is equal to `rhs`.
     bool operator==(const value& lhs, const value& rhs) noexcept;
@@ -507,141 +579,169 @@ namespace registry
     //! Checks whether `lhs` is greater than or equal to `rhs`.
     bool operator>=(const value& lhs, const value& rhs) noexcept;
 
-    //! Calculates a hash value for a `value` object.
-    /*!
-    @return A hash value such that if for two values, `v1 == v2` then `hash_value(v1) == hash_value(v2)`.
-    */
-    size_t hash_value(const value& value) noexcept;
-
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(value& lhs, value& rhs) noexcept;
 
-    //------------------------------------------------------------------------------------//
-    //                              INLINE DEFINITIONS                                    //
-    //------------------------------------------------------------------------------------//
 
-    template <typename CharT>
-    inline value& value::do_assign(sz_value_tag, const CharT* data, size_t size)
+    //-------------------------------------------------------------------------------------------//
+    //                                    INLINE DEFINITIONS                                     //
+    //-------------------------------------------------------------------------------------------//
+
+    inline const char* bad_value_cast::what() const noexcept
     {
-        using namespace details::encoding;
-        const std::wstring string = codec<encoding_type_t<CharT>>().decode(data, data + size);
-        return do_assign(tag, string.data(), string.size());
+        return "registry::bad_value_cast";
     }
 
-    template <typename CharT>
-    inline value& value::do_assign(expand_sz_value_tag, const CharT* data, size_t size)
+    template <typename Source>
+    inline value::value(sz_value_tag, const Source& val, const std::locale& loc)
+    : value(value_type::sz, details::to_native(val, loc))
+    { }
+
+    template <typename InputIt>
+    inline value::value(sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
+    : value(value_type::sz, details::to_native(first, last, loc))
+    { }
+
+    template <typename Source>
+    inline value::value(expand_sz_value_tag, const Source& val, const std::locale& loc)
+    : value(value_type::expand_sz, details::to_native(val, loc))
+    { }
+
+    template <typename InputIt>
+    inline value::value(expand_sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
+    : value(value_type::expand_sz, details::to_native(first, last, loc))
+    { }
+
+    template <typename Source>
+    inline value::value(link_value_tag, const Source& val, const std::locale& loc)
+    : value(value_type::link, details::to_native(val, loc))
+    { }
+
+    template <typename InputIt>
+    inline value::value(link_value_tag, InputIt first, InputIt last, const std::locale& loc)
+    : value(value_type::link, details::to_native(first, last, loc))
+    { }
+
+    template <typename Sequence>
+    inline value::value(multi_sz_value_tag, const Sequence& val, const std::locale& loc)
+    : value(value_type::multi_sz, details::to_natives(val, loc))
+    { }
+
+    template <typename InputIt>
+    inline value::value(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
+    : value(value_type::multi_sz, details::to_natives(first, last, loc))
+    { }
+
+    template <typename Source>
+    inline value& value::assign(sz_value_tag tag, const Source& val, const std::locale& loc)
     {
-        using namespace details::encoding;
-        const std::wstring string = codec<encoding_type_t<CharT>>().decode(data, data + size);
-        return do_assign(tag, string.data(), string.size());
+        value(tag, val, loc).swap(*this);
+        return *this;
     }
 
-    template <typename CharT>
-    inline value& value::do_assign(link_value_tag, const CharT* data, size_t size)
+    template <typename InputIt>
+    inline value& value::assign(sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc)
     {
-        using namespace details::encoding;
-        const std::wstring string = codec<encoding_type_t<CharT>>().decode(data, data + size);
-        return do_assign(tag, string.data(), string.size());
+        value(tag, first, last, loc).swap(*this);
+        return *this;
     }
 
-    template <typename CharT>
-    inline value& value::do_assign(multi_sz_value_tag, const std::vector<std::pair<const CharT*, size_t>>& value)
+    template <typename Source>
+    inline value& value::assign(expand_sz_value_tag tag, const Source& val, const std::locale& loc)
     {
-        std::vector<std::wstring> buffer;
-        details::encoding::codec<details::encoding::encoding_type_t<CharT>> codec;
-        std::transform(value.begin(), value.end(), std::back_inserter(buffer),
-                       [&](const auto& el) { return codec.decode(el.firt, el.first + el.second); });
-
-        std::vector<std::pair<wchar_t*, size_t>> strings;
-        std::transform(buffer.begin(), buffer.end(), std::back_inserter(strings),
-                       [&](const auto& el) { return std::make_pair(el.data(), el.size()); });
-
-        return do_assign(tag, strings);
+        value(tag, val, loc).swap(*this);
+        return *this;
     }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
-    inline value::value(sz_value_tag tag, const Source& value) { assign(tag, value); }
-
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
-    inline value::value(expand_sz_value_tag tag, const Source& value) { assign(tag, value); }
-
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
-    inline value::value(link_value_tag tag, const Source& value) { assign(tag, value); }
-
-    template <typename Sequence,
-              typename = std::enable_if_t<details::encoding::is_encoded_string<typename Sequence::value_type>::value>>
-    inline value::value(multi_sz_value_tag tag, const Sequence& value) { assign(tag, value); }
-
-    template <typename InputIt,
-              typename = std::enable_if_t<details::encoding::is_encoded_string<
-                         typename std::iterator_traits<InputIt>::value_type>::value>>
-    inline value::value(multi_sz_value_tag tag, InputIt first, InputIt last) { assign(tag, first, last); }
-
-    template <typename T, typename = std::enable_if_t<details::encoding::is_encoded_string<T>::value>>
-    inline value::value(multi_sz_value_tag tag, std::initializer_list<T> init) { assign(tag, init); }
-
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
-    inline value& value::assign(sz_value_tag tag, const Source& value)
+    template <typename InputIt>
+    inline value& value::assign(expand_sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc)
     {
-        using namespace details::encoding;
-        return do_assign(tag, string_traits<Source>::data(value), string_traits<Source>::size(value));
+        value(tag, first, last, loc).swap(*this);
+        return *this;
     }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
-    inline value& value::assign(expand_sz_value_tag tag, const Source& value)
+    template <typename Source>
+    inline value& value::assign(link_value_tag tag, const Source& val, const std::locale& loc)
     {
-        using namespace details::encoding;
-        return do_assign(tag, string_traits<Source>::data(value), string_traits<Source>::size(value));
+        value(tag, val, loc).swap(*this);
+        return *this;
     }
 
-    template <typename Source, typename = std::enable_if_t<details::encoding::is_encoded_string<Source>::value>>
-    inline value& value::assign(link_value_tag tag, const Source& value)
+    template <typename InputIt>
+    inline value& value::assign(link_value_tag tag, InputIt first, InputIt last, const std::locale& loc)
     {
-        using namespace details::encoding;
-        return do_assign(tag, string_traits<Source>::data(value), string_traits<Source>::size(value));
+        value(tag, first, last, loc).swap(*this);
+        return *this;
     }
 
-    template <typename Sequence,
-              typename = std::enable_if_t<details::encoding::is_encoded_string<typename Sequence::value_type>::value>>
-    inline value& value::assign(multi_sz_value_tag tag, const Sequence& value)
+    template <typename Sequence>
+    inline value& value::assign(multi_sz_value_tag tag, const Sequence& val, const std::locale& loc)
     {
-        using std::begin; using std::end;
-        return assign(tag, begin(value), end(value));
+        value(tag, val, loc).swap(*this);
+        return *this;
     }
 
-    template <typename InputIt,
-              typename = std::enable_if_t<details::encoding::is_encoded_string<
-                         typename std::iterator_traits<InputIt>::value_type>::value>>
-    inline value& value::assign(multi_sz_value_tag tag, InputIt first, InputIt last)
+    template <typename InputIt>
+    inline value& value::assign(multi_sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc)
     {
-        using namespace details::encoding;
-        using Traits = string_traits<typename std::iterator_traits<InputIt>::value_type>;
-
-        std::vector<std::pair<typename Traits::char_type, size_t>> strings;
-        std::transform(first, last, std::back_inserter(strings),
-                       [](const auto& el) { return std::make_pair(Traits::data(el), Traits::size(el)); });
-        return do_assign(tag, strings);
+        value(tag, first, last, loc).swap(*this);
+        return *this;
     }
 
-    template <typename T, typename = std::enable_if_t<details::encoding::is_encoded_string<T>::value>>
-    inline value& value::assign(multi_sz_value_tag tag, std::initializer_list<T> init) 
-    { return assign(tag, init.begin(), init.end()); }
+    inline bool operator==(const value& lhs, const value& rhs) noexcept
+    {
+        return lhs.type() == rhs.type() && lhs.data() == rhs.data();
+    }
 
-    inline bool operator==(const value& lhs, const value& rhs) noexcept 
-    { return lhs.type() == rhs.type() && lhs.data() == rhs.data(); }
+    inline bool operator!=(const value& lhs, const value& rhs) noexcept
+    {
+        return !(lhs == rhs);
+    }
 
-    inline bool operator!=(const value& lhs, const value& rhs) noexcept { return !(lhs == rhs); }
+    inline bool operator<(const value& lhs, const value& rhs) noexcept
+    {
+        return lhs.type() < rhs.type() || (lhs.type() == rhs.type() && lhs.data() < rhs.data());
+    }
 
-    inline bool operator<(const value& lhs, const value& rhs) noexcept 
-    { return lhs.type() < rhs.type() || (lhs.type() == rhs.type() && lhs.data() < rhs.data()); }
+    inline bool operator>(const value& lhs, const value& rhs) noexcept
+    {
+        return lhs.type() > rhs.type() || (lhs.type() == rhs.type() && lhs.data() > rhs.data());
+    }
 
-    inline bool operator>(const value& lhs, const value& rhs) noexcept 
-    { return lhs.type() > rhs.type() || (lhs.type() == rhs.type() && lhs.data() > rhs.data()); }
+    inline bool operator<=(const value& lhs, const value& rhs) noexcept
+    {
+        return !(lhs > rhs);
+    }
 
-    inline bool operator<=(const value& lhs, const value& rhs) noexcept { return !(lhs > rhs); }
+    inline bool operator>=(const value& lhs, const value& rhs) noexcept
+    {
+        return !(lhs < rhs);
+    }
 
-    inline bool operator>=(const value& lhs, const value& rhs) noexcept { return !(lhs < rhs); }
-
-    inline void swap(value& lhs, value& rhs) noexcept { lhs.swap(rhs); }
+    inline void swap(value& lhs, value& rhs) noexcept
+    {
+        lhs.swap(rhs);
+    }
 
 } // namespace registry
+
+
+namespace std
+{
+    //-------------------------------------------------------------------------------------------//
+    //                               class hash<registry::value>                                 //
+    //-------------------------------------------------------------------------------------------//
+
+    //! std::hash specialization for `registry::value`.
+    template <>
+    struct hash<registry::value>
+    {
+        //! Calculates a hash value for a `value` object.
+        /*!
+        //  @return A hash value such that if for two values, `v1 == v2`
+        //          then `hash<registry::value>()(v1) == hash<registry::value>()(v2)`.
+        */
+        size_t operator()(const registry::value& val) const noexcept;
+    };
+
+} // namespace std
