@@ -10,24 +10,31 @@
 
 namespace registry {
 
-//------------------------------------------------------------------------------------//
-//                              class value_entry                                     //
-//------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------//
+//                                    class value_entry                                      //
+//-------------------------------------------------------------------------------------------//
 
 value_entry::value_entry(const key_path& path, string_view_type value_name)
-    : m_path(path)
-    , m_value_name(value_name)
+: m_path(path)
+, m_value_name(value_name)
 { }
 
-const key_path& value_entry::path() const noexcept { return m_path; }
+const key_path& value_entry::path() const noexcept
+{
+    return m_path;
+}
 
-const string_type& value_entry::value_name() const noexcept { return m_value_name; }
+const string_type& value_entry::value_name() const noexcept
+{
+    return m_value_name;
+}
 
 value value_entry::read_value(std::error_code& ec) const
 {
     std::error_code ec2;
     const auto key_ptr = m_key_weak_ptr.lock();
-    auto result = key_ptr ? key_ptr->read_value(m_value_name, ec2) : registry::read_value(m_path, m_value_name, ec2);
+    auto result = key_ptr ? key_ptr->read_value(m_value_name, ec2)
+                          : registry::read_value(m_path, m_value_name, ec2);
 
     if (!ec2) RETURN_RESULT(ec, result);
     details::set_or_throw(&ec, ec2, __FUNCTION__, m_path, key_path(), m_value_name);
@@ -37,7 +44,8 @@ bool value_entry::value_exists(std::error_code& ec) const
 {
     std::error_code ec2;
     const auto key_ptr = m_key_weak_ptr.lock();
-    auto result = key_ptr ? key_ptr->value_exists(m_value_name, ec2) : registry::value_exists(m_path, m_value_name, ec2);
+    auto result = key_ptr ? key_ptr->value_exists(m_value_name, ec2)
+                          : registry::value_exists(m_path, m_value_name, ec2);
 
     if (!ec2) RETURN_RESULT(ec, result);
     details::set_or_throw(&ec, ec2, __FUNCTION__, m_path, key_path(), m_value_name);
@@ -60,9 +68,9 @@ void value_entry::swap(value_entry& other) noexcept
 }
 
 
-//------------------------------------------------------------------------------------//
-//                             class value_iterator                                   //
-//------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------//
+//                                   class value_iterator                                    //
+//-------------------------------------------------------------------------------------------//
 
 struct value_iterator::state
 {
@@ -74,7 +82,8 @@ struct value_iterator::state
 };
 
 value_iterator::value_iterator(const key& key, std::error_code& ec)
-    : m_state(std::make_shared<state>(state{ uint32_t(-1), {}, details::possibly_ptr<const registry::key>(&key) }))
+: m_state(std::make_shared<state>(state{ uint32_t(-1), {}, 
+                                  details::possibly_ptr<const registry::key>(&key) }))
 {
     // TODO: is it an error if the key was deleted (ERROR_KEY_DELETED) ???
 
@@ -127,9 +136,15 @@ value_iterator::value_iterator(const key_path& path, std::error_code& ec)
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
-bool value_iterator::operator==(const value_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
+bool value_iterator::operator==(const value_iterator& rhs) const noexcept
+{
+    return m_state == rhs.m_state;
+}
 
-bool value_iterator::operator!=(const value_iterator& rhs) const noexcept { return !(*this == rhs); }
+bool value_iterator::operator!=(const value_iterator& rhs) const noexcept
+{
+    return !(*this == rhs);
+}
 
 value_iterator::reference value_iterator::operator*() const
 {
@@ -151,16 +166,21 @@ value_iterator& value_iterator::operator++()
     return res;
 }
 
-value_iterator value_iterator::operator++(int) { auto tmp = *this; ++*this; return tmp; }
+value_iterator value_iterator::operator++(int)
+{
+    auto tmp = *this; ++*this; return tmp;
+}
 
 value_iterator& value_iterator::increment(std::error_code& ec)
 {
     LSTATUS rc;
     assert(*this != value_iterator());
 
-    // NOTE: Values which names size exceed the size of the pre-allocated buffer are ignored.
-    //       Such values may only appear in the enumerated sequence if they were added to the registry key after the
-    //       iterator was constructed. Therefore this behaviour is consistent with what the class documentation states.
+    // NOTE: 
+    // Values which names size exceed the size of the pre-allocated buffer are ignored. Such
+    // values may only appear in the enumerated sequence if they were added to the registry key
+    // after the iterator was constructed. Therefore this behaviour is consistent with what the
+    // class documentation states.
 
     try {
         do {
@@ -185,6 +205,9 @@ value_iterator& value_iterator::increment(std::error_code& ec)
     }
 }
 
-void value_iterator::swap(value_iterator& other) noexcept { m_state.swap(other.m_state); }
+void value_iterator::swap(value_iterator& other) noexcept
+{
+    m_state.swap(other.m_state);
+}
 
 }  // namespace registry

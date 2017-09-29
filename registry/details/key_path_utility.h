@@ -1,10 +1,7 @@
 #pragma once
 
 #include <iterator>
-#include <type_traits>
-
-#include <registry/details/encoding.h>
-#include <registry/types.h>
+#include <string_view>
 
 
 namespace registry {
@@ -16,64 +13,50 @@ namespace details {
         static constexpr auto separator = string_type::value_type('\\');
 
     public:
-        using value_type =        string_view_type;
+        using value_type =        std::wstring_view;
         using difference_type =   std::ptrdiff_t;
         using pointer =           const value_type*;
         using reference =         const value_type&;
         using iterator_category = std::bidirectional_iterator_tag;
 
     public:
-        // TODO: remove ???
-        template <typename Source, 
-                  typename = std::enable_if_t<encoding::encoding_type_is<Source, encoding::native_encoding_type>::value>
-        >
-        static key_name_iterator begin(const Source& name) noexcept
+        static key_name_iterator begin(std::wstring_view name) noexcept
         {
             key_name_iterator it;
-            using ST = encoding::string_traits<Source>;
-            it.m_key_name = string_view_type(ST::data(name), ST::size(name));
-            it.m_element  = string_view_type(ST::data(name), 0);
+            it.m_key_name = string_view_type(name.data(), name.size());
+            it.m_element  = string_view_type(name.data(), 0);
             return ++it;
         }
 
-        // TODO: remove ???
-        template <typename Source, 
-                  typename = std::enable_if_t<encoding::encoding_type_is<Source, encoding::native_encoding_type>::value>
-        >
-        static key_name_iterator end(const Source& name) noexcept
+        static key_name_iterator end(std::wstring_view name) noexcept
         {
             key_name_iterator it;
-            using ST = encoding::string_traits<Source>;
-            it.m_key_name = string_view_type(ST::data(name), ST::size(name));
-            it.m_element =  string_view_type(ST::data(name) + ST::size(name), 0);
-            return it;
-        }
-
-        static key_name_iterator begin(const string_type::value_type* first, const string_type::value_type* last) noexcept
-        {
-            key_name_iterator it;
-            it.m_key_name = string_view_type(first, last - first);
-            it.m_element  = string_view_type(first, 0);
-            return ++it;
-        }
-
-        static key_name_iterator end(const string_type::value_type* first, const string_type::value_type* last) noexcept
-        {
-            key_name_iterator it;
-            it.m_key_name = string_view_type(first, last - first);
-            it.m_element  = string_view_type(last, 0);
+            it.m_key_name = string_view_type(name.data(), name.size());
+            it.m_element  = string_view_type(name.data() + name.size(), 0);
             return ++it;
         }
 
     public:
         bool operator==(const key_name_iterator& rhs) const noexcept 
-        { return m_element.data() == rhs.m_element.data() && m_element.size() == rhs.m_element.size(); }
+        {
+            return m_element.data() == rhs.m_element.data() && 
+                   m_element.size() == rhs.m_element.size();
+        }
 
-        bool operator!=(const key_name_iterator& rhs) const noexcept { return !(*this == rhs); }
+        bool operator!=(const key_name_iterator& rhs) const noexcept
+        {
+            return !(*this == rhs);
+        }
 
-        reference operator*() const noexcept { return m_element; }
+        reference operator*() const noexcept
+        {
+            return m_element;
+        }
 
-        pointer operator->() const noexcept { return &m_element; }
+        pointer operator->() const noexcept
+        {
+            return &m_element;
+        }
 
     public:
         key_name_iterator& operator++() noexcept
@@ -89,7 +72,10 @@ namespace details {
             return *this;
         }
 
-        key_name_iterator operator++(int) noexcept { auto tmp = *this; ++*this; return tmp; }
+        key_name_iterator operator++(int) noexcept
+        {
+            auto tmp = *this; ++*this; return tmp;
+        }
 
         key_name_iterator& operator--() noexcept
         {
@@ -105,7 +91,10 @@ namespace details {
             return *this;
         }
 
-        key_name_iterator operator--(int) noexcept { auto tmp = *this; --*this; return tmp; }
+        key_name_iterator operator--(int) noexcept
+        {
+            auto tmp = *this; --*this; return tmp;
+        }
 
     public:
         void swap(key_name_iterator& other) noexcept
@@ -116,8 +105,9 @@ namespace details {
         }
 
     private:
-        string_view_type  m_element;
-        string_view_type  m_key_name;
+        std::wstring_view  m_element;
+
+        std::wstring_view  m_key_name;
     };
 
 }} // namespace registry::details

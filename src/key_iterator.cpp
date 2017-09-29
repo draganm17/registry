@@ -19,15 +19,18 @@ namespace {
 
 namespace registry {
 
-//------------------------------------------------------------------------------------//
-//                               class key_entry                                      //
-//------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------//
+//                                      class key_entry                                      //
+//-------------------------------------------------------------------------------------------//
 
 key_entry::key_entry(const key_path& path)
-    : m_path(path)
+: m_path(path)
 { }
 
-const key_path& key_entry::path() const noexcept { return m_path; }
+const key_path& key_entry::path() const noexcept
+{
+    return m_path;
+}
 
 key_info key_entry::info(key_info_mask mask, std::error_code& ec) const
 {
@@ -43,7 +46,8 @@ bool key_entry::key_exists(std::error_code& ec) const
 {
     std::error_code ec2;
     const auto key_ptr = m_key_weak_ptr.lock();
-    auto result = key_ptr ? key_ptr->key_exists(key_path(), ec2) : registry::key_exists(m_path, ec2);
+    auto result = key_ptr ? key_ptr->key_exists(key_path(), ec2) 
+                          : registry::key_exists(m_path, ec2);
 
     if (!ec2) RETURN_RESULT(ec, result);
     details::set_or_throw(&ec, ec2, __FUNCTION__, m_path);
@@ -64,9 +68,9 @@ void key_entry::swap(key_entry& other) noexcept
 }
 
 
-//------------------------------------------------------------------------------------//
-//                              class key_iterator                                    //
-//------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------//
+//                                    class key_iterator                                     //
+//-------------------------------------------------------------------------------------------//
 
 struct key_iterator::state
 {
@@ -122,9 +126,15 @@ key_iterator::key_iterator(const key_path& path, std::error_code& ec)
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
-bool key_iterator::operator==(const key_iterator& rhs) const noexcept { return m_state == rhs.m_state; }
+bool key_iterator::operator==(const key_iterator& rhs) const noexcept
+{
+    return m_state == rhs.m_state;
+}
 
-bool key_iterator::operator!=(const key_iterator& rhs) const noexcept { return !(*this == rhs); }
+bool key_iterator::operator!=(const key_iterator& rhs) const noexcept
+{
+    return !(*this == rhs);
+}
 
 key_iterator::reference key_iterator::operator*() const
 {
@@ -146,7 +156,10 @@ key_iterator& key_iterator::operator++()
     return res;
 }
 
-key_iterator key_iterator::operator++(int) { auto tmp = *this; ++*this; return tmp; }
+key_iterator key_iterator::operator++(int)
+{
+    auto tmp = *this; ++*this; return tmp;
+}
 
 key_iterator& key_iterator::increment(std::error_code& ec)
 {
@@ -174,18 +187,21 @@ key_iterator& key_iterator::increment(std::error_code& ec)
     }
 }
 
-void key_iterator::swap(key_iterator& other) noexcept { m_state.swap(other.m_state); }
+void key_iterator::swap(key_iterator& other) noexcept
+{
+    m_state.swap(other.m_state);
+}
 
 
-//------------------------------------------------------------------------------------//
-//                         class recursive_key_iterator                               //
-//------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------//
+//                               class recursive_key_iterator                                //
+//-------------------------------------------------------------------------------------------//
 
 recursive_key_iterator::recursive_key_iterator(const key& key, std::error_code& ec)
-    : recursive_key_iterator(key, key_options::none, ec) { }
+: recursive_key_iterator(key, key_options::none, ec) { }
 
 recursive_key_iterator::recursive_key_iterator(const key& key, key_options options, std::error_code& ec)
-    : m_options(options)
+: m_options(options)
 {
     // TODO: ...
     //assert(key.is_open())  ???
@@ -207,10 +223,10 @@ recursive_key_iterator::recursive_key_iterator(const key& key, key_options optio
 }
 
 recursive_key_iterator::recursive_key_iterator(const key_path& path, std::error_code& ec)
-    : recursive_key_iterator(path, key_options::none, ec) { }
+: recursive_key_iterator(path, key_options::none, ec) { }
 
 recursive_key_iterator::recursive_key_iterator(const key_path& path, key_options options, std::error_code& ec)
-    : m_options(options)
+: m_options(options)
 {
     std::error_code ec2;
     m_stack.emplace_back(path, ec2);
@@ -231,7 +247,10 @@ bool recursive_key_iterator::operator==(const recursive_key_iterator& rhs) const
     return m_stack == rhs.m_stack; // TODO: is that right ???
 }
 
-bool recursive_key_iterator::operator!=(const recursive_key_iterator& rhs) const noexcept { return !(*this == rhs); }
+bool recursive_key_iterator::operator!=(const recursive_key_iterator& rhs) const noexcept
+{
+    return !(*this == rhs);
+}
 
 recursive_key_iterator::reference recursive_key_iterator::operator*() const
 {
@@ -265,7 +284,10 @@ recursive_key_iterator& recursive_key_iterator::operator++()
     return res;
 }
 
-recursive_key_iterator recursive_key_iterator::operator++(int) { auto tmp = *this; ++*this; return tmp; }
+recursive_key_iterator recursive_key_iterator::operator++(int)
+{
+    auto tmp = *this; ++*this; return tmp;
+}
 
 recursive_key_iterator& recursive_key_iterator::increment(std::error_code& ec)
 {

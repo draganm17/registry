@@ -32,7 +32,10 @@ const auto RegDeleteKeyEx_ = []() noexcept
 }();
 #endif
 
-inline constexpr bool& dont_care() noexcept { return (bool&)(*((bool*)nullptr)); }
+inline constexpr bool& dont_care() noexcept
+{
+    return (bool&)(*((bool*)nullptr));
+}
 
 void close_handle(key::native_handle_type handle, std::error_code& ec) noexcept
 {
@@ -118,12 +121,12 @@ void key::close_handle_t::operator()(void* hkey) const noexcept
 }
 
 key::key(key_id id)
-    : m_rights(access_rights::unknown)
-    , m_handle(reinterpret_cast<void*>(id))
+: m_rights(access_rights::unknown)
+, m_handle(reinterpret_cast<void*>(id))
 { }
 
 key::key(open_only_tag, const key_path& path, access_rights rights, std::error_code& ec)
-    : m_rights(rights)
+: m_rights(rights)
 {
     LRESULT rc = ERROR_FILE_NOT_FOUND;
 
@@ -145,11 +148,12 @@ key::key(open_only_tag, const key_path& path, access_rights rights, std::error_c
 }
 
 key::key(open_or_create_tag, const key_path& path, access_rights rights, std::error_code& ec)
-    : key(open_or_create_tag{}, path, rights, dont_care(), ec)
+: key(open_or_create_tag{}, path, rights, dont_care(), ec)
 { }
 
-key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& was_created, std::error_code& ec)
-    : m_rights(rights)
+key::key(open_or_create_tag, const key_path& path, 
+         access_rights rights, bool& was_created, std::error_code& ec)
+: m_rights(rights)
 {
     std::error_code ec2;
     key_path lpath = path, rpath(path.key_view());
@@ -173,12 +177,20 @@ key::key(open_or_create_tag, const key_path& path, access_rights rights, bool& w
     details::set_or_throw(&ec, ec2, __FUNCTION__, path);
 }
 
-access_rights key::rights() const noexcept { return is_open() ? m_rights : access_rights::unknown; }
+access_rights key::rights() const noexcept
+{
+    return is_open() ? m_rights : access_rights::unknown;
+}
 
 key::native_handle_type key::native_handle() const noexcept
-{ return reinterpret_cast<native_handle_type>(m_handle.get()); }
+{
+    return reinterpret_cast<native_handle_type>(m_handle.get());
+}
 
-bool key::is_open() const noexcept { return static_cast<bool>(m_handle); }
+bool key::is_open() const noexcept
+{
+    return static_cast<bool>(m_handle);
+}
 
 std::pair<key, bool> key::create_key(const key_path& path, access_rights rights, std::error_code& ec)
 {
@@ -210,19 +222,22 @@ bool key::equivalent(const key_path& path, std::error_code& ec) const
 }
 
 bool key::equivalent(const key& key, std::error_code& ec) const
-{ RETURN_RESULT(ec, nt_key_name(native_handle()) == nt_key_name(key.native_handle())); }
+{
+    RETURN_RESULT(ec, nt_key_name(native_handle()) == nt_key_name(key.native_handle()));
+}
 
 key_info key::info(key_info_mask mask, std::error_code& ec) const
 {
+    using KIM = key_info_mask;
     constexpr key_info invalid_info{ uint32_t(-1), uint32_t(-1), uint32_t(-1), 
                                      uint32_t(-1), uint32_t(-1), key_time_type::min() };
 
-    const bool read_subkeys =             (mask & key_info_mask::read_subkeys)             != key_info_mask::none;
-    const bool read_values =              (mask & key_info_mask::read_values)              != key_info_mask::none;
-    const bool read_max_subkey_size =     (mask & key_info_mask::read_max_subkey_size)     != key_info_mask::none;
-    const bool read_max_value_name_size = (mask & key_info_mask::read_max_value_name_size) != key_info_mask::none;
-    const bool read_max_value_data_size = (mask & key_info_mask::read_max_value_data_size) != key_info_mask::none;
-    const bool read_last_write_time =     (mask & key_info_mask::read_last_write_time)     != key_info_mask::none;
+    const bool read_subkeys =             (mask & KIM::read_subkeys)             != KIM::none;
+    const bool read_values =              (mask & KIM::read_values)              != KIM::none;
+    const bool read_max_subkey_size =     (mask & KIM::read_max_subkey_size)     != KIM::none;
+    const bool read_max_value_name_size = (mask & KIM::read_max_value_name_size) != KIM::none;
+    const bool read_max_value_data_size = (mask & KIM::read_max_value_data_size) != KIM::none;
+    const bool read_last_write_time =     (mask & KIM::read_last_write_time)     != KIM::none;
 
     FILETIME time;
     key_info info = invalid_info;
@@ -239,8 +254,9 @@ key_info key::info(key_info_mask mask, std::error_code& ec) const
     );
 
     if (rc == ERROR_SUCCESS) {
-        if (read_last_write_time) 
+        if (read_last_write_time) {
             info.last_write_time = key_time_type::clock::from_time_t(details::file_time_to_time_t(time));
+        }
         RETURN_RESULT(ec, info);
     }
 

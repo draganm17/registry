@@ -4,9 +4,9 @@
 
 namespace registry {
 
-//------------------------------------------------------------------------------------//
-//                             class registry_error                                   //
-//------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------//
+//                                  class registry_error                                     //
+//-------------------------------------------------------------------------------------------//
 
 struct registry_error::storage
 {
@@ -16,25 +16,24 @@ struct registry_error::storage
 };
 
 registry_error::registry_error(std::error_code ec, const std::string& msg)
-    : std::system_error(ec, msg)
+: std::system_error(ec, msg)
 { }
 
-registry_error::registry_error(std::error_code ec, const std::string& msg,
-                               const key_path& path1)
-    : std::system_error(ec, msg)
-    , m_info(std::make_shared<storage>(storage{ path1 }))
+registry_error::registry_error(std::error_code ec, const std::string& msg, const key_path& path1)
+: std::system_error(ec, msg)
+, m_info(std::make_shared<storage>(storage{ path1 }))
 { }
 
 registry_error::registry_error(std::error_code ec, const std::string& msg,
                                const key_path& path1, const key_path& path2)
-    : std::system_error(ec, msg)
-    , m_info(std::make_shared<storage>(storage{ path1, path2 }))
+: std::system_error(ec, msg)
+, m_info(std::make_shared<storage>(storage{ path1, path2 }))
 { }
 
 registry_error::registry_error(std::error_code ec, const std::string& msg,
                                const key_path& path1, const key_path& path2, string_view_type value_name)
-    : std::system_error(ec, msg)
-    , m_info(std::make_shared<storage>(storage{ path1, path2, static_cast<string_type>(value_name) }))
+: std::system_error(ec, msg)
+, m_info(std::make_shared<storage>(storage{ path1, path2, static_cast<string_type>(value_name) }))
 { }
 
 const key_path& registry_error::path1() const noexcept
