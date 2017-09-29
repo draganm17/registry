@@ -74,7 +74,7 @@ namespace registry
         static constexpr wchar_t separator = L'\\';
 
     private:
-        key_path(std::wstring&& name, view view);
+        key_path& do_assign(std::wstring&& name, view view);
 
         key_path& do_append(std::wstring&& name, view view);
 
@@ -579,23 +579,27 @@ namespace registry
 
     template <typename Source>
     inline key_path::key_path(const Source& name, view view)
-    : key_path(details::to_native(name), view)
-    { }
+    {
+        assign(name, view);
+    }
 
     template <typename Source>
     inline key_path::key_path(const Source& name, const std::locale& loc, view view)
-    : key_path(details::to_native(name, loc), view)
-    { }
+    {
+        assign(name, loc, view);
+    }
 
     template <typename InputIt>
     inline key_path::key_path(InputIt first, InputIt last, view view)
-    : key_path(details::to_native(first, last), view)
-    { }
+    {
+        assign(first, last, view);
+    }
 
     template <typename InputIt>
     inline key_path::key_path(InputIt first, InputIt last, const std::locale& loc, view view)
-    : key_path(details::to_native(first, last, loc), view)
-    { }
+    {
+        assign(first, last, loc, view);
+    }
 
     template <typename Source>
     inline key_path& key_path::operator/=(const Source& src)
@@ -612,29 +616,25 @@ namespace registry
     template <typename Source>
     inline key_path& key_path::assign(const Source& name, view view)
     {
-        key_path(name, view).swap(*this);
-        return *this;
+        return do_assign(details::to_native(name), view);
     }
 
     template <typename Source>
     inline key_path& key_path::assign(const Source& name, const std::locale& loc, view view)
     {
-        key_path(name, loc, view).swap(*this);
-        return *this;
+        return do_assign(details::to_native(name, loc), view);
     }
 
     template <typename InputIt>
     inline key_path& key_path::assign(InputIt first, InputIt last, view view)
     {
-        key_path(first, last, view).swap(*this);
-        return *this;
+        return do_assign(details::to_native(first, last), view);
     }
 
     template <typename InputIt>
     inline key_path& key_path::assign(InputIt first, InputIt last, const std::locale& loc, view view)
     {
-        key_path(first, last, loc, view).swap(*this);
-        return *this;
+        return do_assign(details::to_native(first, last, loc), view);
     }
 
     template <typename Source>

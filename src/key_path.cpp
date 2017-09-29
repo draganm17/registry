@@ -13,10 +13,10 @@ namespace registry {
 //                                     class key_path                                        //
 //-------------------------------------------------------------------------------------------//
 
-key_path::key_path(std::wstring&& name, view view)
-: m_view(view)
-, m_name(std::move(name))
-{ }
+key_path& key_path::do_assign(std::wstring&& name, view view)
+{
+    return do_append(std::move(name), view);
+}
 
 key_path& key_path::do_append(std::wstring&& name, view view)
 {

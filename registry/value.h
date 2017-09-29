@@ -146,9 +146,11 @@ namespace registry
     class value
     {
     private:
-        value(value_type type, const std::wstring& val);
+        value& do_assign(value_type type, const void* data, size_t size);
 
-        value(value_type type, const std::vector<std::wstring>& val);
+        value& do_assign(value_type type, std::wstring&& val);
+
+        value& do_assign(value_type type, std::vector<std::wstring>&& val);
 
     public:
         //! Default constructor.
@@ -335,7 +337,7 @@ namespace registry
         //
         //  @param[in] size - the size of the binary data in bytes.
         */
-        value(value_type type, const unsigned char* data, size_t size);
+        value(value_type type, const void* data, size_t size);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -360,7 +362,7 @@ namespace registry
         value_type type() const noexcept;
 
         //! TODO: ...
-        const unsigned char* data() const noexcept;
+        const void* data() const noexcept;
 
         //! TODO: ...
         size_t size() const noexcept;
@@ -544,15 +546,15 @@ namespace registry
         //
         //  @return `*this`.
         */
-        value& assign(value_type type, const unsigned char* data, size_t size);
+        value& assign(value_type type, const void* data, size_t size);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(value& other) noexcept;
 
     private:
-        value_type                        m_type = value_type::none;
+        value_type               m_type = value_type::none;
       
-        std::basic_string<unsigned char>  m_data;
+        std::basic_string<char>  m_data;
         // NOTE: using std::basic_string as a container allows small data optimization.
     };
 
@@ -594,98 +596,98 @@ namespace registry
 
     template <typename Source>
     inline value::value(sz_value_tag, const Source& val, const std::locale& loc)
-    : value(value_type::sz, details::to_native(val, loc))
-    { }
+    {
+        assign(sz_value_tag(), val, loc);
+    }
 
     template <typename InputIt>
     inline value::value(sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
-    : value(value_type::sz, details::to_native(first, last, loc))
-    { }
+    {
+        assign(sz_value_tag(), first, last, loc);
+    }
 
     template <typename Source>
     inline value::value(expand_sz_value_tag, const Source& val, const std::locale& loc)
-    : value(value_type::expand_sz, details::to_native(val, loc))
-    { }
+    {
+        assign(expand_sz_value_tag(), val, loc);
+    }
 
     template <typename InputIt>
     inline value::value(expand_sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
-    : value(value_type::expand_sz, details::to_native(first, last, loc))
-    { }
+    {
+        assign(expand_sz_value_tag(), first, last, loc);
+    }
 
     template <typename Source>
     inline value::value(link_value_tag, const Source& val, const std::locale& loc)
-    : value(value_type::link, details::to_native(val, loc))
-    { }
+    {
+        assign(link_value_tag(), val, loc);
+    }
 
     template <typename InputIt>
     inline value::value(link_value_tag, InputIt first, InputIt last, const std::locale& loc)
-    : value(value_type::link, details::to_native(first, last, loc))
-    { }
+    {
+        assign(link_value_tag(), first, last, loc);
+    }
 
     template <typename Sequence>
     inline value::value(multi_sz_value_tag, const Sequence& val, const std::locale& loc)
-    : value(value_type::multi_sz, details::to_natives(val, loc))
-    { }
+    {
+        assign(multi_sz_value_tag(), val, loc);
+    }
 
     template <typename InputIt>
     inline value::value(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
-    : value(value_type::multi_sz, details::to_natives(first, last, loc))
-    { }
-
-    template <typename Source>
-    inline value& value::assign(sz_value_tag tag, const Source& val, const std::locale& loc)
     {
-        value(tag, val, loc).swap(*this);
-        return *this;
-    }
-
-    template <typename InputIt>
-    inline value& value::assign(sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc)
-    {
-        value(tag, first, last, loc).swap(*this);
-        return *this;
+        assign(multi_sz_value_tag(), first, last, loc);
     }
 
     template <typename Source>
-    inline value& value::assign(expand_sz_value_tag tag, const Source& val, const std::locale& loc)
+    inline value& value::assign(sz_value_tag, const Source& val, const std::locale& loc)
     {
-        value(tag, val, loc).swap(*this);
-        return *this;
+        return do_assign(value_type::sz, to_native(val, loc));
     }
 
     template <typename InputIt>
-    inline value& value::assign(expand_sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc)
+    inline value& value::assign(sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
     {
-        value(tag, first, last, loc).swap(*this);
-        return *this;
+        return do_assign(value_type::sz, to_native(first, last, loc));
     }
 
     template <typename Source>
-    inline value& value::assign(link_value_tag tag, const Source& val, const std::locale& loc)
+    inline value& value::assign(expand_sz_value_tag, const Source& val, const std::locale& loc)
     {
-        value(tag, val, loc).swap(*this);
-        return *this;
+        return do_assign(value_type::expand_sz, to_native(val, loc));
     }
 
     template <typename InputIt>
-    inline value& value::assign(link_value_tag tag, InputIt first, InputIt last, const std::locale& loc)
+    inline value& value::assign(expand_sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
     {
-        value(tag, first, last, loc).swap(*this);
-        return *this;
+        return do_assign(value_type::expand_sz, to_native(first, last, loc));
+    }
+
+    template <typename Source>
+    inline value& value::assign(link_value_tag, const Source& val, const std::locale& loc)
+    {
+        return do_assign(value_type::link, to_native(val, loc));
+    }
+
+    template <typename InputIt>
+    inline value& value::assign(link_value_tag, InputIt first, InputIt last, const std::locale& loc)
+    {
+        return do_assign(value_type::link, to_native(first, last, loc));
     }
 
     template <typename Sequence>
-    inline value& value::assign(multi_sz_value_tag tag, const Sequence& val, const std::locale& loc)
+    inline value& value::assign(multi_sz_value_tag, const Sequence& val, const std::locale& loc)
     {
-        value(tag, val, loc).swap(*this);
-        return *this;
+        return do_assign(value_type::multi_sz, to_natives(val, loc));
     }
 
     template <typename InputIt>
-    inline value& value::assign(multi_sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc)
+    inline value& value::assign(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
     {
-        value(tag, first, last, loc).swap(*this);
-        return *this;
+        return do_assign(value_type::multi_sz, to_natives(first, last, loc));
     }
 
     inline bool operator==(const value& lhs, const value& rhs) noexcept

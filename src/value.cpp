@@ -13,55 +13,67 @@ namespace registry {
 //                                       class value                                         //
 //-------------------------------------------------------------------------------------------//
 
-value::value(value_type type, const std::wstring& val)
-: m_type(type)
-, m_data(reinterpret_cast<const unsigned char*>(val.data()), (val.size() + 1) * sizeof(wchar_t))
-{ }
-
-value::value(value_type type, const std::vector<std::wstring>& val)
-: m_type(type)
-, m_data(std::accumulate(val.begin(), val.end(), size_t(0),
-                         [](size_t sz, auto&& el)
-                         { return sz + (el.size() + 1) * sizeof(wchar_t); }) + sizeof(wchar_t), 0)
+value& value::do_assign(value_type type, const void* data, size_t size)
 {
-    size_t offset = 0;
+    m_data.resize(size);
+    m_type = type;
+    memcpy(m_data.data(), data, size);
+    return *this;
+}
+
+value& value::do_assign(value_type type, std::wstring&& val)
+{
+    return do_assign(type, val.data(), (val.size() + 1) * sizeof(wchar_t));
+}
+
+value& value::do_assign(value_type type, std::vector<std::wstring>&& val)
+{
+    size_t buf_offs = 0;
+    size_t buf_size = sizeof(wchar_t) + 
+                      std::accumulate(val.begin(), val.end(), 0, [](auto sz, auto&& el)
+                                      { return sz + (el.size() + 1) * sizeof(wchar_t); });
+
+    m_data.resize(buf_size);
     for (const auto& el : val)
     {
         size_t copy_bytes = (el.size() + 1) * sizeof(wchar_t);
-        memcpy(m_data.data() + offset, el.data(), copy_bytes);
-        offset += copy_bytes;
+        memcpy(m_data.data() + buf_offs, el.data(), copy_bytes);
+        buf_offs += copy_bytes;
     }
+
+    m_type = type;
+    constexpr wchar_t null_char{};
+    memcpy(m_data.data() + buf_offs, &null_char, sizeof(null_char));
+
+    return *this;
 }
 
 value::value(dword_value_tag, uint32_t val)
-: m_type(value_type::dword)
-, m_data(reinterpret_cast<unsigned char*>(&val), sizeof(val))
-{ }
+{
+    assign(dword_value_tag(), val);
+}
 
 value::value(dword_big_endian_value_tag, uint32_t val)
-: m_type(value_type::dword_big_endian)
-, m_data(sizeof(val), 0)
 {
-    boost::endian::big_uint32_t val_copy = val;
-    memcpy(m_data.data(), val_copy.data(), sizeof(val));
+    assign(dword_big_endian_value_tag(), val);
 }
 
 value::value(qword_value_tag, uint64_t val)
-: m_type(value_type::qword)
-, m_data(reinterpret_cast<unsigned char*>(&val), sizeof(val))
-{ }
+{
+    assign(qword_value_tag(), val);
+}
 
-value::value(value_type type, const unsigned char* data, size_t size)
-: m_type(type)
-, m_data(data, size)
-{ }
+value::value(value_type type, const void* data, size_t size)
+{
+    assign(type, data, size);
+}
 
 value_type value::type() const noexcept
 {
     return m_type;
 }
 
-const unsigned char* value::data() const noexcept
+const void* value::data() const noexcept
 {
     return m_data.size() ? m_data.data() : nullptr;
 }
@@ -176,26 +188,23 @@ std::vector<std::wstring> value::to_wstrings() const
 
 value& value::assign(dword_value_tag tag, uint32_t val)
 {
-    value(tag, val).swap(*this);
-    return *this;
+    return do_assign(value_type::dword, &val, sizeof(val));
 }
 
 value& value::assign(dword_big_endian_value_tag tag, uint32_t val)
 {
-    value(tag, val).swap(*this);
-    return *this;
+    boost::endian::big_uint32_t val_copy = val;
+    return do_assign(value_type::dword_big_endian, val_copy.data(), sizeof(val));
 }
 
 value& value::assign(qword_value_tag tag, uint64_t val)
 {
-    value(tag, val).swap(*this);
-    return *this;
+    return do_assign(value_type::qword, &val, sizeof(val));
 }
 
-value& value::assign(value_type type, const unsigned char* data, size_t size)
+value& value::assign(value_type type, const void* data, size_t size)
 {
-    value(type, data, size).swap(*this);
-    return *this;
+    return do_assign(type, data, size);
 }
 
 void value::swap(value& other) noexcept
@@ -217,7 +226,7 @@ namespace std {
 size_t hash<registry::value>::operator()(const registry::value& val) const noexcept
 {
     const size_t sz = val.size();
-    const unsigned char* ptr = val.data();
+    const unsigned char* ptr = reinterpret_cast<const unsigned char*>(val.data());
     size_t hash = std::hash<registry::value_type>()(val.type());
 
     for (auto i = sz % sizeof(long); i; --i, ++ptr)
