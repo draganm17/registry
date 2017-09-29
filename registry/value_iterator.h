@@ -7,8 +7,8 @@
 
 #include <registry/details/iterator_utility.h>
 #include <registry/key_path.h>
-#include <registry/types.h>
 #include <registry/value.h>
+#include <registry/value_name.h>
 
 
 namespace registry
@@ -51,9 +51,9 @@ namespace registry
         /*!
         //  @post `this->path() == path`.
         //
-        //  @post `this->value_name() == value_name`.
+        //  @post `this->value_name() == name`.
         */
-        value_entry(const key_path& path, string_view_type value_name);
+        value_entry(const key_path& path, const value_name& name);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -78,7 +78,7 @@ namespace registry
         const key_path& path() const noexcept;
 
         //! Returns the value name this object was initializes with.
-        const string_type& value_name() const noexcept;
+        const value_name& value_name() const noexcept;
 
         //! TODO: ...
         value read_value(std::error_code& ec = throws()) const;
@@ -89,9 +89,9 @@ namespace registry
     public:
         //! Replaces the contents of the entry.
         /*!
-        //  @post `*this == key_entry(path, value_name)`.
+        //  @post `*this == key_entry(path, name)`.
         */
-        value_entry& assign(const key_path& path, string_view_type value_name);
+        value_entry& assign(const key_path& path, const registry::value_name& name);
 
         //! Swaps the contents of `*this` and `other`.
         void swap(value_entry& other) noexcept;
@@ -99,7 +99,7 @@ namespace registry
     private:
         key_path                               m_path;
 
-        string_type                            m_value_name;
+        registry::value_name                   m_value_name;
 
         details::possibly_weak_ptr<const key>  m_key_weak_ptr;
     };

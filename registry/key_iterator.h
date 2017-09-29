@@ -8,7 +8,7 @@
 
 #include <registry/details/iterator_utility.h>
 #include <registry/key_path.h>
-#include <registry/types.h>
+#include <registry/types.h> // TODO: ???
 
 
 namespace registry

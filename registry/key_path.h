@@ -732,11 +732,11 @@ namespace std
     //                             class hash<registry::key_path>                                //
     //-------------------------------------------------------------------------------------------//
 
-    //! std::hash specialization for `registry::value`.
+    //! std::hash specialization for `registry::key_path`.
     template <>
     struct hash<registry::key_path>
     {
-        //! Calculates a hash value for a `value` object.
+        //! Calculates a hash value for a `key_path` object.
         /*!
         //  @return A hash value such that if for two values, `v1 == v2`
         //          then `hash<registry::key_path>()(v1) == hash<registry::key_path>()(v2)`.

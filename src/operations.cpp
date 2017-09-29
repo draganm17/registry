@@ -6,6 +6,7 @@
 #include <registry/key.h>
 #include <registry/key_path.h>
 #include <registry/operations.h>
+#include <registry/value_name.h>
 
 
 namespace registry {
@@ -61,14 +62,14 @@ bool key_exists(const key_path& path, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
-value read_value(const key_path& path, string_view_type value_name, std::error_code& ec)
+value read_value(const key_path& path, const value_name& name, std::error_code& ec)
 {
     std::error_code ec2;
     const key key(open_only_tag{}, path, access_rights::query_value, ec2);
 
     value result;
-    if (!ec2 && (result = key.read_value(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name), result;
+    if (!ec2 && (result = key.read_value(name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), name), result;
 }
 
 bool remove_key(const key_path& path, std::error_code& ec)
@@ -95,15 +96,15 @@ uint32_t remove_keys(const key_path& path, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), static_cast<uint32_t>(-1);
 }
 
-bool remove_value(const key_path& path, string_view_type value_name, std::error_code& ec)
+bool remove_value(const key_path& path, const value_name& name, std::error_code& ec)
 {
     std::error_code ec2;
     key key(open_only_tag{}, path, access_rights::set_value, ec2);
 
     bool result;
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
-    if (!ec2 && (result = key.remove_value(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name), false;
+    if (!ec2 && (result = key.remove_value(name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), name), false;
 }
 
 space_info space(std::error_code& ec)
@@ -119,24 +120,24 @@ space_info space(std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__), invalid_info;
 }
 
-bool value_exists(const key_path& path, string_view_type value_name, std::error_code& ec)
+bool value_exists(const key_path& path, const value_name& name, std::error_code& ec)
 {
     std::error_code ec2;
     const key key(open_only_tag{}, path, access_rights::query_value, ec2);
 
     bool result;
     if (ec2.value() == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
-    if (!ec2 && (result = key.value_exists(value_name, ec2), !ec2)) RETURN_RESULT(ec, result);
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name), false;
+    if (!ec2 && (result = key.value_exists(name, ec2), !ec2)) RETURN_RESULT(ec, result);
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), name), false;
 }
 
-void write_value(const key_path& path, string_view_type value_name, const value& value, std::error_code& ec)
+void write_value(const key_path& path, const value_name& name, const value& value, std::error_code& ec)
 {
     std::error_code ec2;
     key key(open_only_tag{}, path, access_rights::set_value, ec2);
 
-    if (!ec2 && (key.write_value(value_name, value), !ec2)) RETURN_RESULT(ec, VOID);
-    details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), value_name);
+    if (!ec2 && (key.write_value(name, value), !ec2)) RETURN_RESULT(ec, VOID);
+    details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), name);
 }
 
 }  // namespace registry

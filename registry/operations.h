@@ -11,6 +11,8 @@
 namespace registry
 {
     class key_path;
+    class value_name;
+
 
     //-------------------------------------------------------------------------------------------//
     //                                   NON-MEMBER FUNCTIONS                                    //
@@ -109,12 +111,12 @@ namespace registry
 
     //! Retrieves the type and data for the specified value name associated with an registry key.
     /*!
-    //  @param[in]  path       - an absolute key path specifying the location of the value.
+    //  @param[in]  path - an absolute key path specifying the location of the value.
     //
-    //  @param[in]  value_name - a null-terminated string containing the value name. An empty string
-    //                           correspond to the default value.
+    //  @param[in]  name - the name of the registry value. An empty name correspond to the
+    //                     default value.
     //
-    //  @param[out] ec         - out-parameter for error reporting.
+    //  @param[out] ec   - out-parameter for error reporting.
     //
     //  @return 
     //      An instance of registry::value. \n
@@ -123,13 +125,13 @@ namespace registry
     //  
     //  @throw 
     //      The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-    //      errors, constructed with the first key path set to `path`, the value name set to `value_name` and the OS error
+    //      errors, constructed with the first key path set to `path`, the value name set to `name` and the OS error
     //      code as the error code argument. \n
     //      The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
     //      and executes `ec.clear()` if no errors occur. \n
     //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
     */
-    value read_value(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
+    value read_value(const key_path& path, const value_name& name, std::error_code& ec = throws());
 
     //! Deletes an registry key.
     /*! The key to be deleted must not have subkeys. To delete a key and all its subkeys use 
@@ -176,10 +178,12 @@ namespace registry
 
     //! Deletes an registry value.
     /*!
-    //  @param[in]  value_name - a null-terminated string containing the value name. An empty string
-    //                           correspond to the default value.
+    //  @param[in]  path - an absolute key path specifying the location of the value.
     //
-    //  @param[out] ec         - out-parameter for error reporting.
+    //  @param[in]  name - the name of the registry value. An empty name correspond to the
+    //                     default value.
+    //
+    //  @param[out] ec   - out-parameter for error reporting.
     //
     //  @return 
     //      `true` if the value was deleted, `false` if it did not exist. \n
@@ -187,13 +191,13 @@ namespace registry
     //  
     //  @throw 
     //      The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-    //      constructed with the first key path set to `path`, the value name set to `value_name` and the errors, OS error
+    //      constructed with the first key path set to `path`, the value name set to `name` and the errors, OS error
     //      code as the error code argument. \n
     //      The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
     //      and executes `ec.clear()` if no errors occur. \n
     //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
     */
-    bool remove_value(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
+    bool remove_value(const key_path& path, const value_name& name, std::error_code& ec = throws());
 
     //! Retrieves the information about the size of the registry on the system.
     /*!
@@ -215,12 +219,12 @@ namespace registry
 
     //! Check whether a registry value exists.
     /*!
-    //  @param[in]  path       - an absolute key path specifying the location of the value.
+    //  @param[in]  path - an absolute key path specifying the location of the value.
     //
-    //  @param[in]  value_name - a null-terminated string containing the value name. An empty string
-    //                           correspond to the default value.
+    //  @param[in]  name - the name of the registry value. An empty name correspond to the
+    //                     default value.
     //
-    //  @param[out] ec         - out-parameter for error reporting.
+    //  @param[out] ec   - out-parameter for error reporting.
     //
     //  @return 
     //      `true` if the given name corresponds to an existing registry value, `false` otherwise. \n
@@ -228,33 +232,33 @@ namespace registry
     //  
     //  @throw 
     //      The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS API
-    //      errors, constructed with the first key path set to `path`, the value name set to `value_name` and the OS error
+    //      errors, constructed with the first key path set to `path`, the value name set to `name` and the OS error
     //      code as the error code argument. \n
     //      The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
     //      and executes `ec.clear()` if no errors occur. \n
     //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
     */
-    bool value_exists(const key_path& path, string_view_type value_name, std::error_code& ec = throws());
+    bool value_exists(const key_path& path, const value_name& name, std::error_code& ec = throws());
 
     //! Sets the data and type of a specified value under a registry key.
     /*!
-    //  @param[in]  path       - an absolute key path specifying the location of the value.
+    //  @param[in]  path  - an absolute key path specifying the location of the value.
     //
-    //  @param[in]  value_name - a null-terminated string containing the value name. An empty string
-    //                           correspond to the default value.
+    //  @param[in]  name  - the name of the registry value. An empty name correspond to the
+    //                      default value.
     //
-    //  @param[in]  value      - the content of the value.
+    //  @param[in]  value - the content of the value.
     //
-    //  @param[out] ec         - out-parameter for error reporting.
+    //  @param[out] ec    - out-parameter for error reporting.
     //
     //  @throw 
     //      The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-    //      API errors, constructed with the first key path set to `path`, the value name set to `value_name` and the
+    //      API errors, constructed with the first key path set to `path`, the value name set to `name` and the
     //      OS error code as the error code argument. \n
     //      The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
     //      and executes `ec.clear()` if no errors occur. \n
     //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
     */
-    void write_value(const key_path& path, string_view_type value_name, const value& value, std::error_code& ec = throws());
+    void write_value(const key_path& path, const value_name& name, const value& value, std::error_code& ec = throws());
 
 } // namespace registry

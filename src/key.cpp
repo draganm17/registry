@@ -7,6 +7,8 @@
 #include <registry/exception.h>
 #include <registry/key.h>
 #include <registry/key_iterator.h>
+#include <registry/key_path.h>
+#include <registry/value_name.h>
 
 
 namespace  {
@@ -292,7 +294,7 @@ key key::open_key(const key_path& path, access_rights rights, std::error_code& e
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), registry::key();
 }
 
-value key::read_value(string_view_type value_name, std::error_code& ec) const
+value key::read_value(const value_name& name, std::error_code& ec) const
 {
     LSTATUS rc;
     details::value_state state;
@@ -300,7 +302,7 @@ value key::read_value(string_view_type value_name, std::error_code& ec) const
     do {
         BYTE dummy;
         DWORD size = static_cast<DWORD>(state.m_data.size());
-        rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), value_name.data(), nullptr,
+        rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), name.c_str(), nullptr,
                              reinterpret_cast<DWORD*>(&state.m_type), size ? state.m_data.data() : &dummy, &size);
         state.m_data.resize(size);
     } while (rc == ERROR_MORE_DATA);
@@ -308,7 +310,7 @@ value key::read_value(string_view_type value_name, std::error_code& ec) const
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, reinterpret_cast<value&&>(state));
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), value_name), value();
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), name), value();
 }
 
 bool key::remove_key(const key_path& path, std::error_code& ec)
@@ -346,40 +348,40 @@ uint32_t key::remove_keys(const key_path& path, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), static_cast<uint32_t>(-1);
 }
 
-bool key::remove_value(string_view_type value_name, std::error_code& ec)
+bool key::remove_value(const value_name& name, std::error_code& ec)
 {
-    const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), value_name.data());
+    const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), name.c_str());
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
     if (rc == ERROR_KEY_DELETED) RETURN_RESULT(ec, false);
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), value_name), false;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), name), false;
 }
 
-bool key::value_exists(string_view_type value_name, std::error_code& ec) const
+bool key::value_exists(const value_name& name, std::error_code& ec) const
 {
     const LSTATUS rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), 
-                                       value_name.data(), nullptr, nullptr, nullptr, nullptr);
+                                       name.c_str(), nullptr, nullptr, nullptr, nullptr);
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
     if (rc == ERROR_KEY_DELETED) RETURN_RESULT(ec, false);
     if (rc == ERROR_FILE_NOT_FOUND) RETURN_RESULT(ec, false);
 
     const std::error_code ec2(rc, std::system_category());
-    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), value_name), false;
+    return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), name), false;
 }
 
-void key::write_value(string_view_type value_name, const value& value, std::error_code& ec)
+void key::write_value(const value_name& name, const value& value, std::error_code& ec)
 {
     const LSTATUS rc = RegSetValueEx(reinterpret_cast<HKEY>(native_handle()), 
-                                     value_name.data(), 0, static_cast<DWORD>(value.type()), 
+                                     name.c_str(), 0, static_cast<DWORD>(value.type()), 
                                      value.data().data(), static_cast<DWORD>(value.data().size()));
     
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, VOID);
     const std::error_code ec2(rc, std::system_category());
-    details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), value_name);
+    details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), name);
 }
 
 void key::close(std::error_code& ec)

@@ -7,13 +7,16 @@
 #include <system_error>
 #include <type_traits>
 
-#include <registry/key_path.h>
 #include <registry/types.h>
 #include <registry/value.h>
 
 
 namespace registry
 {
+    class key_path;
+    class value_name;
+
+
     /*! The Windows security model enables you to control access to registry keys. For more information see:
     https://msdn.microsoft.com/en-us/library/windows/desktop/ms724878 \n
     access_rights satisfies the requirements of BitmaskType (which means the bitwise operators `operator&`, 
@@ -236,8 +239,9 @@ namespace registry
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        std::pair<key, bool> create_key(const key_path& path,
-                                        access_rights rights = access_rights::all_access, std::error_code& ec = throws());
+        std::pair<key, bool>
+        create_key(const key_path& path,
+                   access_rights rights = access_rights::all_access, std::error_code& ec = throws());
 
         /*! \brief 
         //  Checks whether the registry key identified by `*this` and the registry key identified
@@ -360,10 +364,10 @@ namespace registry
         //  key identified by `*this`. /*
         /*! The key must have been opened with the `access_rights::query_value` access right.
         //
-        //  @param[in]  value_name - a null-terminated string containing the value name. An empty string correspond to the 
-        //                           default value.
+        //  @param[in]  name - the name of the registry value. An empty name correspond to the 
+        //                     default value.
         //
-        //  @param[out] ec         - out-parameter for error reporting.
+        //  @param[out] ec   - out-parameter for error reporting.
         //
         //  @return 
         //      An instance of registry::value. \n
@@ -371,13 +375,13 @@ namespace registry
         //  
         //  @throw 
         //      The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-        //      API errors, constructed with the value name set to `value_name` and the OS error code as the error code 
+        //      API errors, constructed with the value name set to `name` and the OS error code as the error code 
         //      argument. \n
         //      The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        value read_value(string_view_type value_name, std::error_code& ec = throws()) const;
+        value read_value(const value_name& name, std::error_code& ec = throws()) const;
 
         //! Deletes an subkey from the registry key identified by `*this`.
         /*! The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use
@@ -429,10 +433,10 @@ namespace registry
 
         //! Deletes an registry value from the registry key identified by `*this`.
         /*!
-        //  @param[in]  value_name - a null-terminated string containing the value name. An empty
-        //                           string correspond to the default value.
+        //  @param[in]  name - the name of the registry value. An empty name correspond to the 
+        //                     default value.
         //
-        //  @param[out] ec         - out-parameter for error reporting.
+        //  @param[out] ec   - out-parameter for error reporting.
         //
         //  @return 
         //      `true` if the value was deleted, `false` if it did not exist. \n
@@ -440,21 +444,21 @@ namespace registry
         //
         //  @throw 
         //      The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-        //      API errors, constructed with the value name set to `value_name` and the OS error code as the error code 
+        //      API errors, constructed with the value name set to `name` and the OS error code as the error code 
         //      argument. \n
         //      The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        bool remove_value(string_view_type value_name, std::error_code& ec = throws());
+        bool remove_value(const value_name& name, std::error_code& ec = throws());
 
         //! Check whether the registry key identified by `*this` contains the given value.
         /*! The key must have been opened with the `access_rights::query_value` access right.
         //
-        //  @param[in]  value_name - a null-terminated string containing the value name. An empty
-        //                           string correspond to the default value.
+        //  @param[in]  name - the name of the registry value. An empty name correspond to the
+        //                     default value.
         //
-        //  @param[out] ec         - out-parameter for error reporting.
+        //  @param[out] ec   - out-parameter for error reporting.
         //
         //  @return 
         //      `true` if the given name corresponds to an existing registry value, `false` otherwise. \n
@@ -462,34 +466,34 @@ namespace registry
         //
         //  @throw 
         //      The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-        //      API errors, constructed with the value name set to `value_name` and the OS error code as the error code 
+        //      API errors, constructed with the value name set to `name` and the OS error code as the error code 
         //      argument. \n
         //      The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        bool value_exists(string_view_type value_name, std::error_code& ec = throws()) const;
+        bool value_exists(const value_name& name, std::error_code& ec = throws()) const;
 
         //! Sets the data and type of a specified value under the registry key identified by `*this`.
         /*!
         //  The key must have been opened with the `access_rights::set_value` access right.
         //
-        //  @param[in]  value_name - a null-terminated string containing the value name. An empty
-        //                           string correspond to the default value.
+        //  @param[in]  name  - the name of the registry value. An empty name correspond to the
+        //                      default value.
         //
-        //  @param[in]  value      - the content of the value.
+        //  @param[in]  value - the content of the value.
         //
-        //  @param[out] ec         - out-parameter for error reporting.
+        //  @param[out] ec    - out-parameter for error reporting.
         //
         //  @throw 
         //      The overload that does not take a `std::error_code&` parameter throws `registry_error` on underlying OS
-        //      API errors, constructed with the value name set to `value_name` and the OS error code as the error code 
+        //      API errors, constructed with the value name set to `name` and the OS error code as the error code 
         //      argument. \n
         //      The overload taking a `std::error_code&` parameter sets it to the OS API error code if an OS API call fails, 
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        void write_value(string_view_type value_name, const value& value, std::error_code& ec = throws());
+        void write_value(const value_name& name, const value& value, std::error_code& ec = throws());
 
     public:
         //! Closes the registry key identified by `*this`.
