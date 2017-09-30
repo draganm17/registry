@@ -3,45 +3,14 @@
 
 #include <chrono>
 #include <cstdint>
-#include <string>
-#if _HAS_CXX17
-#include <string_view>
-#endif
 #include <system_error>
-#include <vector>
-
-#if !_HAS_CXX17
-#include <boost/utility/string_view.hpp> //awaiting for C++17 std::string_view
-#endif
 
 // TODO: rename types.h to common.h  ???
 
 
 namespace registry
 {
-#if defined(_UNICODE)
-    using string_type =      std::wstring;
-#if _HAS_CXX17
-    using string_view_type = std::wstring_view;
-#else
-    using string_view_type = boost::wstring_view;
-#endif
-#else
-    using string_type =      std::string;
-#if _HAS_CXX17
-    using string_view_type = std::string_view;
-#else
-    using string_view_type = boost::string_view;
-#endif
-#endif
-    using byte_array_type =      std::vector<uint8_t>;
-#if _HAS_CXX17
-    using byte_array_view_type = std::basic_string_view<uint8_t>;
-    //TODO: replace with std::array_view<uint8_t> when (if ever) available
-#else
-    using byte_array_view_type = boost::basic_string_view<uint8_t>;
-    //TODO: replace with std::array_view<uint8_t> when (if ever) available
-#endif
+    //! TODO: ...
     using key_time_type = std::chrono::time_point<std::chrono::system_clock>;
 
     /*! Windows defines a set of predefined registry keys. These keys are entry points to the registry hierarchy.
@@ -164,6 +133,7 @@ namespace registry
     // TODO: description ...
     inline constexpr std::error_code& throws() noexcept { return *detail::throws(); }
 
+
     //------------------------------------------------------------------------------------//
     //                             NON-MEMBER FUNCTIONS                                   //
     //------------------------------------------------------------------------------------//
@@ -181,6 +151,7 @@ namespace registry
     key_info_mask& operator|=(key_info_mask& lhs, key_info_mask rhs) noexcept;
 
     key_info_mask& operator^=(key_info_mask& lhs, key_info_mask rhs) noexcept;
+
 
     //------------------------------------------------------------------------------------//
     //                              INLINE DEFINITIONS                                    //

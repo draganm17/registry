@@ -190,7 +190,7 @@ namespace registry
         //  @param[in] loc - TODO: ...
         */
         template <typename Source>
-        value(sz_value_tag, const Source& val, const std::locale& loc = std::locale(""));
+        value(sz_value_tag, const Source& val, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::sz`.
         /*!
@@ -203,7 +203,7 @@ namespace registry
         //  @param[in] loc         - TODO: ...
         */
         template <typename InputIt>
-        value(sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+        value(sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::expand_sz`.
         /*!
@@ -217,7 +217,7 @@ namespace registry
         */
         // TODO: document the template
         template <typename Source>
-        value(expand_sz_value_tag, const Source& val, const std::locale& loc = std::locale(""));
+        value(expand_sz_value_tag, const Source& val, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::expand_sz`.
         /*!
@@ -230,7 +230,7 @@ namespace registry
         //  @param[in] loc         - TODO: ...
         */
         template <typename InputIt>
-        value(expand_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+        value(expand_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::dword`.
         /*!
@@ -263,7 +263,7 @@ namespace registry
         //  @param[in] loc - TODO: ...
         */
         template <typename Source>
-        value(link_value_tag, const Source& val, const std::locale& loc = std::locale(""));
+        value(link_value_tag, const Source& val, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::link`.
         /*!
@@ -276,7 +276,7 @@ namespace registry
         //  @param[in] loc         - TODO: ...
         */
         template <typename InputIt>
-        value(link_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+        value(link_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::multi_sz`.
         /*!
@@ -291,7 +291,7 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename Sequence>
-        value(multi_sz_value_tag, const Sequence& val, const std::locale& loc = std::locale(""));
+        value(multi_sz_value_tag, const Sequence& val, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::multi_sz`.
         /*!
@@ -306,7 +306,7 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename InputIt>
-        value(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+        value(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::qword`.
         /*!
@@ -389,7 +389,7 @@ namespace registry
         */
         // TODO: rewrite description
         //       ad the descr. of all members that reffer to 'to_string()'
-        std::string to_string(const std::locale& loc = std::locale("")) const;
+        std::string to_string(const std::locale& loc = std::locale()) const;
 
         //! TODO: ...
         std::wstring to_wstring() const;
@@ -398,7 +398,7 @@ namespace registry
         /*!
         //  @throw `registry::bad_value_cast` if the value type is not `value_type::multi_sz`.
         */
-        std::vector<std::string> to_strings(const std::locale& loc = std::locale("")) const;
+        std::vector<std::string> to_strings(const std::locale& loc = std::locale()) const;
 
         //! TODO: ...
         std::vector<std::wstring> to_wstrings() const;
@@ -415,7 +415,7 @@ namespace registry
         //  @return `*this`.
         */
         template <typename Source>
-        value& assign(sz_value_tag tag, const Source& val, const std::locale& loc = std::locale(""));
+        value& assign(sz_value_tag tag, const Source& val, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value as if by `value(tag, first, last, loc).swap(*this)`.
         /*!
@@ -428,7 +428,7 @@ namespace registry
         //  @return `*this`.
         */
         template <typename InputIt>
-        value& assign(sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+        value& assign(sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value as if by `value(tag, val, loc).swap(*this)`.
         /*!
@@ -441,7 +441,7 @@ namespace registry
         //  @return `*this`.
         */
         template <typename Source>
-        value& assign(expand_sz_value_tag tag, const Source& val, const std::locale& loc = std::locale(""));
+        value& assign(expand_sz_value_tag tag, const Source& val, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value as if by `value(tag, first, last, loc).swap(*this)`.
         /*!
@@ -454,7 +454,7 @@ namespace registry
         //  @return `*this`.
         */
         template <typename InputIt>
-        value& assign(expand_sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+        value& assign(expand_sz_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value as if by `value(tag, val).swap(*this)`.
         /*!
@@ -483,7 +483,7 @@ namespace registry
         //  @return `*this`.
         */
         template <typename Source>
-        value& assign(link_value_tag tag, const Source& val, const std::locale& loc = std::locale(""));
+        value& assign(link_value_tag tag, const Source& val, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value as if by `value(tag, first, last, loc).swap(*this)`.
         /*!
@@ -496,7 +496,7 @@ namespace registry
         //  @return `*this`.
         */
         template <typename InputIt>
-        value& assign(link_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+        value& assign(link_value_tag tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value as if by `value(tag, val, loc).swap(*this)`.
         /*!
@@ -511,7 +511,7 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename Sequence>
-        value& assign(multi_sz_value_tag, const Sequence& val, const std::locale& loc = std::locale(""));
+        value& assign(multi_sz_value_tag, const Sequence& val, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value as if by `value(tag, first, last, loc).swap(*this)`.
         /*!
@@ -526,7 +526,7 @@ namespace registry
         */
         // TODO: rewrite description
         template <typename InputIt>
-        value& assign(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale(""));
+        value& assign(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value as if by `value(tag, val).swap(*this)`.
         /*!

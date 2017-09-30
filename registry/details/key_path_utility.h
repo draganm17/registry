@@ -1,7 +1,8 @@
 #pragma once
 
 #include <iterator>
-#include <string_view>
+
+#include <registry/name.h>
 
 
 namespace registry {
@@ -10,29 +11,29 @@ namespace details {
     // NOTE: key_name_iterator is able to process names with multiple redundant separators.
     class key_name_iterator
     {
-        static constexpr auto separator = string_type::value_type('\\');
+        static constexpr auto separator = name::value_type('\\');
 
     public:
-        using value_type =        std::wstring_view;
+        using value_type =        name::string_view_type;
         using difference_type =   std::ptrdiff_t;
         using pointer =           const value_type*;
         using reference =         const value_type&;
         using iterator_category = std::bidirectional_iterator_tag;
 
     public:
-        static key_name_iterator begin(std::wstring_view name) noexcept
+        static key_name_iterator begin(name::string_view_type name) noexcept
         {
             key_name_iterator it;
-            it.m_key_name = string_view_type(name.data(), name.size());
-            it.m_element  = string_view_type(name.data(), 0);
+            it.m_key_name = name::string_view_type(name.data(), name.size());
+            it.m_element  = name::string_view_type(name.data(), 0);
             return ++it;
         }
 
-        static key_name_iterator end(std::wstring_view name) noexcept
+        static key_name_iterator end(name::string_view_type name) noexcept
         {
             key_name_iterator it;
-            it.m_key_name = string_view_type(name.data(), name.size());
-            it.m_element  = string_view_type(name.data() + name.size(), 0);
+            it.m_key_name = name::string_view_type(name.data(), name.size());
+            it.m_element  = name::string_view_type(name.data() + name.size(), 0);
             return ++it;
         }
 
@@ -68,7 +69,7 @@ namespace details {
             auto last = first;
             for (; last != end && *last != separator; ++last);
 
-            m_element = string_view_type(first, last - first);
+            m_element = name::string_view_type(first, last - first);
             return *this;
         }
 
@@ -87,7 +88,7 @@ namespace details {
             for (; first != rbeg && *first != separator; --first);
 
             ++first; ++last;
-            m_element = string_view_type(first, last - first);
+            m_element = name::string_view_type(first, last - first);
             return *this;
         }
 
@@ -105,9 +106,9 @@ namespace details {
         }
 
     private:
-        std::wstring_view  m_element;
+        name::string_view_type  m_element;
 
-        std::wstring_view  m_key_name;
+        name::string_view_type  m_key_name;
     };
 
 }} // namespace registry::details

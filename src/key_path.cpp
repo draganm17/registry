@@ -1,10 +1,20 @@
 #include <algorithm>
 #include <cassert>
-#include <locale>
-#include <Windows.h>
 
 #include <registry/details/common_utility.impl.h>
 #include <registry/key_path.h>
+
+
+namespace
+{
+    using namespace registry;
+
+    void remove_redundant_separators(name::string_type &str) noexcept
+    {
+        // TODO:
+        throw 0;
+    }
+}
 
 
 namespace registry {
@@ -12,44 +22,6 @@ namespace registry {
 //-------------------------------------------------------------------------------------------//
 //                                     class key_path                                        //
 //-------------------------------------------------------------------------------------------//
-
-key_path& key_path::do_assign(std::wstring&& name, view view)
-{
-    return do_append(std::move(name), view);
-}
-
-key_path& key_path::do_append(std::wstring&& name, view view)
-{
-    m_name.reserve(m_name.size() + name.size() + (!m_name.empty() && name.size() ? 1 : 0));
-
-    for (auto it =  details::key_name_iterator::begin(name);
-              it != details::key_name_iterator::end  (name); ++it)
-    {
-        if (!m_name.empty()) m_name.push_back(key_path::separator);
-        m_name.append(it->data(), it->size());
-    }
-    if (view != view::view_default) m_view = view;
-    return *this;
-}
-
-key_path& key_path::do_concat(std::wstring&& name, view view)
-{
-    m_name.reserve(m_name.size() + name.size());
-    for (auto it =  details::key_name_iterator::begin(name);
-              it != details::key_name_iterator::end  (name); ++it)
-    {
-        m_name.append(it->data(), it->size());
-        m_name.push_back(key_path::separator);
-    }
-    if (!m_name.empty() && m_name.back() == key_path::separator) m_name.pop_back();
-    if (view != view::view_default) m_view = view;
-    return *this;
-}
-
-key_path& key_path::do_replace_leaf_path(std::wstring&& name, view view)
-{
-    return remove_leaf_path().do_append(std::move(name), view);
-}
 
 key_path key_path::from_key_id(key_id id)
 {
@@ -60,7 +32,19 @@ key_path::key_path(view view)
 : m_view(view)
 { }
 
-const string_type& key_path::key_name() const noexcept
+key_path::key_path(name&& name, view view)
+: m_view(view)
+, m_name(std::move(name))
+{
+    remove_redundant_separators(m_name.value());
+}
+
+key_path& key_path::operator=(name&& name)
+{
+    return assign(std::move(name));
+}
+
+const name& key_path::key_name() const noexcept
 {
     return m_name;
 }
@@ -70,24 +54,10 @@ view key_path::key_view() const noexcept
     return m_view;
 }
 
-std::string key_path::key_name_string(const std::locale& loc) const
-{
-    // TODO: ...
-    throw 0;
-}
-
-std::wstring key_path::key_name_wstring() const
-{
-    // TODO: ...
-    throw 0;
-}
-
 key_path key_path::root_path() const
 {
-    const auto it = details::key_name_iterator::begin(m_name);
-    return (it == details::key_name_iterator::end(m_name) ||
-            details::key_id_from_string(*it) == key_id::unknown) ? key_path(m_view)
-                                                                 : key_path(*it, m_view);
+    return root_key_id() != key_id::unknown 
+           ? key_path(*details::key_name_iterator::begin(m_name), m_view) : key_path(m_view);
 }
 
 key_id key_path::root_key_id() const noexcept
@@ -157,15 +127,11 @@ bool key_path::is_relative() const noexcept
 
 int key_path::compare(const key_path& other) const noexcept
 {
-    if (m_view != other.m_view) {
-        return m_view < other.m_view ? -1 : 1;
-    }
+    // TODO: compare element-wise
+    throw 0;
 
-    const auto beg1 = m_name.begin(),       end1 = m_name.end(),
-               beg2 = other.m_name.begin(), end2 = other.m_name.end();
-    if (std::lexicographical_compare(beg1, end1, beg2, end2, details::is_iless())) return -1;
-    if (std::lexicographical_compare(beg2, end2, beg1, end1, details::is_iless())) return  1;
-    return 0;
+    //return (m_view != other.m_view) ? m_view < other.m_view ? -1 : 1
+    //                                : m_name.compare(other.m_name);
 }
 
 key_path::iterator key_path::begin() const
@@ -195,6 +161,35 @@ key_path& key_path::assign(view view)
     return *this;
 }
 
+key_path& key_path::assign(name&& name, view view)
+{
+    m_view = view;
+    m_name = std::move(name);
+    remove_redundant_separators(m_name.value());
+    return *this;
+}
+
+key_path& key_path::append(const key_path& path)
+{
+    const bool sp = !m_name.empty() && !path.m_name.empty();
+    m_name.value().reserve(m_name.size() + path.m_name.size() + static_cast<int>(sp));
+
+    if (sp) m_name.value() += separator;
+    m_name.value() += path.m_name.value();
+    m_view = path.m_view != view::view_default ? path.m_view : m_view;
+
+    return *this;
+}
+
+key_path& key_path::concat(const key_path& path)
+{
+    m_name.value().reserve(m_name.size() + path.m_name.size());
+    m_name.value() += path.m_name.value();
+    m_view = path.m_view != view::view_default ? path.m_view : m_view;
+
+    return *this;
+}
+
 key_path& key_path::remove_leaf_path()
 {
     auto first = details::key_name_iterator::begin(m_name);
@@ -202,9 +197,14 @@ key_path& key_path::remove_leaf_path()
 
     if (first != last) {
         auto it = --last;
-        m_name.resize((it != first) ? (--it, it->data() - first->data() + it->size()) : 0);
+        m_name.value().resize((it != first) ? (--it, it->data() - first->data() + it->size()) : 0);
     }
     return *this;
+}
+
+key_path& key_path::replace_leaf_path(const key_path& path)
+{
+    return remove_leaf_path().append(path);
 }
 
 void key_path::swap(key_path& other) noexcept
@@ -288,12 +288,8 @@ namespace std {
 
 size_t hash<registry::key_path>::operator()(const registry::key_path& val) const noexcept
 {
-    const auto loc = std::locale();
-    const auto& key_name = val.key_name();
-
     size_t hash = std::hash<registry::view>()(val.key_view());
-    std::for_each(key_name.begin(), key_name.end(), 
-                  [&](auto c) { registry::details::hash_combine(hash, std::tolower(c, loc)); });
+    registry::details::hash_combine(hash, std::hash<registry::name>()(val.key_name()));
     return hash;
 }
 
