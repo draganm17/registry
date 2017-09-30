@@ -11,8 +11,8 @@
 
 namespace registry
 {
+    class name;
     class key_path;
-    class value_name;
 
 
     //-------------------------------------------------------------------------------------------//
@@ -53,7 +53,7 @@ namespace registry
         //  `name`.
         */
         registry_error(std::error_code ec, const std::string& msg,
-                       const key_path& path1, const key_path& path2, const value_name& name);
+                       const key_path& path1, const key_path& path2, const name& name);
 
     public:
         //! Returns the first paths that was stored in the exception object.
@@ -63,7 +63,7 @@ namespace registry
         const key_path& path2() const noexcept;
 
         //! Returns the value name that was stored in the exception object.
-        const value_name& value_name() const noexcept;
+        const name& value_name() const noexcept;
 
     private:
         struct storage;

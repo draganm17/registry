@@ -8,7 +8,7 @@
 #include <registry/key.h>
 #include <registry/key_iterator.h>
 #include <registry/key_path.h>
-#include <registry/value_name.h>
+#include <registry/name.h>
 
 
 namespace  {
@@ -294,7 +294,7 @@ key key::open_key(const key_path& path, access_rights rights, std::error_code& e
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), registry::key();
 }
 
-value key::read_value(const value_name& name, std::error_code& ec) const
+value key::read_value(const name& name, std::error_code& ec) const
 {
     LSTATUS rc;
     details::value_state state;
@@ -348,7 +348,7 @@ uint32_t key::remove_keys(const key_path& path, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), static_cast<uint32_t>(-1);
 }
 
-bool key::remove_value(const value_name& name, std::error_code& ec)
+bool key::remove_value(const name& name, std::error_code& ec)
 {
     const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), name.c_str());
 
@@ -360,7 +360,7 @@ bool key::remove_value(const value_name& name, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), name), false;
 }
 
-bool key::value_exists(const value_name& name, std::error_code& ec) const
+bool key::value_exists(const name& name, std::error_code& ec) const
 {
     const LSTATUS rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), 
                                        name.c_str(), nullptr, nullptr, nullptr, nullptr);
@@ -373,7 +373,7 @@ bool key::value_exists(const value_name& name, std::error_code& ec) const
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), name), false;
 }
 
-void key::write_value(const value_name& name, const value& value, std::error_code& ec)
+void key::write_value(const name& name, const value& value, std::error_code& ec)
 {
     const LSTATUS rc = RegSetValueEx(reinterpret_cast<HKEY>(native_handle()), 
                                      name.c_str(), 0, static_cast<DWORD>(value.type()), 

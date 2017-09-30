@@ -13,8 +13,8 @@
 
 namespace registry
 {
+    class name;
     class key_path;
-    class value_name;
 
 
     /*! The Windows security model enables you to control access to registry keys. For more information see:
@@ -381,7 +381,7 @@ namespace registry
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        value read_value(const value_name& name, std::error_code& ec = throws()) const;
+        value read_value(const name& name, std::error_code& ec = throws()) const;
 
         //! Deletes an subkey from the registry key identified by `*this`.
         /*! The subkey to be deleted must not have subkeys. To delete a key and all its subkeys use
@@ -450,7 +450,7 @@ namespace registry
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        bool remove_value(const value_name& name, std::error_code& ec = throws());
+        bool remove_value(const name& name, std::error_code& ec = throws());
 
         //! Check whether the registry key identified by `*this` contains the given value.
         /*! The key must have been opened with the `access_rights::query_value` access right.
@@ -472,7 +472,7 @@ namespace registry
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        bool value_exists(const value_name& name, std::error_code& ec = throws()) const;
+        bool value_exists(const name& name, std::error_code& ec = throws()) const;
 
         //! Sets the data and type of a specified value under the registry key identified by `*this`.
         /*!
@@ -493,7 +493,7 @@ namespace registry
         //      and executes `ec.clear()` if no errors occur. \n
         //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
         */
-        void write_value(const value_name& name, const value& value, std::error_code& ec = throws());
+        void write_value(const name& name, const value& value, std::error_code& ec = throws());
 
     public:
         //! Closes the registry key identified by `*this`.

@@ -1,6 +1,6 @@
 #include <registry/exception.h>
 #include <registry/key_path.h>
-#include <registry/value_name.h>
+#include <registry/name.h>
 
 
 namespace registry {
@@ -11,9 +11,9 @@ namespace registry {
 
 struct registry_error::storage
 {
-    key_path               path1;
-    key_path               path2;
-    registry::value_name   value_name;
+    key_path  path1;
+    key_path  path2;
+    name      value_name;
 };
 
 registry_error::registry_error(std::error_code ec, const std::string& msg)
@@ -33,7 +33,7 @@ registry_error::registry_error(std::error_code ec, const std::string& msg,
 
 registry_error::registry_error(
                 std::error_code ec, const std::string& msg,
-                const key_path& path1, const key_path& path2, const registry::value_name& name)
+                const key_path& path1, const key_path& path2, const name& name)
 : std::system_error(ec, msg)
 , m_info(std::make_shared<storage>(storage{ path1, path2, name }))
 { }
@@ -50,9 +50,9 @@ const key_path& registry_error::path2() const noexcept
     return m_info ? m_info->path2 : empty_path;
 }
 
-const value_name& registry_error::value_name() const noexcept
+const name& registry_error::value_name() const noexcept
 {
-    static const registry::value_name empty_value_name;
+    static const name empty_value_name;
     return m_info ? m_info->value_name : empty_value_name;
 }
 

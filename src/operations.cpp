@@ -5,8 +5,8 @@
 #include <registry/details/common_utility.impl.h>
 #include <registry/key.h>
 #include <registry/key_path.h>
+#include <registry/name.h>
 #include <registry/operations.h>
-#include <registry/value_name.h>
 
 
 namespace registry {
@@ -62,7 +62,7 @@ bool key_exists(const key_path& path, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), false;
 }
 
-value read_value(const key_path& path, const value_name& name, std::error_code& ec)
+value read_value(const key_path& path, const name& name, std::error_code& ec)
 {
     std::error_code ec2;
     const key key(open_only_tag{}, path, access_rights::query_value, ec2);
@@ -96,7 +96,7 @@ uint32_t remove_keys(const key_path& path, std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path), static_cast<uint32_t>(-1);
 }
 
-bool remove_value(const key_path& path, const value_name& name, std::error_code& ec)
+bool remove_value(const key_path& path, const name& name, std::error_code& ec)
 {
     std::error_code ec2;
     key key(open_only_tag{}, path, access_rights::set_value, ec2);
@@ -120,7 +120,7 @@ space_info space(std::error_code& ec)
     return details::set_or_throw(&ec, ec2, __FUNCTION__), invalid_info;
 }
 
-bool value_exists(const key_path& path, const value_name& name, std::error_code& ec)
+bool value_exists(const key_path& path, const name& name, std::error_code& ec)
 {
     std::error_code ec2;
     const key key(open_only_tag{}, path, access_rights::query_value, ec2);
@@ -131,7 +131,7 @@ bool value_exists(const key_path& path, const value_name& name, std::error_code&
     return details::set_or_throw(&ec, ec2, __FUNCTION__, path, key_path(), name), false;
 }
 
-void write_value(const key_path& path, const value_name& name, const value& value, std::error_code& ec)
+void write_value(const key_path& path, const name& name, const value& value, std::error_code& ec)
 {
     std::error_code ec2;
     key key(open_only_tag{}, path, access_rights::set_value, ec2);

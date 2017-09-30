@@ -10,8 +10,8 @@
 
 namespace registry
 {
+    class name;
     class key_path;
-    class value_name;
 
 
     //-------------------------------------------------------------------------------------------//
@@ -131,7 +131,7 @@ namespace registry
     //      and executes `ec.clear()` if no errors occur. \n
     //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
     */
-    value read_value(const key_path& path, const value_name& name, std::error_code& ec = throws());
+    value read_value(const key_path& path, const name& name, std::error_code& ec = throws());
 
     //! Deletes an registry key.
     /*! The key to be deleted must not have subkeys. To delete a key and all its subkeys use 
@@ -197,7 +197,7 @@ namespace registry
     //      and executes `ec.clear()` if no errors occur. \n
     //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
     */
-    bool remove_value(const key_path& path, const value_name& name, std::error_code& ec = throws());
+    bool remove_value(const key_path& path, const name& name, std::error_code& ec = throws());
 
     //! Retrieves the information about the size of the registry on the system.
     /*!
@@ -238,7 +238,7 @@ namespace registry
     //      and executes `ec.clear()` if no errors occur. \n
     //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
     */
-    bool value_exists(const key_path& path, const value_name& name, std::error_code& ec = throws());
+    bool value_exists(const key_path& path, const name& name, std::error_code& ec = throws());
 
     //! Sets the data and type of a specified value under a registry key.
     /*!
@@ -259,6 +259,6 @@ namespace registry
     //      and executes `ec.clear()` if no errors occur. \n
     //      `std::bad_alloc` may be thrown by both overloads if memory allocation fails.
     */
-    void write_value(const key_path& path, const value_name& name, const value& value, std::error_code& ec = throws());
+    void write_value(const key_path& path, const name& name, const value& value, std::error_code& ec = throws());
 
 } // namespace registry

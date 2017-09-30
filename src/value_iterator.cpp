@@ -14,7 +14,7 @@ namespace registry {
 //                                    class value_entry                                      //
 //-------------------------------------------------------------------------------------------//
 
-value_entry::value_entry(const key_path& path, const registry::value_name& name)
+value_entry::value_entry(const key_path& path, const name& name)
 : m_path(path)
 , m_value_name(name)
 { }
@@ -24,7 +24,7 @@ const key_path& value_entry::path() const noexcept
     return m_path;
 }
 
-const value_name& value_entry::value_name() const noexcept
+const name& value_entry::value_name() const noexcept
 {
     return m_value_name;
 }
@@ -51,7 +51,7 @@ bool value_entry::value_exists(std::error_code& ec) const
     details::set_or_throw(&ec, ec2, __FUNCTION__, m_path, key_path(), m_value_name);
 }
 
-value_entry& value_entry::assign(const key_path& path, const registry::value_name& name)
+value_entry& value_entry::assign(const key_path& path, const name& name)
 {
     // TODO: copy / swap ???
 
