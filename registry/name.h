@@ -19,10 +19,6 @@ namespace registry
     public:
         using value_type = wchar_t;
 
-        using string_type = std::basic_string<value_type>;
-
-        using string_view_type = std::basic_string_view<value_type>;
-
     public:
         //! Default constructor.
         /*!
@@ -45,7 +41,7 @@ namespace registry
         name(name&& other) noexcept = default;
 
         //! TODO: ...
-        name(string_type&& source) noexcept;
+        name(std::basic_string<value_type>&& source) noexcept;
 
         //! TODO: ...
         template <typename Source>
@@ -77,13 +73,13 @@ namespace registry
         /*!
         //  @return `*this`.
         */
-        name& operator=(const string_type& source);
+        name& operator=(const std::basic_string<value_type>& source);
 
         //! Calls `value() = std::move(source)`.
         /*!
         //  @return `*this`.
         */
-        name& operator=(string_type&& source) noexcept;
+        name& operator=(std::basic_string<value_type>&& source) noexcept;
 
         //! Calls `value() = source`.
         /*!
@@ -95,7 +91,7 @@ namespace registry
         /*!
         //  @return `*this`.
         */
-        name& operator=(string_view_type source);
+        name& operator=(std::basic_string_view<value_type> source);
 
         //! TODO: ...
         /*!
@@ -104,33 +100,40 @@ namespace registry
         template <typename Source>
         name& operator=(const Source& source);
 
-        //! Returns a `string_type`, constructed as if by `string_type(c_str(), size())`.
-        operator string_type() const;
+        /*! \brief
+        //  Returns a `std::basic_string<value_type>`, constructed 
+        //  as if by `std::basic_string<value_type>(c_str(), size())`. */
+        operator std::basic_string<value_type>() const;
 
-        //! Returns a `string_view_type`, constructed as if by `string_view_type(c_str(), size())`.
-        operator string_view_type() const noexcept;
+        /*! \brief
+        //  Returns a `std::basic_string_view<value_type>`, constructed
+        //  as if by `std::basic_string_view<value_type>(c_str(), size())`. */
+        operator std::basic_string_view<value_type>() const noexcept;
 
     public:
         //! Returns `value().empty()`.
         bool empty() const noexcept;
 
-        //! Returns `value().c_str()`.
-        const value_type* c_str() const noexcept;
+        //! Returns `value().data()`.
+        value_type* data() noexcept;
+
+        //! Returns `value().data()`.
+        const value_type* data() const noexcept;
 
         //! Returns `value().size()`.
         size_t size() const noexcept;
 
         //! Returns a reference to the contained string.
-        constexpr string_type& value() & noexcept;
+        constexpr std::basic_string<value_type>& value() & noexcept;
 
         //! Returns a reference to the contained string.
-        constexpr const string_type& value() const & noexcept;
+        constexpr const std::basic_string<value_type>& value() const & noexcept;
 
         //! Returns a reference to the contained string.
-        constexpr string_type&& value() && noexcept;
+        constexpr std::basic_string<value_type>&& value() && noexcept;
 
         //! Returns a reference to the contained string.
-        constexpr const string_type&& value() const && noexcept;
+        constexpr const std::basic_string<value_type>&& value() const && noexcept;
 
         //! TODO: ...
         std::string string(const std::locale& loc = std::locale()) const;
@@ -162,13 +165,13 @@ namespace registry
         /*!
         //  @return `*this`.
         */
-        name& assign(const string_type& source);
+        name& assign(const std::basic_string<value_type>& source);
 
         //! Calls `value().assign(std::move(source))`.
         /*!
         //  @return `*this`.
         */
-        name& assign(string_type&& source) noexcept;
+        name& assign(std::basic_string<value_type>&& source) noexcept;
 
         //! Calls `value().assign(source)`.
         /*!
@@ -180,7 +183,7 @@ namespace registry
         /*!
         //  @return `*this`.
         */
-        name& assign(string_view_type source);
+        name& assign(std::basic_string_view<value_type> source);
 
         //! TODO: ...
         /*!
@@ -203,7 +206,7 @@ namespace registry
         void swap(name& other) noexcept;
 
     private:
-        string_type m_value;
+        std::basic_string<value_type> m_value;
     };
 
 

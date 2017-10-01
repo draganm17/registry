@@ -8,17 +8,17 @@ namespace registry {
 //                                       class name                                          //
 //-------------------------------------------------------------------------------------------//
 
-name::name(string_type&& source) noexcept
+name::name(std::basic_string<value_type>&& source) noexcept
 : m_value(std::move(source))
 { }
 
-name& name::operator=(const string_type& source)
+name& name::operator=(const std::basic_string<value_type>& source)
 {
     m_value = source;
     return *this;
 }
 
-name& name::operator=(string_type&& source) noexcept
+name& name::operator=(std::basic_string<value_type>&& source) noexcept
 {
     m_value = std::move(source);
     return *this;
@@ -30,20 +30,10 @@ name& name::operator=(const value_type* source)
     return *this;
 }
 
-name& name::operator=(string_view_type source)
+name& name::operator=(std::basic_string_view<value_type> source)
 {
     m_value = source;
     return *this;
-}
-
-name::operator string_type() const
-{
-    return m_value;
-}
-
-name::operator string_view_type() const noexcept
-{
-    return m_value;
 }
 
 bool name::empty() const noexcept
@@ -51,9 +41,14 @@ bool name::empty() const noexcept
     return m_value.empty();
 }
 
-const name::value_type* name::c_str() const noexcept
+name::value_type* name::data() noexcept
 {
-    return m_value.c_str();
+    return m_value.data();
+}
+
+const name::value_type* name::data() const noexcept
+{
+    return m_value.data();
 }
 
 size_t name::size() const noexcept
@@ -61,22 +56,22 @@ size_t name::size() const noexcept
     return m_value.size();
 }
 
-constexpr name::string_type& name::value() & noexcept
+constexpr std::basic_string<name::value_type>& name::value() & noexcept
 {
     return m_value;
 }
 
-constexpr const name::string_type& name::value() const & noexcept
+constexpr const std::basic_string<name::value_type>& name::value() const & noexcept
 {
     return m_value;
 }
 
-constexpr name::string_type&& name::value() && noexcept
+constexpr std::basic_string<name::value_type>&& name::value() && noexcept
 {
     return std::move(m_value);
 }
 
-constexpr const name::string_type&& name::value() const && noexcept
+constexpr const std::basic_string<name::value_type>&& name::value() const && noexcept
 {
     return std::move(m_value);
 }
@@ -111,6 +106,16 @@ std::u32string name::u32string(const std::locale& loc) const
     throw 0;
 }
 
+name::operator std::basic_string<name::value_type>() const
+{
+    return m_value;
+}
+
+name::operator std::basic_string_view<name::value_type>() const noexcept
+{
+    return m_value;
+}
+
 int name::compare(const name& name) const noexcept
 {
     // TODO: ...
@@ -124,13 +129,13 @@ int name::compare(const name& name) const noexcept
     //return 0;
 }
 
-name& name::assign(const string_type& source)
+name& name::assign(const std::basic_string<value_type>& source)
 {
     m_value.assign(source);
     return *this;
 }
 
-name& name::assign(string_type&& source) noexcept
+name& name::assign(std::basic_string<value_type>&& source) noexcept
 {
     m_value.assign(std::move(source));
     return *this;
@@ -142,7 +147,7 @@ name& name::assign(const value_type* source)
     return *this;
 }
 
-name& name::assign(string_view_type source)
+name& name::assign(std::basic_string_view<value_type> source)
 {
     m_value.assign(source);
     return *this;

@@ -9,10 +9,22 @@ namespace
 {
     using namespace registry;
 
-    void remove_redundant_separators(name::string_type &str) noexcept
+    template <typename ForwardIt>
+    ForwardIt remove_redundant_separators(ForwardIt first, ForwardIt last)
     {
-        // TODO:
-        throw 0;
+        struct pred
+        {
+            name::value_type last_char{};
+
+            bool operator()(name::value_type ch)
+            {
+                bool remove = (ch == key_path::separator) && (last_char == key_path::separator);
+                last_char = ch;
+                return remove;
+            }
+        };
+
+        return std::remove_if(first, last, pred());
     }
 }
 
@@ -22,6 +34,48 @@ namespace registry {
 //-------------------------------------------------------------------------------------------//
 //                                     class key_path                                        //
 //-------------------------------------------------------------------------------------------//
+
+key_path& key_path::do_assign(std::basic_string_view<name::value_type> name, view view)
+{
+    m_name.value().assign(name);
+    m_name.value().erase(remove_redundant_separators(m_name.value().begin(), m_name.value().end()),
+                         m_name.value().end());
+    m_view = view;
+
+    return *this;
+}
+
+key_path& key_path::do_append(std::basic_string_view<name::value_type> name, view view)
+{
+    if (!name.empty())
+    {
+        const int sp = m_name.empty() ? 0 : 1;
+        m_name.value().reserve(m_name.size() + name.size() + sp);
+
+        if (sp) m_name.value() += separator;
+        m_name.value() += name;
+        m_name.value().erase(remove_redundant_separators(m_name.value().end() - name.size() - sp,
+                                                         m_name.value().end()),
+                             m_name.value().end());
+    }
+    m_view = view != view::view_default ? view : m_view;
+    return *this;
+}
+
+key_path& key_path::do_concat(std::basic_string_view<name::value_type> name, view view)
+{
+    if (!name.empty())
+    {
+        m_name.value().reserve(m_name.size() + name.size());
+
+        m_name.value() += name;
+        m_name.value().erase(remove_redundant_separators(m_name.value().end() - name.size(),
+                                                         m_name.value().end()),
+                             m_name.value().end());
+    }
+    m_view = view != view::view_default ? view : m_view;
+    return *this;
+}
 
 key_path key_path::from_key_id(key_id id)
 {
@@ -36,10 +90,16 @@ key_path::key_path(name&& name, view view)
 : m_view(view)
 , m_name(std::move(name))
 {
-    remove_redundant_separators(m_name.value());
+    m_name.value().erase(remove_redundant_separators(m_name.value().begin(), m_name.value().end()),
+                         m_name.value().end());
 }
 
 key_path& key_path::operator=(name&& name)
+{
+    return assign(std::move(name));
+}
+
+key_path& key_path::operator=(std::basic_string<name::value_type>&& name)
 {
     return assign(std::move(name));
 }
@@ -76,11 +136,11 @@ key_path key_path::leaf_path() const
 
 key_path key_path::parent_path() const
 {
-    auto it = details::key_name_iterator::end(m_name);
+    auto last = details::key_name_iterator::end(m_name);
     const auto first = details::key_name_iterator::begin(m_name);
 
-    return (it == first || --it == first) ? key_path(m_view) 
-                                          : key_path(first->data(), it->data(), m_view);
+    return (first == last || first == --last) ? key_path(m_view)
+                                              : key_path({ first->data(), last->data() }, m_view);
 }
 
 key_path key_path::relative_path() const
@@ -165,29 +225,28 @@ key_path& key_path::assign(name&& name, view view)
 {
     m_view = view;
     m_name = std::move(name);
-    remove_redundant_separators(m_name.value());
+    m_name.value().erase(remove_redundant_separators(m_name.value().begin(), m_name.value().end()),
+                         m_name.value().end());
+    return *this;
+}
+
+key_path& key_path::assign(std::basic_string<name::value_type>&& name, view view)
+{
+    m_view = view;
+    m_name = std::move(name);
+    m_name.value().erase(remove_redundant_separators(m_name.value().begin(), m_name.value().end()),
+                         m_name.value().end());
     return *this;
 }
 
 key_path& key_path::append(const key_path& path)
 {
-    const bool sp = !m_name.empty() && !path.m_name.empty();
-    m_name.value().reserve(m_name.size() + path.m_name.size() + static_cast<int>(sp));
-
-    if (sp) m_name.value() += separator;
-    m_name.value() += path.m_name.value();
-    m_view = path.m_view != view::view_default ? path.m_view : m_view;
-
-    return *this;
+    return do_append(path.key_name(), path.key_view());
 }
 
 key_path& key_path::concat(const key_path& path)
 {
-    m_name.value().reserve(m_name.size() + path.m_name.size());
-    m_name.value() += path.m_name.value();
-    m_view = path.m_view != view::view_default ? path.m_view : m_view;
-
-    return *this;
+    return do_concat(path.key_name(), path.key_view());
 }
 
 key_path& key_path::remove_leaf_path()

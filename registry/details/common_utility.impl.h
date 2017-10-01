@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <locale>
+#include <string_view>
 #include <system_error>
 #include <time.h>
 #include <Windows.h>
@@ -68,7 +69,7 @@ namespace details {
         return static_cast<time_t>((t - 116444736000000000ll) / 10000000);
     }
 
-    inline name::string_view_type key_id_to_string(key_id id) noexcept
+    inline std::basic_string_view<name::value_type> key_id_to_string(key_id id) noexcept
     {
         switch(id)
         {
@@ -81,13 +82,13 @@ namespace details {
             case key_id::performance_nlstext :         return TEXT("HKEY_PERFORMANCE_NLSTEXT");
             case key_id::current_config :              return TEXT("HKEY_CURRENT_CONFIG");
             case key_id::current_user_local_settings : return TEXT("HKEY_CURRENT_USER_LOCAL_SETTINGS");
-            default:                                   return name::string_view_type{};
+            default:                                   return std::basic_string_view<name::value_type>{};
         };
     }
 
-    inline key_id key_id_from_string(name::string_view_type str) noexcept
+    inline key_id key_id_from_string(std::basic_string_view<name::value_type> str) noexcept
     {
-        using key_map_value_type = std::pair<name::string_view_type, key_id>;
+        using key_map_value_type = std::pair<std::basic_string_view<name::value_type>, key_id>;
         using key_map_type = std::array<key_map_value_type, 9>;
 
         // NOTE: keys are sorted in alphabetical order

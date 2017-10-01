@@ -14,26 +14,26 @@ namespace details {
         static constexpr auto separator = name::value_type('\\');
 
     public:
-        using value_type =        name::string_view_type;
+        using value_type =        std::basic_string_view<name::value_type>;
         using difference_type =   std::ptrdiff_t;
         using pointer =           const value_type*;
         using reference =         const value_type&;
         using iterator_category = std::bidirectional_iterator_tag;
 
     public:
-        static key_name_iterator begin(name::string_view_type name) noexcept
+        static key_name_iterator begin(std::basic_string_view<name::value_type> name) noexcept
         {
             key_name_iterator it;
-            it.m_key_name = name::string_view_type(name.data(), name.size());
-            it.m_element  = name::string_view_type(name.data(), 0);
+            it.m_key_name = std::basic_string_view<name::value_type>(name.data(), name.size());
+            it.m_element  = std::basic_string_view<name::value_type>(name.data(), 0);
             return ++it;
         }
 
-        static key_name_iterator end(name::string_view_type name) noexcept
+        static key_name_iterator end(std::basic_string_view<name::value_type> name) noexcept
         {
             key_name_iterator it;
-            it.m_key_name = name::string_view_type(name.data(), name.size());
-            it.m_element  = name::string_view_type(name.data() + name.size(), 0);
+            it.m_key_name = std::basic_string_view<name::value_type>(name.data(), name.size());
+            it.m_element  = std::basic_string_view<name::value_type>(name.data() + name.size(), 0);
             return ++it;
         }
 
@@ -69,7 +69,7 @@ namespace details {
             auto last = first;
             for (; last != end && *last != separator; ++last);
 
-            m_element = name::string_view_type(first, last - first);
+            m_element = std::basic_string_view<name::value_type>(first, last - first);
             return *this;
         }
 
@@ -88,7 +88,7 @@ namespace details {
             for (; first != rbeg && *first != separator; --first);
 
             ++first; ++last;
-            m_element = name::string_view_type(first, last - first);
+            m_element = std::basic_string_view<name::value_type>(first, last - first);
             return *this;
         }
 
@@ -106,9 +106,9 @@ namespace details {
         }
 
     private:
-        name::string_view_type  m_element;
+        std::basic_string_view<name::value_type>  m_element;
 
-        name::string_view_type  m_key_name;
+        std::basic_string_view<name::value_type>  m_key_name;
     };
 
 }} // namespace registry::details

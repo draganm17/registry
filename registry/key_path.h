@@ -3,7 +3,9 @@
 
 #include <cstdint>
 #include <iterator>
-#include <locale>
+#include <string>
+#include <string_view>
+#include <type_traits>
 
 #include <registry/details/key_path_utility.h>
 #include <registry/name.h>
@@ -84,6 +86,13 @@ namespace registry
         */
         static key_path from_key_id(key_id id);
 
+    private:
+        key_path& do_assign(std::basic_string_view<name::value_type> name, view view);
+
+        key_path& do_append(std::basic_string_view<name::value_type> name, view view);
+
+        key_path& do_concat(std::basic_string_view<name::value_type> name, view view);
+
     public:
         //! Default constructor.
         /*!
@@ -118,6 +127,7 @@ namespace registry
         explicit key_path(view view);
 
         // TODO: rewrite that ???
+        // TODO: specify postconditions for 'name' ???
         //
         //! Constructs the path from a key name and a registry view.
         /*! The current path key name is composed as follows: \n
@@ -136,55 +146,16 @@ namespace registry
         */
         key_path(name&& name, view view = view::view_default);
 
-        //! Constructs the path as if by `value(registry::name(name), view)`.
+        //! Constructs the path as if by `value(registry::name(std::forward<Source>(name)), view)`.
         /*!
         //  @post `key_view() == view`.
         //
-        //  @param[in] name - a character range.
+        //  @param[in] name - a key name.
         //
         //  @param[in] view - a registry view.
         */
         template <typename Source>
-        key_path(const Source& name, view view = view::view_default);
-
-        //! Constructs the path as if by `value(registry::name(name, loc), view)`.
-        /*!
-        //  @post `key_view() == view`.
-        //
-        //  @param[in] name - a character range.
-        //
-        //  @param[in] loc  - a locale used to convert the input character range to
-        //                    the system native encoding, if such conversion is required.
-        //
-        //  @param[in] view - a registry view.
-        */
-        template <typename Source>
-        key_path(const Source& name, const std::locale& loc, view view = view::view_default);
-
-        //! Constructs the path as if by `value(registry::name(first, last), view)`.
-        /*!
-        //  @post `key_view() == view`.
-        //
-        //  @param[in] first, last - a character range.
-        //
-        //  @param[in] view        - a registry view.
-        */
-        template <typename InputIt>
-        key_path(InputIt first, InputIt last, view view = view::view_default);
-
-        //! Constructs the path as if by `value(registry::name(first, last, loc), view)`.
-        /*!
-        //  @post `key_view() == view`.
-        //
-        //  @param[in] first, last - a character range.
-        //
-        //  @param[in] loc         - a locale used to convert the input character range to
-        //                           the system native encoding, if such conversion is required.
-        //
-        //  @param[in] view        - a registry view.
-        */
-        template <typename InputIt>
-        key_path(InputIt first, InputIt last, const std::locale& loc, view view = view::view_default);
+        key_path(Source&& name, view view = view::view_default);
 
         //! Replaces the contents of `*this` with a copy of the contents of `other`.
         /*!
@@ -204,42 +175,21 @@ namespace registry
         */
         key_path& operator=(key_path&& other) noexcept = default;
 
-        //! Replaces the contents of `*this` as if by `assign(std::move(name))`.
-        /*!
-        //  @post `*this == key_path(std::move(name))`.
-        //
-        //  @param[in] name - a key name.
-        //
-        //  @return `*this`.
-        */
+        //! Returns `assign(std::move(name))`.
         key_path& operator=(name&& name);
 
-        //! Replaces the contents of `*this` as if by `assign(name)`.
-        /*!
-        //  @post `*this == key_path(name)`.
-        //
-        //  @param[in] name - a key name.
-        //
-        //  @return `*this`.
-        */
+        //! Returns `assign(std::move(name))`.
+        key_path& operator=(std::basic_string<name::value_type>&& name);
+
+        //! Returns `assign(name)`.
         template <typename Source>
         key_path& operator=(const Source& name);
 
-        //! Appends elements to the path as if by `append(source)`.
-        /*
-        //  @param[in] source - a value to append.
-        //
-        //  @return `*this`.
-        */
+        //! Returns `append(source)`.
         template <typename Source>
         key_path& operator/=(const Source& source);
 
-        //! Concatenates the current path and `source` as if by `concat(source)`.
-        /*!
-        //  @param[in] name - a value to concatenate with.
-        //
-        //  @return `*this`.
-        */
+        //! Returns `concat(source)`.
         template <typename Source>
         key_path& operator+=(const Source& source);
 
@@ -342,7 +292,7 @@ namespace registry
         key_path& assign(view view);
 
         //! TODO: ...
-        /*!
+        /*
         //  @post `*this == key_path(std::move(name), view)`.
         //
         //  @param[in] name - a key name.
@@ -355,9 +305,21 @@ namespace registry
 
         //! TODO: ...
         /*
+        //  @post `*this == key_path(std::move(name), view)`.
+        //
+        //  @param[in] name - a key name.
+        //
+        //  @param[in] view - a registry view.
+        //
+        //  @return `*this`.
+        */
+        key_path& assign(std::basic_string<name::value_type>&& name, view view = view::view_default);
+
+        //! TODO: ...
+        /*
         //  @post `*this == key_path(name, view)`.
         //
-        //  @param[in] name - a character range.
+        //  @param[in] name - a key name.
         //
         //  @param[in] view - a registry view.
         //
@@ -365,51 +327,6 @@ namespace registry
         */
         template <typename Source>
         key_path& assign(const Source& name, view view = view::view_default);
-
-        //! TODO: ...
-        /*!
-        //  @post `*this == key_path(name, loc, view)`.
-        //
-        //  @param[in] name - a character range.
-        //
-        //  @param[in] loc  - a locale used to convert the input character range to
-        //                    the system native encoding, if such conversion is required.
-        //
-        //  @param[in] view - a registry view.
-        //
-        //  @return `*this`.
-        */
-        template <typename Source>
-        key_path& assign(const Source& name, const std::locale& loc, view view = view::view_default);
-
-        //! TODO: ...
-        /*!
-        //  @post `*this == key_path(first, last, view)`.
-        //
-        //  @param[in] first, last - a character range.
-        //
-        //  @param[in] view        - a registry view.
-        //
-        //  @return `*this`.
-        */
-        template <typename InputIt>
-        key_path& assign(InputIt first, InputIt last, view view = view::view_default);
-
-        //! TODO: ...
-        /*!
-        //  @post `*this == key_path(first, last, loc, view)`.
-        //
-        //  @param[in] first, last - a character range.
-        //
-        //  @param[in] loc         - a locale used to convert the input character range to
-        //                           the system native encoding, if such conversion is required.
-        //
-        //  @param[in] view        - a registry view.
-        //
-        //  @return `*this`.
-        */
-        template <typename InputIt>
-        key_path& assign(InputIt first, InputIt last, const std::locale& loc, view view = view::view_default);
 
         //! Appends elements to the path with a key separator.
         /*! Establishes the postcondition, as if by applying the following steps:
@@ -427,29 +344,14 @@ namespace registry
         */
         key_path& append(const key_path& path);
 
-        //! Appends elements to the path as if by `append(key_path(name, loc))`.
+        //! Appends elements to the path as if by `append(key_path(name))`.
         /*!
-        //  @param[in] name - a character range.
-        //
-        //  @param[in] loc  - a locale used to convert the input character range to
-        //                    the system native encoding, if such conversion is required.
+        //  @param[in] name - a key name.
         //
         //  @return `*this`.
         */
         template <typename Source>
-        key_path& append(const Source& name, const std::locale& loc = std::locale());
-
-        //! Appends elements to the path as if by `append(key_path(first, last, loc))`.
-        /*!
-        //  @param[in] first, last - a character range.
-        //
-        //  @param[in] loc         - a locale used to convert the input character range to
-        //                           the system native encoding, if such conversion is required.
-        //
-        //  @return `*this`.
-        */
-        template <typename InputIt>
-        key_path& append(InputIt fist, InputIt last, const std::locale& loc = std::locale());
+        key_path& append(const Source& name);
 
         //! Concatenates the current path and `path` without introducing a key separator.
         /*! Establishes the postcondition, as if by applying the following steps:
@@ -463,29 +365,14 @@ namespace registry
         */
         key_path& concat(const key_path& path);
 
-        //! Concatenates the current path and `name` as if by `concat(key_path(name, loc))`.
+        //! Concatenates the current path and `name` as if by `concat(key_path(name))`.
         /*!
-        //  @param[in] name - a character range.
-        //
-        //  @param[in] loc  - a locale used to convert the input character range to
-        //                    the system native encoding, if such conversion is required.
+        //  @param[in] name - a key name.
         //
         //  @return `*this`.
         */
         template <typename Source>
-        key_path& concat(const Source& name, const std::locale& loc = std::locale());
-
-        //! Concatenates the current path and `[first, last)` as if by `concat(key_path(first, last, loc))`.
-        /*!
-        //  @param[in] first, last - a character range.
-        //
-        //  @param[in] loc         - a locale used to convert the input character range to
-        //                           the system native encoding, if such conversion is required.
-        //
-        //  @return `*this`.
-        */
-        template <typename InputIt>
-        key_path& concat(InputIt fist, InputIt last, const std::locale& loc = std::locale());
+        key_path& concat(const Source& name);
 
         //! Removes a single leaf component.
         /*! If `begin() == end()`, does nothing. \n
@@ -634,23 +521,8 @@ namespace registry
     //-------------------------------------------------------------------------------------------//
 
     template <typename Source>
-    inline key_path::key_path(const Source& name, view view)
-    : key_path(registry::name(name), view)
-    { }
-
-    template <typename Source>
-    inline key_path::key_path(const Source& name, const std::locale& loc, view view)
-    : key_path(registry::name(name, loc), view)
-    { }
-
-    template <typename InputIt>
-    inline key_path::key_path(InputIt first, InputIt last, view view)
-    : key_path(registry::name(first, last), view)
-    { }
-
-    template <typename InputIt>
-    inline key_path::key_path(InputIt first, InputIt last, const std::locale& loc, view view)
-    : key_path(registry::name(first, last, loc), view)
+    inline key_path::key_path(Source&& name, view view)
+    : key_path(registry::name(std::forward<Source>(name)), view)
     { }
 
     template <typename Source>
@@ -674,53 +546,40 @@ namespace registry
     template <typename Source>
     inline key_path& key_path::assign(const Source& name, view view)
     {
-        return assign(registry::name(name), view);
+        if constexpr(std::is_convertible_v<std::decay_t<Source>,
+                                           std::basic_string_view<name::value_type>>)
+        {
+            return do_assign(name, view::view_default);
+        } else
+        {
+            return do_assign(registry::name(name), view::view_default);
+        }
     }
 
     template <typename Source>
-    inline key_path& key_path::assign(const Source& name, const std::locale& loc, view view)
+    inline key_path& key_path::append(const Source& name)
     {
-        return assign(registry::name(name, loc), view);
-    }
-
-    template <typename InputIt>
-    inline key_path& key_path::assign(InputIt first, InputIt last, view view)
-    {
-        return assign(registry::name(first, last), view);
-    }
-
-    template <typename InputIt>
-    inline key_path& key_path::assign(InputIt first, InputIt last, const std::locale& loc, view view)
-    {
-        return assign(registry::name(first, last, loc), view);
+        if constexpr(std::is_convertible_v<std::decay_t<Source>,
+                                           std::basic_string_view<name::value_type>>)
+        {
+            return do_append(name, view::view_default);
+        } else
+        {
+            return do_append(registry::name(name), view::view_default);
+        }
     }
 
     template <typename Source>
-    inline key_path& key_path::append(const Source& name, const std::locale& loc)
+    inline key_path& key_path::concat(const Source& name)
     {
-        // TODO: optimize this ?
-        return append(key_path(name, loc));
-    }
-
-    template <typename InputIt>
-    inline key_path& key_path::append(InputIt first, InputIt last, const std::locale& loc)
-    {
-        // TODO: optimize this ?
-        return append(key_path(first, last, loc));
-    }
-
-    template <typename Source>
-    inline key_path& key_path::concat(const Source& name, const std::locale& loc)
-    {
-        // TODO: optimize this ?
-        return concat(key_path(first, last, loc));
-    }
-
-    template <typename InputIt>
-    inline key_path& key_path::concat(InputIt first, InputIt last, const std::locale& loc)
-    {
-        // TODO: optimize this ?
-        return concat(key_path(first, last, loc));
+        if constexpr(std::is_convertible_v<std::decay_t<Source>,
+                                           std::basic_string_view<name::value_type>>)
+        {
+            return do_concat(name, view::view_default);
+        } else
+        {
+            return do_concat(registry::name(name), view::view_default);
+        }
     }
 
     template <typename Source>
