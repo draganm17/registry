@@ -507,6 +507,9 @@ namespace registry
     //! Swaps the contents of `lhs` and `rhs`.
     void swap(key_path& lhs, key_path& rhs) noexcept;
 
+    //! Swaps the contents of `lhs` and `rhs`.
+    void swap(key_path::iterator& lhs, key_path::iterator& rhs) noexcept;
+
 
     //-------------------------------------------------------------------------------------------//
     //                                    INLINE DEFINITIONS                                     //
@@ -611,6 +614,11 @@ namespace registry
     }
 
     inline void swap(key_path& lhs, key_path& rhs) noexcept
+    {
+        lhs.swap(rhs);
+    }
+
+    inline void swap(key_path::iterator& lhs, key_path::iterator& rhs) noexcept
     {
         lhs.swap(rhs);
     }

@@ -139,16 +139,16 @@ namespace registry
         std::string string(const std::locale& loc = std::locale()) const;
 
         //! TODO: ...
-        std::wstring wstring(const std::locale& loc = std::locale()) const;
+        std::wstring wstring(const std::locale& loc = std::locale()) const; // TODO: rm loc ???
 
         //! TODO: ...
-        std::string u8string(const std::locale& loc = std::locale()) const;
+        std::string u8string(const std::locale& loc = std::locale()) const; // TODO: rm loc ???
 
         //! TODO: ...
-        std::u16string u16string(const std::locale& loc = std::locale()) const;
+        std::u16string u16string(const std::locale& loc = std::locale()) const; // TODO: rm loc ???
 
         //! TODO: ...
-        std::u32string u32string(const std::locale& loc = std::locale()) const;
+        std::u32string u32string(const std::locale& loc = std::locale()) const; // TODO: rm loc ???
 
         //! Compares names objects.
         /*! Names are compared lexicographically. The comparison is case-insensitive.

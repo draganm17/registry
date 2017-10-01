@@ -82,7 +82,7 @@ namespace details {
             case key_id::performance_nlstext :         return TEXT("HKEY_PERFORMANCE_NLSTEXT");
             case key_id::current_config :              return TEXT("HKEY_CURRENT_CONFIG");
             case key_id::current_user_local_settings : return TEXT("HKEY_CURRENT_USER_LOCAL_SETTINGS");
-            default:                                   return std::basic_string_view<name::value_type>{};
+            default:                                   return std::basic_string_view<name::value_type>();
         };
     }
 
@@ -108,13 +108,13 @@ namespace details {
         static const auto cmp_less = [](auto&& lhs, auto&& rhs)
         {
             using std::begin; using std::end;
-            return std::lexicographical_compare(begin(lhs.first), end(lhs.first), begin(rhs), end(rhs), is_iless{});
+            return std::lexicographical_compare(begin(lhs.first), end(lhs.first), begin(rhs), end(rhs), is_iless());
         };
 
         static const auto cmp_equal = [](auto&& lhs, auto&& rhs)
         {
             using std::begin; using std::end;
-            return std::equal(begin(lhs.first), end(lhs.first), begin(rhs), end(rhs), is_iequal{});
+            return std::equal(begin(lhs.first), end(lhs.first), begin(rhs), end(rhs), is_iequal());
         };
 
         auto it = std::lower_bound(key_map.begin(), key_map.end(), str, cmp_less);

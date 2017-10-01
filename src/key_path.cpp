@@ -35,6 +35,11 @@ namespace registry {
 //                                     class key_path                                        //
 //-------------------------------------------------------------------------------------------//
 
+key_path key_path::from_key_id(key_id id)
+{
+    return key_path(details::key_id_to_string(id));
+}
+
 key_path& key_path::do_assign(std::basic_string_view<name::value_type> name, view view)
 {
     m_name.value().assign(name);
@@ -75,11 +80,6 @@ key_path& key_path::do_concat(std::basic_string_view<name::value_type> name, vie
     }
     m_view = view != view::view_default ? view : m_view;
     return *this;
-}
-
-key_path key_path::from_key_id(key_id id)
-{
-    return key_path(details::key_id_to_string(id));
 }
 
 key_path::key_path(view view)
