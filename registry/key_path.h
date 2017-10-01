@@ -21,7 +21,7 @@ namespace registry
     //  an application may use different registry keys and values than the 32-bit version. 
     //  These flags enable explicit access to the 64-bit registry view and the 32-bit view, 
     //  respectively. \n
-    // For more information see: https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms724072 
+    // For more information see: https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms724072
     */
     enum class view : uint32_t
     {
@@ -79,10 +79,10 @@ namespace registry
         /*!
         //  @param[in] id - a predefined key identifier.
         //
-        //  @return 
-        //      If `id == key_id::unknown`, returns `key_path()`. Otherwise, returns `p`, where
-        //      `p.key_name()` contains the name of the predefined registry key and `p.key_view()` 
-        //      is equal to `view::view_default`.
+        //  @return
+        //      If `id == key_id::unknown`, returns `key_path()`. Otherwise, returns 
+        //      `key_path(NAME)`, where `NAME` is the name of the predefined registry 
+        //      key identified by `id`.
         */
         static key_path from_key_id(key_id id);
 
@@ -201,34 +201,42 @@ namespace registry
         view key_view() const noexcept;
 
         //! Returns the root path of the path.
-        /*! If `root_key_id() != key_id::unknown`, returns `*begin()`. Otherwise, returns
-        //  `key_path(key_view())`.
+        /*! If the path does not include a root key, returns `key_path(key_view())`. \n
+        //
+        //  Effectively, returns the following: 
+        // `root_key_id() != key_id::unknown ? *begin() : key_path(key_view())`.
         */
         key_path root_path() const;
 
-        //! Returns the identifier of the root key.
-        /*! If `begin() != end()` and `*begin()` identifies a predefined registry key, returns 
-        //  that key identifier. Otherwise, returns `key_id::unknown`.
+        //! Returns the root key identifier.
+        /*! If the path does not include a root key, returns `key_id::unknown`.
         */
         key_id root_key_id() const noexcept;
 
         //! Returns the leaf component of the path.
-        /*! If `begin() != end()`, returns `key_path(*--end())`. Otherwise, returns 
-        //  `key_path(key_view())`.
+        /*! If the path has no components, returns `key_path(key_view())`. \n
+        //
+        //  Effectively, returns the following:
+        // `begin() != end() ? *--end() : key_path(key_view())`.
         */
         key_path leaf_path() const;
 
         //! Returns the parent of the path.
-        /*! If `begin() != end()`, returns `p`, where `p` is constructed as if by 
-        //  `key_path p(key_view())` and successively applying `operator/=` for each
-        //  element in the range `[begin(), --end())`. Otherwise, returns `key_path(key_view())`.
+        /*! If the path has no parent, return `key_path(key_view())`. \n
+        //
+        //  Effectively, returns the following: \n
+        //  A path `p`, where `p`, is constructed as if by `key_path p(key_view())` and 
+        //  successively applying `operator/=` for each element in the range `[begin(), --end())`.
         */
         key_path parent_path() const;
 
         //! Returns a path relative to the root path.
-        /*! If `has_root_path()`, returns `p`, where `p` is constructed as if by 
-        //  `key_path p(key_view())` and successively applying `operator/=` for each 
-        //  element in the range `[++begin(), end())`. Otherwise, returns `*this`.
+        /*! If the path does not include a root key, returns `*this`. \n
+        //
+        //  Effectively, returns the following: \n
+        // `root_key_id() != key_id::unknown ? p : *this`, where `p` is constructed as 
+        //  if by `key_path p(key_view())` and successively applying `operator/=` for 
+        //  each element in the range `[++begin(), end())`.
         */
         key_path relative_path() const;
 
@@ -330,12 +338,12 @@ namespace registry
 
         //! Appends elements to the path with a key separator.
         /*! Establishes the postcondition, as if by applying the following steps:
-        //  - Appends `separator` to the current path key name, except if any of the following
+        //  - Appends `separator` to the path key name, except if any of the following
         //    conditions is true:
         //    - `key_name()` is empty;
         //    - `path.key_name()` is empty.
-        //  - Appends `path.key_name()` the to the current path key name;
-        //  - Replaces the current path key view with `path.key_view()`, except if
+        //  - Appends `path.key_name()` the to the path key name;
+        //  - Replaces the path key view with `path.key_view()`, except if
         //    `path.key_view() == view::view_default`.
         //
         //  @param[in] path - a path to append.
@@ -353,10 +361,10 @@ namespace registry
         template <typename Source>
         key_path& append(const Source& name);
 
-        //! Concatenates the current path and `path` without introducing a key separator.
+        //! Concatenates the path and `path` without introducing a key separator.
         /*! Establishes the postcondition, as if by applying the following steps:
-        //  - Appends `path.key_name()` the  to the current path key name;
-        //  - Replaces the current path key view with `path.key_view()`, except if 
+        //  - Appends `path.key_name()` the  to the path key name;
+        //  - Replaces the path key view with `path.key_view()`, except if 
         //    `path.key_view() == view::view_default`.
         //
         //  @param[in] path - a path to concatenate with.
@@ -365,7 +373,7 @@ namespace registry
         */
         key_path& concat(const key_path& path);
 
-        //! Concatenates the current path and `name` as if by `concat(key_path(name))`.
+        //! Concatenates the path and `name` as if by `concat(key_path(name))`.
         /*!
         //  @param[in] name - a key name.
         //
@@ -375,7 +383,8 @@ namespace registry
         key_path& concat(const Source& name);
 
         //! Removes a single leaf component.
-        /*! If `begin() == end()`, does nothing. \n
+        /*! If the path has no components, does nothing. \n
+        //
         //  Note that the leaf component of the key name is removed along with the preceding key 
         //  separator, if present.
         //
@@ -386,16 +395,16 @@ namespace registry
         //! Replaces a single leaf component with `path`.
         /*! Equivalent to `remove_leaf_path().append(path)`.
         //
-        //  @pre `has_leaf_path()`.
+        //  @pre `has_leaf_path()`. // TODO: ???
         //
-        //  @param[in] path - a path to replace the leaf component with..
+        //  @param[in] path - a path to replace the leaf component with.
         //
         //  @return `*this`.
         */
         key_path& replace_leaf_path(const key_path& path);
 
         // TODO: ... 
-        //       to be able to set the key viewy to the default value
+        //       to be able to set the key view to the default value
         // void replace_key_view(view);
 
         //! Swaps the contents of `*this` and `other`.
@@ -434,43 +443,27 @@ namespace registry
 
         //! Accesses the pointed-to `registry::key_path`.
         /*!
-        //  @pre `*this` is a valid iterator and not the end iterator.
-        //
         //  @return Value of the `registry::key_path` referred to by this iterator.
         */
         reference operator*() const noexcept;
 
         //! Accesses the pointed-to `registry::key_path`.
         /*!
-        //  @pre `*this` is a valid iterator and not the end iterator.
-        //
         //  @return Pointer to the `registry::key_path` referred to by this iterator.
         */
         pointer operator->() const noexcept;
 
     public:
         //! Advances the iterator to the next entry, then returns `*this`.
-        /*!
-        //  @pre `*this` is a valid iterator and not the end iterator.
-        */
         iterator& operator++();
 
         //! Makes a copy of `*this`, calls operator++(), then returns the copy.
-        /*!
-        //  @pre `*this` is a valid iterator and not the end iterator.
-        */
         iterator operator++(int);
 
         //! Decrements the iterator to the previous entry, then returns `*this`.
-        /*!
-        //  @pre `*this` is a valid iterator and not the begin iterator.
-        */
         iterator& operator--();
 
         //! Makes a copy of `*this`, calls operator--(), then returns the copy.
-        /*!
-        //  @pre `*this` is a valid iterator and not the begin iterator.
-        */
         iterator operator--(int);
 
     public:
@@ -491,7 +484,6 @@ namespace registry
     //-------------------------------------------------------------------------------------------//
 
     //! Appends `lhs` to `rhs` with a key separator as if by `key_path(lhs).append(rhs)`.
-    template <typename Source>
     key_path operator/(const key_path& lhs, const key_path& rhs); // TODO: templatize ???
 
     //! Checks whether `lhs` is equal to `rhs`. Equivalent to `lhs.compare(rhs) == 0`.

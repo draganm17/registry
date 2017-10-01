@@ -263,6 +263,7 @@ key_path& key_path::remove_leaf_path()
 
 key_path& key_path::replace_leaf_path(const key_path& path)
 {
+    assert(has_leaf_path());
     return remove_leaf_path().append(path);
 }
 
