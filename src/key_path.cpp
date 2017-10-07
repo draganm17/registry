@@ -94,6 +94,10 @@ key_path::key_path(name&& name, view view)
                          m_name.value().end());
 }
 
+key_path::key_path(std::basic_string<name::value_type>&& name, view view)
+: key_path(registry::name(std::move(name)), view)
+{ }
+
 key_path& key_path::operator=(name&& name)
 {
     return assign(std::move(name));
@@ -140,7 +144,7 @@ key_path key_path::parent_path() const
     const auto first = details::key_name_iterator::begin(m_name);
 
     return (first == last || first == --last) ? key_path(m_view)
-                                              : key_path({ first->data(), last->data() }, m_view);
+                                              : key_path(first->data(), last->data(), m_view);
 }
 
 key_path key_path::relative_path() const
@@ -232,11 +236,7 @@ key_path& key_path::assign(name&& name, view view)
 
 key_path& key_path::assign(std::basic_string<name::value_type>&& name, view view)
 {
-    m_view = view;
-    m_name = std::move(name);
-    m_name.value().erase(remove_redundant_separators(m_name.value().begin(), m_name.value().end()),
-                         m_name.value().end());
-    return *this;
+    return assign(registry::name(std::move(name)), view);
 }
 
 key_path& key_path::append(const key_path& path)

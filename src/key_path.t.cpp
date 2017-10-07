@@ -1,9 +1,212 @@
+#include <algorithm>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <registry/key_path.h>
+#include <registry/name.h>
 
 using namespace registry;
+
+
+namespace {
+
+    static const std::pair<const char*, const char*> construction_test_set[]
+    {
+    //  input name string                                    expected output name string
+        { "",                                                "" },
+        { "\\",                                              "" },
+        { "\\\\",                                            "" },
+        { "Test",                                            "Test" },
+        { "\\Test",                                          "Test" },
+        { "Test\\",                                          "Test" },
+        { "Test1\\Test2\\Test3",                             "Test1\\Test2\\Test3" },
+        { "\\Test1\\Test2\\Test3",                           "Test1\\Test2\\Test3" },
+        { "Test1\\Test2\\Test3\\",                           "Test1\\Test2\\Test3" },
+        { "\\\\Test1\\Test2\\\\Test3\\\\",                   "Test1\\Test2\\Test3" },
+        { "HKEY_local_machine",                              "HKEY_local_machine" },
+        { "HKEY_local_machine\\\\Test1\\Test2\\\\Test3\\\\", "HKEY_local_machine\\Test1\\Test2\\Test3" },
+    };
+
+    bool test_name_view_constructors_impl(const std::string& in_name,  view in_view,
+                                          const name&        exp_name, view exp_view)
+    {
+        // key_path(name&&, view view)
+        {
+            key_path p(name(in_name), in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        // key_path(std::basic_string<name::value_type>&&, view)
+        {
+            key_path p(name(in_name).value(), in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        // key_path(const Source&, view)
+        {
+            key_path p(in_name, in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        // key_path(const Source&, const std::locale&, view)
+        {
+            key_path p(in_name, std::locale(), in_view);
+            return p.key_name() == exp_name && p.key_view() == exp_view;
+        }
+
+        // key_path(InputIt, InputIt, view)
+        {
+            key_path p(in_name.begin(), in_name.end(), in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        // key_path(InputIt, InputIt, const std::locale&, view)
+        {
+            key_path p(in_name.begin(), in_name.end(), std::locale(), in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool test_name_view_constructors()
+    {
+        for (auto it =  std::begin(construction_test_set);
+                  it != std::end(construction_test_set); ++it)
+        {
+            if (!test_name_view_constructors_impl(it->first,  view::view_64bit,
+                                                  it->second, view::view_64bit))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool test_name_view_assignments_impl(const std::string& in_name,  view in_view,
+                                         const name&        exp_name, view exp_view)
+    {
+        // operator=(name&&)
+        {
+            key_path p("placeholder");
+            p = name(in_name);
+            if (p.key_name() != exp_name || p.key_view() != view::view_default)
+            {
+                return false;
+            }
+        }
+
+        // operator=(std::basic_string<name::value_type>&&)
+        {
+            key_path p("placeholder");
+            p = name(in_name).value();
+            if (p.key_name() != exp_name || p.key_view() != view::view_default)
+            {
+                return false;
+            }
+        }
+
+        // operator=(const Source&)
+        {
+            key_path p("placeholder");
+            p = in_name;
+            if (p.key_name() != exp_name || p.key_view() != view::view_default)
+            {
+                return false;
+            }
+        }
+
+        // assign(name&&, view view)
+        {
+            key_path p("placeholder");
+            p.assign(name(in_name), in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        // assign(std::basic_string<name::value_type>&&, view)
+        {
+            key_path p("placeholder");
+            p.assign(name(in_name).value(), in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        // assign(const Source&, view)
+        {
+            key_path p("placeholder");
+            p.assign(in_name, in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        // assign(const Source&, const std::locale&, view)
+        {
+            key_path p("placeholder");
+            p.assign(in_name, std::locale(), in_view);
+            return p.key_name() == exp_name && p.key_view() == exp_view;
+        }
+
+        // assign(InputIt, InputIt, view)
+        {
+            key_path p("placeholder");
+            p.assign(in_name.begin(), in_name.end(), in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        // assign(InputIt, InputIt, const std::locale&, view)
+        {
+            key_path p("placeholder");
+            p.assign(in_name.begin(), in_name.end(), std::locale(), in_view);
+            if (p.key_name() != exp_name || p.key_view() != exp_view)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool test_name_view_assignments()
+    {
+        for (auto it =  std::begin(construction_test_set);
+                  it != std::end(construction_test_set); ++it)
+        {
+            if (!test_name_view_assignments_impl(it->first,  view::view_64bit,
+                                                 it->second, view::view_64bit))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+} // anonymous namespace
 
 
 TEST(KeyPath, Construct) 
@@ -15,67 +218,33 @@ TEST(KeyPath, Construct)
         EXPECT_TRUE(p.key_view() == view::view_default);
     }
 
-    // construct from view
+    // key_path(view)
     {
         key_path p(view::view_64bit);
         EXPECT_TRUE(p.key_name().empty());
         EXPECT_TRUE(p.key_view() == view::view_64bit);
     }
 
-    // construct from name and view
+    // other constructors
     {
-        key_path p00("HKEY_CURRENT_user\\Test", view::view_32bit);
-        EXPECT_TRUE(p00.key_name() == "HKEY_CURRENT_user\\Test");
-        EXPECT_TRUE(p00.key_view() == view::view_32bit);
-
-        key_path p01;
-        EXPECT_TRUE(p01.key_name().empty());
-
-        key_path p02 = "\\";
-        EXPECT_TRUE(p02.key_name().empty());
-
-        key_path p03 = "\\\\";
-        EXPECT_TRUE(p03.key_name().empty());
-
-        key_path p04 = "Test";
-        EXPECT_TRUE(p04.key_name() == "Test");
-
-        key_path p05 = "\\Test";
-        EXPECT_TRUE(p05.key_name() == "Test");
-
-        key_path p06 = "Test\\";
-        EXPECT_TRUE(p06.key_name() == "Test");
-
-        key_path p07 = "\\\\Test\\\\";
-        EXPECT_TRUE(p07.key_name() == "Test");
-
-        key_path p08 = "Test1\\Test2\\Test3";
-        EXPECT_TRUE(p08.key_name() == "Test1\\Test2\\Test3");
-
-        key_path p09 = "\\Test1\\Test2\\Test3";
-        EXPECT_TRUE(p09.key_name() == "Test1\\Test2\\Test3");
-
-        key_path p10 = "Test1\\Test2\\Test3\\";
-        EXPECT_TRUE(p10.key_name() == "Test1\\Test2\\Test3");
-
-        key_path p11 = "\\\\Test1\\Test2\\\\Test3\\\\";
-        EXPECT_TRUE(p11.key_name() == "Test1\\Test2\\Test3");
-    }
-
-    // test implicit from-string construction
-    {
-        key_path p = "HKEY_CURRENT_user\\Test";
-        EXPECT_TRUE(p.key_name() == "HKEY_CURRENT_user\\Test");
-        EXPECT_TRUE(p.key_view() == view::view_default);
+        EXPECT_TRUE(test_name_view_constructors());
     }
 }
 
 TEST(KeyPath, Assign)
 {
-    key_path p1("Test1", view::view_32bit);
-    key_path p2("Test1\\Test2\\Test3", view::view_64bit);
+    // assign(view)
+    {
+        key_path p("placeholder");
+        p.assign(view::view_64bit);
+        EXPECT_TRUE(p.key_name().empty());
+        EXPECT_TRUE(p.key_view() == view::view_64bit);
+    }
 
-    EXPECT_TRUE(p1.assign(p2.key_name(), p2.key_view()) == p2);
+    // other assignments
+    {
+        EXPECT_TRUE(test_name_view_assignments());
+    }
 }
 
 TEST(KeyPath, FromKeyId)
