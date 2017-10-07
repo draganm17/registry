@@ -783,9 +783,9 @@ namespace registry
         if constexpr(std::is_convertible_v<std::decay_t<Source>,
                                            std::basic_string_view<name::value_type>>)
         {
-            return do_append(name, view);
+            return do_append(name, view::view_default);
         } else {
-            return do_append(registry::name(name, loc), view);
+            return do_append(registry::name(name, loc), view::view_default);
         }
     }
 

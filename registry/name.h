@@ -49,8 +49,16 @@ namespace registry
         name(std::basic_string<value_type>&& source) noexcept;
 
         //! TODO: ...
-        template <typename Source>
-        name(const Source& source, const std::locale& loc = std::locale());
+        template <typename CharT>
+        name(const CharT* source, const std::locale& loc = std::locale());
+
+        //! TODO: ...
+        template <typename CharT>
+        name(const std::basic_string<CharT>& source, const std::locale& loc = std::locale());
+
+        //! TODO: ...
+        template <typename CharT>
+        name(std::basic_string_view<CharT> source, const std::locale& loc = std::locale());
 
         //! TODO: ...
         template <typename InputIt>
@@ -78,6 +86,16 @@ namespace registry
         /*!
         //  @return `*this`.
         */
+        name& operator=(const value_type* source);
+
+        // TODO: ...
+        template <typename CharT>
+        name& operator=(const CharT* source);
+
+        //! Calls `value() = source`.
+        /*!
+        //  @return `*this`.
+        */
         name& operator=(const std::basic_string<value_type>& source);
 
         //! Calls `value() = std::move(source)`.
@@ -86,11 +104,9 @@ namespace registry
         */
         name& operator=(std::basic_string<value_type>&& source) noexcept;
 
-        //! Calls `value() = source`.
-        /*!
-        //  @return `*this`.
-        */
-        name& operator=(const value_type* source);
+        // TODO: ...
+        template <typename CharT>
+        name& operator=(const std::basic_string<CharT>& source);
 
         //! Calls `value() = source`.
         /*!
@@ -98,12 +114,9 @@ namespace registry
         */
         name& operator=(std::basic_string_view<value_type> source);
 
-        //! TODO: ...
-        /*!
-        //  @return `*this`.
-        */
-        template <typename Source>
-        name& operator=(const Source& source);
+        // TODO: ...
+        template <typename CharT>
+        name& operator=(std::basic_string_view<CharT> source);
 
         /*! \brief
         //  Returns a `std::basic_string<value_type>`, constructed 
@@ -170,6 +183,16 @@ namespace registry
         /*!
         //  @return `*this`.
         */
+        name& assign(const value_type* source);
+
+        //! TODO: ...
+        template <typename CharT>
+        name& assign(const CharT* source, const std::locale& loc = std::locale());
+
+        //! Calls `value().assign(source)`.
+        /*!
+        //  @return `*this`.
+        */
         name& assign(const std::basic_string<value_type>& source);
 
         //! Calls `value().assign(std::move(source))`.
@@ -178,11 +201,9 @@ namespace registry
         */
         name& assign(std::basic_string<value_type>&& source) noexcept;
 
-        //! Calls `value().assign(source)`.
-        /*!
-        //  @return `*this`.
-        */
-        name& assign(const value_type* source);
+        //! TODO: ...
+        template <typename CharT>
+        name& assign(const std::basic_string<CharT>& source, const std::locale& loc = std::locale());
 
         //! Calls `value().assign(source)`.
         /*!
@@ -191,11 +212,8 @@ namespace registry
         name& assign(std::basic_string_view<value_type> source);
 
         //! TODO: ...
-        /*!
-        //  @return `*this`.
-        */
-        template <typename Source>
-        name& assign(const Source& source, const std::locale& loc = std::locale());
+        template <typename CharT>
+        name& assign(std::basic_string_view<CharT> source, const std::locale& loc = std::locale());
 
         //! TODO: ...
         /*!
@@ -253,8 +271,18 @@ namespace registry
     //                                    INLINE DEFINITIONS                                     //
     //-------------------------------------------------------------------------------------------//
 
-    template <typename Source>
-    inline name::name(const Source& source, const std::locale& loc)
+    template <typename CharT>
+    inline name::name(const CharT* source, const std::locale& loc)
+    : name(details::to_native(source, loc))
+    { }
+
+    template <typename CharT>
+    inline name::name(const std::basic_string<CharT>& source, const std::locale& loc)
+    : name(details::to_native(source, loc))
+    { }
+
+    template <typename CharT>
+    inline name::name(std::basic_string_view<CharT> source, const std::locale& loc)
     : name(details::to_native(source, loc))
     { }
 
@@ -263,14 +291,38 @@ namespace registry
     : name(details::to_native(first, last, loc))
     { }
 
-    template <typename Source>
-    inline name& name::operator=(const Source& source)
+    template <typename CharT>
+    inline name& name::operator=(const CharT* source)
     {
-        return assign(details::to_native(source));
+        return assign(source);
     }
 
-    template <typename Source>
-    inline name& name::assign(const Source& source, const std::locale& loc)
+    template <typename CharT>
+    inline name& name::operator=(const std::basic_string<CharT>& source)
+    {
+        return assign(source);
+    }
+
+    template <typename CharT>
+    inline name& name::operator=(std::basic_string_view<CharT> source)
+    {
+        return assign(source);
+    }
+
+    template <typename CharT>
+    inline name& name::assign(const CharT* source, const std::locale& loc)
+    {
+        return assign(details::to_native(source, loc));
+    }
+
+    template <typename CharT>
+    inline name& name::assign(const std::basic_string<CharT>& source, const std::locale& loc)
+    {
+        return assign(details::to_native(source, loc));
+    }
+
+    template <typename CharT>
+    inline name& name::assign(std::basic_string_view<CharT> source, const std::locale& loc)
     {
         return assign(details::to_native(source, loc));
     }
