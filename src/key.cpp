@@ -300,18 +300,20 @@ key key::open_key(const key_path& path, access_rights rights, std::error_code& e
 value key::read_value(const name& name, std::error_code& ec) const
 {
     LSTATUS rc;
-    details::value_state state;
+
+    value_type  type;
+    std::string data(8, 0);
+    DWORD       size = static_cast<DWORD>(data.size());
 
     do {
-        BYTE dummy;
-        DWORD size = static_cast<DWORD>(state.m_data.size());
         rc = RegQueryValueEx(
              reinterpret_cast<HKEY>(native_handle()), name.data(), nullptr,
-             reinterpret_cast<DWORD*>(&state.m_type), size ? state.m_data.data() : &dummy, &size);
-        state.m_data.resize(size);
+             reinterpret_cast<DWORD*>(&type), reinterpret_cast<BYTE*>(data.data()), &size);
+
+        data.resize(size);
     } while (rc == ERROR_MORE_DATA);
     
-    if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, reinterpret_cast<value&&>(state));
+    if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, value(type, data.data(), size));
 
     const std::error_code ec2(rc, std::system_category());
     return details::set_or_throw(&ec, ec2, __FUNCTION__, key_path(), key_path(), name), value();

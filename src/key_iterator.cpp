@@ -73,9 +73,9 @@ void key_entry::swap(key_entry& other) noexcept
 
 struct key_iterator::state
 {
-    uint32_t                                           idx;
-    key_entry                                          val;
-    details::possibly_ptr<const key>                   key;
+    uint32_t                                    idx;
+    key_entry                                   val;
+    details::possibly_ptr<const key>            key;
     std::array<name::value_type, MAX_KEY_SIZE>  buf;
 };
 
@@ -168,12 +168,13 @@ key_iterator& key_iterator::increment(std::error_code& ec)
 
     try {
         LSTATUS rc;
-        DWORD buffer_size = m_state->buf.size();
+        DWORD buf_size = m_state->buf.size();
         rc = RegEnumKeyEx(reinterpret_cast<HKEY>(m_state->key->native_handle()), ++m_state->idx,
-                          m_state->buf.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
+                          m_state->buf.data(), &buf_size, nullptr, nullptr, nullptr, nullptr);
 
         if (rc == ERROR_SUCCESS) {
-            m_state->val.m_path.replace_leaf_path(string_view_type(m_state->buf.data(), buffer_size));
+            m_state->val.m_path.replace_leaf_path({ m_state->buf.data(),
+                                                    m_state->buf.data() + buf_size });
         } else if (rc == ERROR_NO_MORE_ITEMS) {
             key_iterator tmp(std::move(*this)); // *this becomes the end iterator
         } else {
