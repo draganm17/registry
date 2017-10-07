@@ -40,7 +40,12 @@ namespace registry
         */
         name(name&& other) noexcept = default;
 
-        //! TODO: ...
+        /*! \brief
+        //  Constructs the name with the contents of `source` using move semantics. `source` is left
+        //  in a valid but unspecified state. */
+        /*!
+        //  @post `this->value()` has the original value of `source`.
+        */
         name(std::basic_string<value_type>&& source) noexcept;
 
         //! TODO: ...

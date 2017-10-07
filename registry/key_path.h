@@ -310,7 +310,7 @@ namespace registry
         //! Returns the root key identifier.
         /*! If the path does not include a root key, returns `key_id::unknown`.
         */
-        key_id root_key_id() const noexcept;
+        key_id root_key_id() const;
 
         //! Returns the leaf component of the path.
         /*! If the path has no components, returns `key_path(key_view())`. \n
@@ -340,28 +340,28 @@ namespace registry
         key_path relative_path() const;
 
         //! Checks whether `root_path()` has at least one component.
-        bool has_root_path() const noexcept;
+        bool has_root_path() const;
 
         //! Checks whether `leaf_path()` has at least one component.
-        bool has_leaf_path() const noexcept;
+        bool has_leaf_path() const;
 
         //! Checks whether `parent_path()` has at least one component.
-        bool has_parent_path() const noexcept;
+        bool has_parent_path() const;
 
         //! Checks whether `relative_path()` has at least one component.
-        bool has_relative_path() const noexcept;
+        bool has_relative_path() const;
 
         //! Checks whether the path is absolute.
         /*! An absolute path is a path that unambiguously identifies the location of a registry key
         //  without reference to an additional starting location. The key name of an absolute path 
         //  always begins with a predefined key identifier.
         */
-        bool is_absolute() const noexcept;
+        bool is_absolute() const;
 
         //! Checks whether the path is relative.
         /*! Equivalent to `!is_absolute()`.
         */
-        bool is_relative() const noexcept;
+        bool is_relative() const;
 
         //! Compares paths objects.
         /*!
@@ -385,7 +385,7 @@ namespace registry
         //! Returns an iterator one past the last component of the path.
         /*! Dereferencing this iterator is undefined behavior.
         */
-        iterator end() const noexcept;
+        iterator end() const;
 
     public:
         //! Replaces the contents of the path.
@@ -547,6 +547,8 @@ namespace registry
         //! Concatenates the path and `name` without introducing a key separator.
         /*! Equivalent to `concat(key_path(first, last, loc))`.
         /*!
+        //  @tparam InputIt - shall satisfy requirements of `InputIterator`.
+        //
         //  @param[in] first, last - a pair of iterators that specify a character sequence.
         //
         //  @param[in] loc         - a locale that defines encoding conversion to use.

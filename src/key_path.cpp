@@ -124,7 +124,7 @@ key_path key_path::root_path() const
            ? key_path(*details::key_name_iterator::begin(m_name), m_view) : key_path(m_view);
 }
 
-key_id key_path::root_key_id() const noexcept
+key_id key_path::root_key_id() const
 {
     const auto it = details::key_name_iterator::begin(m_name);
     return it == details::key_name_iterator::end(m_name) ? key_id::unknown
@@ -155,23 +155,23 @@ key_path key_path::relative_path() const
                                                          : key_path(it->data(), m_view);
 }
 
-bool key_path::has_root_path() const noexcept
+bool key_path::has_root_path() const
 {
     return root_key_id() != key_id::unknown;
 }
 
-bool key_path::has_leaf_path() const noexcept 
+bool key_path::has_leaf_path() const 
 {
     return details::key_name_iterator::begin(m_name) != details::key_name_iterator::end(m_name);
 }
 
-bool key_path::has_parent_path() const noexcept
+bool key_path::has_parent_path() const
 {
     return std::distance(details::key_name_iterator::begin(m_name),
                          details::key_name_iterator::end(m_name)) > 1;
 }
 
-bool key_path::has_relative_path() const noexcept 
+bool key_path::has_relative_path() const 
 {
     const bool has_root = has_root_path();
     auto first = details::key_name_iterator::begin(m_name);
@@ -179,12 +179,12 @@ bool key_path::has_relative_path() const noexcept
     return (has_root && ++first != last) || (!has_root && first != last);
 }
 
-bool key_path::is_absolute() const noexcept
+bool key_path::is_absolute() const
 {
     return has_root_path();
 }
 
-bool key_path::is_relative() const noexcept
+bool key_path::is_relative() const
 {
     return !is_absolute();
 }
@@ -210,7 +210,7 @@ key_path::iterator key_path::begin() const
     return it;
 }
 
-key_path::iterator key_path::end() const noexcept
+key_path::iterator key_path::end() const
 {
     iterator it;
     it.m_path_ptr = this;

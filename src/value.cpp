@@ -21,8 +21,10 @@ value& value::do_assign(value_type type, const void* data, size_t size)
     return *this;
 }
 
-value& value::do_assign(value_type type, std::wstring&& val)
+value& value::do_assign(value_type type, std::basic_string_view<name::value_type> val)
 {
+    // TODO: can be not null-terminated
+
     return do_assign(type, val.data(), (val.size() + 1) * sizeof(wchar_t));
 }
 
@@ -48,6 +50,20 @@ value& value::do_assign(value_type type, std::vector<std::wstring>&& val)
     return *this;
 }
 
+value::value(nullptr_t) noexcept
+: value()
+{ }
+
+value::value(sz_value_tag, const name& val)
+{
+    assign(sz_value_tag(), val);
+}
+
+value::value(expand_sz_value_tag, const name& val)
+{
+    assign(expand_sz_value_tag(), val);
+}
+
 value::value(dword_value_tag, uint32_t val)
 {
     assign(dword_value_tag(), val);
@@ -58,6 +74,11 @@ value::value(dword_big_endian_value_tag, uint32_t val)
     assign(dword_big_endian_value_tag(), val);
 }
 
+value::value(link_value_tag, const name& val)
+{
+    assign(link_value_tag(), val);
+}
+
 value::value(qword_value_tag, uint64_t val)
 {
     assign(qword_value_tag(), val);
@@ -66,6 +87,11 @@ value::value(qword_value_tag, uint64_t val)
 value::value(value_type type, const void* data, size_t size)
 {
     assign(type, data, size);
+}
+
+value& value::operator=(nullptr_t)
+{
+    return assign(nullptr);
 }
 
 value_type value::type() const noexcept
@@ -186,6 +212,21 @@ std::vector<std::wstring> value::to_wstrings() const
     throw bad_value_cast();
 }
 
+value& value::assign(nullptr_t)
+{
+    return do_assign(value_type::none, nullptr, 0);
+}
+
+value& value::assign(sz_value_tag, const name& val)
+{
+    return do_assign(value_type::sz, val);
+}
+
+value& value::assign(expand_sz_value_tag, const name& val)
+{
+    return do_assign(value_type::expand_sz, val);
+}
+
 value& value::assign(dword_value_tag tag, uint32_t val)
 {
     return do_assign(value_type::dword, &val, sizeof(val));
@@ -195,6 +236,11 @@ value& value::assign(dword_big_endian_value_tag tag, uint32_t val)
 {
     boost::endian::big_uint32_t val_copy = val;
     return do_assign(value_type::dword_big_endian, val_copy.data(), sizeof(val));
+}
+
+value& value::assign(link_value_tag, const name& val)
+{
+    return do_assign(value_type::link, val);
 }
 
 value& value::assign(qword_value_tag tag, uint64_t val)
