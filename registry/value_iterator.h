@@ -338,7 +338,7 @@ namespace registry
         lhs.swap(rhs);
     }
 
-    inline const value_iterator& begin(const value_iterator& it) noexcept
+    inline value_iterator begin(value_iterator it) noexcept
     {
         return it;
     }

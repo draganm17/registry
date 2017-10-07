@@ -625,7 +625,7 @@ namespace registry
         lhs.swap(rhs);
     }
 
-    inline const key_iterator& begin(const key_iterator& it) noexcept
+    inline key_iterator begin(key_iterator it) noexcept
     {
         return it;
     }
@@ -640,7 +640,7 @@ namespace registry
         lhs.swap(rhs);
     }
 
-    inline const recursive_key_iterator& begin(const recursive_key_iterator& it) noexcept
+    inline recursive_key_iterator begin(recursive_key_iterator it) noexcept
     {
         return it;
     }
