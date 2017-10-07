@@ -1,5 +1,4 @@
 #include <cassert>
-#include <Windows.h>
 
 #include <registry/details/common_utility.impl.h>
 #include <registry/exception.h>
@@ -76,10 +75,10 @@ void value_entry::swap(value_entry& other) noexcept
 
 struct value_iterator::state
 {
-    uint32_t                              idx;
-    value_entry                           val;
-    details::possibly_ptr<const key>      key;
-    std::vector<string_type::value_type>  buf;  // TODO: write data directly to val.m_key_name ???
+    uint32_t                             idx;
+    value_entry                          val;
+    details::possibly_ptr<const key>     key;
+    std::basic_string<name::value_type>  buf;  // TODO: write data directly to val.m_key_name ???
 
 };
 
@@ -100,7 +99,7 @@ value_iterator::value_iterator(const key& key, std::error_code& ec)
         if (info = m_state->key->info(key_info_mask::read_max_value_name_size, ec2), !ec2)
         {
             m_state->buf.resize(++info.max_value_name_size);
-            m_state->val.m_value_name.reserve(info.max_value_name_size);
+            m_state->val.m_value_name.value().reserve(info.max_value_name_size);
             m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
 
             if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
@@ -124,11 +123,11 @@ value_iterator::value_iterator(const key_path& path, std::error_code& ec)
     if (!ec2 && (info = k.info(key_info_mask::read_max_value_name_size, ec2), !ec2))
     {
         m_state = std::make_shared<state>(state{ uint32_t(-1), 
-                                                 value_entry(path, string_type()),
+                                                 value_entry(path, name()),
                                                  details::possibly_ptr<const key>(std::move(k)) });
 
         m_state->buf.resize(++info.max_value_name_size);
-        m_state->val.m_value_name.reserve(info.max_value_name_size);
+        m_state->val.m_value_name.value().reserve(info.max_value_name_size);
         m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const key>(m_state, m_state->key.operator->()));
 
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
@@ -191,12 +190,13 @@ value_iterator& value_iterator::increment(std::error_code& ec)
                               m_state->buf.data(), &buffer_size, nullptr, nullptr, nullptr, nullptr);
 
             if (rc == ERROR_SUCCESS) {
-                m_state->val.m_value_name.assign(m_state->buf.data(), buffer_size);
+                m_state->val.m_value_name.value().assign(m_state->buf.data(), buffer_size);
             } else if (rc == ERROR_NO_MORE_ITEMS) {
                 value_iterator tmp(std::move(*this)); // *this becomes the end iterator
             } else if (rc != ERROR_MORE_DATA) {
                 value_iterator tmp(std::move(*this)); // *this becomes the end iterator
-                return details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__), *this;
+                details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__);
+                return *this;
             }
         } while (rc == ERROR_MORE_DATA);
 

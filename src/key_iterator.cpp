@@ -1,7 +1,6 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <Windows.h>
 
 #include <registry/details/common_utility.impl.h>
 #include <registry/exception.h>
@@ -77,7 +76,7 @@ struct key_iterator::state
     uint32_t                                           idx;
     key_entry                                          val;
     details::possibly_ptr<const key>                   key;
-    std::array<string_type::value_type, MAX_KEY_SIZE>  buf;
+    std::array<name::value_type, MAX_KEY_SIZE>  buf;
 };
 
 key_iterator::key_iterator(const key& key, std::error_code& ec)
@@ -91,7 +90,8 @@ key_iterator::key_iterator(const key& key, std::error_code& ec)
     // assert(key.is_open()); ???
 
     std::error_code ec2;
-    if ((key.rights() & (access_rights::enumerate_sub_keys | access_rights::query_value)) != access_rights::unknown)
+    if ((key.rights() & 
+        (access_rights::enumerate_sub_keys | access_rights::query_value)) != access_rights::unknown)
     {
         using weak_key_ptr_t = details::possibly_weak_ptr<const registry::key>;
         m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const registry::key>(m_state, &key));
@@ -113,11 +113,12 @@ key_iterator::key_iterator(const key_path& path, std::error_code& ec)
 
     if (!ec2) {
         m_state = std::make_shared<state>(state{ uint32_t(-1),
-                                                 key_entry(key_path(path).append(TEXT("PLACEHOLDER"))),
+                                                 key_entry(key_path(path).append(L"PLACEHOLDER")),
                                                  details::possibly_ptr<const key>(std::move(k)) });
 
         using weak_key_ptr_t = details::possibly_weak_ptr<const key>;
-        m_state->val.m_key_weak_ptr = weak_key_ptr_t(std::shared_ptr<const key>(m_state, m_state->key.operator->()));
+        m_state->val.m_key_weak_ptr =
+        weak_key_ptr_t(std::shared_ptr<const key>(m_state, m_state->key.operator->()));
         
         if (increment(ec2), !ec2) RETURN_RESULT(ec, VOID);
     }
@@ -177,7 +178,8 @@ key_iterator& key_iterator::increment(std::error_code& ec)
             key_iterator tmp(std::move(*this)); // *this becomes the end iterator
         } else {
             key_iterator tmp(std::move(*this)); // *this becomes the end iterator
-            return details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__), *this;
+            details::set_or_throw(&ec, std::error_code(rc, std::system_category()), __FUNCTION__);
+            return *this;
         }
 
         RETURN_RESULT(ec, *this);

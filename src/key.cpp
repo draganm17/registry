@@ -150,7 +150,7 @@ key::key(open_only_tag, const key_path& path, access_rights rights, std::error_c
 }
 
 key::key(open_or_create_tag, const key_path& path, access_rights rights, std::error_code& ec)
-: key(open_or_create_tag{}, path, rights, dont_care(), ec)
+: key(open_or_create_tag(), path, rights, dont_care(), ec)
 { }
 
 key::key(open_or_create_tag, const key_path& path, 
@@ -160,11 +160,11 @@ key::key(open_or_create_tag, const key_path& path,
     std::error_code ec2;
     key_path lpath = path, rpath(path.key_view());
     if (&was_created != &dont_care()) was_created = false;
-    key lkey(open_only_tag{}, lpath, access_rights::create_sub_key, ec2);
+    key lkey(open_only_tag(), lpath, access_rights::create_sub_key, ec2);
 
     while (ec2.value() == ERROR_FILE_NOT_FOUND && lpath.has_parent_path()) {
         rpath = lpath.leaf_path().append(rpath);
-        lkey = key(open_only_tag{}, lpath.remove_leaf_path(), access_rights::create_sub_key, ec2);
+        lkey = key(open_only_tag(), lpath.remove_leaf_path(), access_rights::create_sub_key, ec2);
     }
 
     std::pair<key, bool> create_key_result;
@@ -201,8 +201,9 @@ std::pair<key, bool> key::create_key(const key_path& path, access_rights rights,
     DWORD disp;
     key.m_rights = rights;
     const DWORD sam_desired = static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view());
-    const LSTATUS rc = RegCreateKeyEx(reinterpret_cast<HKEY>(native_handle()), path.key_name().data(),
-                                      0, nullptr, REG_OPTION_NON_VOLATILE, sam_desired, nullptr, &hkey, &disp);
+    const LSTATUS rc = RegCreateKeyEx(
+                       reinterpret_cast<HKEY>(native_handle()), path.key_name().data(),
+                       0, nullptr, REG_OPTION_NON_VOLATILE, sam_desired, nullptr, &hkey, &disp);
     
     if (rc == ERROR_SUCCESS) {
         key.m_handle = handle_t(reinterpret_cast<void*>(hkey));
@@ -257,7 +258,8 @@ key_info key::info(key_info_mask mask, std::error_code& ec) const
 
     if (rc == ERROR_SUCCESS) {
         if (read_last_write_time) {
-            info.last_write_time = key_time_type::clock::from_time_t(details::file_time_to_time_t(time));
+            info.last_write_time = 
+            key_time_type::clock::from_time_t(details::file_time_to_time_t(time));
         }
         RETURN_RESULT(ec, info);
     }
@@ -282,8 +284,9 @@ key key::open_key(const key_path& path, access_rights rights, std::error_code& e
     key key;
     HKEY hkey;
     key.m_rights = rights;
-    const LRESULT rc = RegOpenKeyEx(reinterpret_cast<HKEY>(native_handle()), path.key_name().data(), 0,
-                                    static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
+    const LRESULT rc = RegOpenKeyEx(
+                       reinterpret_cast<HKEY>(native_handle()), path.key_name().data(), 0,
+                       static_cast<DWORD>(rights) | static_cast<DWORD>(path.key_view()), &hkey);
 
     if (rc == ERROR_SUCCESS) {
         key.m_handle = handle_t(reinterpret_cast<void*>(hkey));
@@ -302,8 +305,9 @@ value key::read_value(const name& name, std::error_code& ec) const
     do {
         BYTE dummy;
         DWORD size = static_cast<DWORD>(state.m_data.size());
-        rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), name.c_str(), nullptr,
-                             reinterpret_cast<DWORD*>(&state.m_type), size ? state.m_data.data() : &dummy, &size);
+        rc = RegQueryValueEx(
+             reinterpret_cast<HKEY>(native_handle()), name.data(), nullptr,
+             reinterpret_cast<DWORD*>(&state.m_type), size ? state.m_data.data() : &dummy, &size);
         state.m_data.resize(size);
     } while (rc == ERROR_MORE_DATA);
     
@@ -350,7 +354,7 @@ uint32_t key::remove_keys(const key_path& path, std::error_code& ec)
 
 bool key::remove_value(const name& name, std::error_code& ec)
 {
-    const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), name.c_str());
+    const LSTATUS rc = RegDeleteValue(reinterpret_cast<HKEY>(native_handle()), name.data());
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
     if (rc == ERROR_KEY_DELETED) RETURN_RESULT(ec, false);
@@ -363,7 +367,7 @@ bool key::remove_value(const name& name, std::error_code& ec)
 bool key::value_exists(const name& name, std::error_code& ec) const
 {
     const LSTATUS rc = RegQueryValueEx(reinterpret_cast<HKEY>(native_handle()), 
-                                       name.c_str(), nullptr, nullptr, nullptr, nullptr);
+                                       name.data(), nullptr, nullptr, nullptr, nullptr);
 
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, true);
     if (rc == ERROR_KEY_DELETED) RETURN_RESULT(ec, false);
@@ -375,9 +379,10 @@ bool key::value_exists(const name& name, std::error_code& ec) const
 
 void key::write_value(const name& name, const value& value, std::error_code& ec)
 {
-    const LSTATUS rc = RegSetValueEx(reinterpret_cast<HKEY>(native_handle()), 
-                                     name.c_str(), 0, static_cast<DWORD>(value.type()), 
-                                     value.data().data(), static_cast<DWORD>(value.data().size()));
+    const LSTATUS rc = RegSetValueEx(
+                       reinterpret_cast<HKEY>(native_handle()), 
+                       name.data(), 0, static_cast<DWORD>(value.type()),
+                       static_cast<const BYTE*>(value.data()), static_cast<DWORD>(value.size()));
     
     if (rc == ERROR_SUCCESS) RETURN_RESULT(ec, VOID);
     const std::error_code ec2(rc, std::system_category());

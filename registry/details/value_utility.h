@@ -38,7 +38,7 @@ inline namespace range_traits
 
     template <typename T>
     struct is_input_range_impl 
-    : std::conditional_t<std::is_same_v<iterator_category_t<T>, std::input_iterator_tag>,
+    : std::conditional_t<std::is_base_of_v<std::input_iterator_tag, iterator_category_t<T>>,
                          std::true_type, std::false_type>
     { };
 

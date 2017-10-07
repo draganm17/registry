@@ -47,15 +47,6 @@ namespace registry
         
         /*! A sequence of null-terminated strings, terminated by an empty string (\0). */
         multi_sz =                    7,
-
-        /*! TODO: ... */
-        //resource_list =               8,
-
-        /*! TODO: ... */
-        //full_resource_descriptor =    9,
-
-        /*! TODO: ... */
-        //resource_requirements_list =  10,
         
         /*! A 64-bit number. */
         qword =                       11
