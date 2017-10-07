@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <initializer_list>
 #include <locale>
 #include <string>
 #include <typeinfo>
@@ -56,6 +57,12 @@ namespace registry
     //  Defines an empty class type used to disambiguate the overloads of constructors and member
     //  functions of `registry::value`.
     */
+    struct none_value_tag             { };
+
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
     struct sz_value_tag               { };
 
     /*! \brief
@@ -63,6 +70,12 @@ namespace registry
     //  functions of `registry::value`.
     */
     struct expand_sz_value_tag        { };
+
+    /*! \brief
+    //  Defines an empty class type used to disambiguate the overloads of constructors and member
+    //  functions of `registry::value`.
+    */
+    struct binary_value_tag           { };
 
     /*! \brief
     //  Defines an empty class type used to disambiguate the overloads of constructors and member
@@ -126,7 +139,7 @@ namespace registry
 
         value& do_assign(value_type type, std::basic_string_view<name::value_type> val);
 
-        value& do_assign(value_type type, std::vector<std::wstring>&& val);
+        value& do_assign(value_type type, std::vector<name>&& val);
 
     public:
         //! Default constructor.
@@ -159,7 +172,7 @@ namespace registry
         //      - `data() == nullptr`.
         //      - `size() == 0`.
         */
-        value(nullptr_t) noexcept;
+        value(nullptr_t);
 
         //! Constructs a value of type `value_type::dword` as if by `value(dword_value_tag(), val)`.
         /*!
@@ -226,6 +239,15 @@ namespace registry
         >
         value(const T& val);
 
+        //! Constructs a value of type `value_type::none`.
+        /*!
+        //  @post
+        //      - `type() == value_type::none`.
+        //      - `data() == nullptr`.
+        //      - `size() == 0`.
+        */
+        explicit value(none_value_tag);
+
         //! Constructs a value of type `value_type::sz`.
         /*!
         //  @post
@@ -286,6 +308,20 @@ namespace registry
         */
         template <typename Source>
         value(expand_sz_value_tag, const Source& val, const std::locale& loc = std::locale());
+
+        //! Constructs a value of type `value_type::binary`.
+        /*!
+        //
+        //  @post
+        //      - `type() == value_type::binary`.
+        //      - `size() == size`.
+        //      - `memcmp(data, data(), size()) == 0`.
+        //
+        //  @param[in] data - the binary data to be stored in this value.
+        //
+        //  @param[in] size - the size of the binary data in bytes.
+        */
+        value(binary_value_tag, const void* data, size_t size);
 
         //! Constructs a value of type `value_type::expand_sz`.
         /*!
@@ -386,6 +422,10 @@ namespace registry
         // TODO: rewrite description
         template <typename InputIt>
         value(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
+
+        //! TODO: ...
+        template <typename Source>
+        value(multi_sz_value_tag, std::initializer_list<Source> init, const std::locale& loc = std::locale());
 
         //! Constructs a value of type `value_type::qword`.
         /*!
@@ -569,6 +609,14 @@ namespace registry
 
         //! Replaces the contents of the value.
         /*!
+        //  @post `*this == value(none_value_tag())`.
+        //
+        //  @return `*this`.
+        */
+        value& assign(none_value_tag);
+
+        //! Replaces the contents of the value.
+        /*!
         //  @post `*this == value(sz_value_tag(), val)`.
         //
         //  @param[in] val - a string to be stored in this value.
@@ -637,6 +685,18 @@ namespace registry
 
         //! Replaces the contents of the value.
         /*!
+        //  @post `*this == value(binary_value_tag(), data, size)`.
+        //
+        //  @param[in] data - the binary data to be stored in this value.
+        //
+        //  @param[in] size - the size of the binary data in bytes.
+        //
+        //  @return `*this`.
+        */
+        value& assign(binary_value_tag, const void* data, size_t size);
+
+        //! Replaces the contents of the value.
+        /*!
         //  @post `*this == value(dword_value_tag(), val)`.
         //
         //  @param[in] val - an integer to be stored in this value.
@@ -698,8 +758,8 @@ namespace registry
         //
         //  @param[in] val - a collection of strings to be stored in this value.
         */
-        template <typename Sequence>
-        value& assign(multi_sz_value_tag, const Sequence& val, const std::locale& loc = std::locale());
+        template <typename Source>
+        value& assign(multi_sz_value_tag, const Source& val, const std::locale& loc = std::locale());
 
         //! Replaces the contents of the value.
         /*!
@@ -715,6 +775,10 @@ namespace registry
         // TODO: rewrite description
         template <typename InputIt>
         value& assign(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc = std::locale());
+
+        //! TODO: ...
+        template <typename Source>
+        value& assign(multi_sz_value_tag, std::initializer_list<Source> init, const std::locale& loc = std::locale());
 
         //! TODO: ...
         /*!
@@ -850,8 +914,8 @@ namespace registry
         assign(link_value_tag(), first, last, loc);
     }
 
-    template <typename Sequence>
-    inline value::value(multi_sz_value_tag, const Sequence& val, const std::locale& loc)
+    template <typename Source>
+    inline value::value(multi_sz_value_tag, const Source& val, const std::locale& loc)
     {
         assign(multi_sz_value_tag(), val, loc);
     }
@@ -860,6 +924,12 @@ namespace registry
     inline value::value(multi_sz_value_tag, InputIt first, InputIt last, const std::locale& loc)
     {
         assign(multi_sz_value_tag(), first, last, loc);
+    }
+
+    template <typename Source>
+    inline value::value(multi_sz_value_tag, std::initializer_list<Source> init, const std::locale& loc)
+    {
+        assign(multi_sz_value_tag(), init, loc);
     }
 
     template <typename T,
@@ -966,8 +1036,8 @@ namespace registry
         }
     }
 
-    template <typename Sequence>
-    inline value& value::assign(multi_sz_value_tag, const Sequence& val, const std::locale& loc)
+    template <typename Source>
+    inline value& value::assign(multi_sz_value_tag, const Source& val, const std::locale& loc)
     {
         std::vector<name> names;
         using std::begin; using std::end;
@@ -983,6 +1053,16 @@ namespace registry
         std::vector<name> names;
         std::transform(first, last, std::back_inserter(names), [&](auto&& el)
                                                                { return name(el, loc); });
+
+        return do_assign(value_type::multi_sz, std::move(names));
+    }
+
+    template <typename Source>
+    inline value& value::assign(multi_sz_value_tag, std::initializer_list<Source> init, const std::locale& loc)
+    {
+        std::vector<name> names;
+        std::transform(std::begin(init), std::end(init),
+                       std::back_inserter(names), [&](auto&& el) { return name(el, loc); });
 
         return do_assign(value_type::multi_sz, std::move(names));
     }

@@ -286,7 +286,7 @@ namespace registry
     void swap(value_entry& lhs, value_entry& rhs) noexcept;
 
     //! Returns `it` unchanged.
-    const value_iterator& begin(const value_iterator& it) noexcept;
+    value_iterator begin(value_iterator it) noexcept;
 
     /*! \brief
     //  Returns a default-constructed value_iterator, which serves as the end iterator. 

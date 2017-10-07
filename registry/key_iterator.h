@@ -529,7 +529,7 @@ namespace registry
     void swap(key_entry& lhs, key_entry& rhs) noexcept;
 
     //! Returns `it` unchanged.
-    const key_iterator& begin(const key_iterator& it) noexcept;
+    key_iterator begin(key_iterator it) noexcept;
 
     /*! \brief
     //  Returns a default-constructed key_iterator, which serves as the end iterator. 
@@ -540,7 +540,7 @@ namespace registry
     void swap(key_iterator& lhs, key_iterator& rhs) noexcept;
 
     //! Returns `it` unchanged.
-    const recursive_key_iterator& begin(const recursive_key_iterator& it) noexcept;
+    recursive_key_iterator begin(recursive_key_iterator it) noexcept;
 
     /*! \brief
     //  Returns a default-constructed recursive_key_iterator, which serves as the end iterator. 

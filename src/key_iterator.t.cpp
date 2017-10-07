@@ -1,7 +1,6 @@
 #include <functional>
 #include <set>
 #include <vector>
-#include <Windows.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -21,9 +20,9 @@ void test_iteration(const key_path& p,
     std::error_code ec;
 
     std::set<key_path> expected_keys;
-    expected_keys.emplace(key_path(p).append(TEXT("key_1_deep_0")));
-    expected_keys.emplace(key_path(p).append(TEXT("key_2_deep_0")));
-    expected_keys.emplace(key_path(p).append(TEXT("key_3_deep_0")));
+    expected_keys.emplace(key_path(p).append("key_1_deep_0"));
+    expected_keys.emplace(key_path(p).append("key_2_deep_0"));
+    expected_keys.emplace(key_path(p).append("key_3_deep_0"));
 
     // using range-based for loop
     int elements = 0;
@@ -70,15 +69,15 @@ void test_recursive_iteration(const key_path& p,
 
     // NOTE: vector element index represent the depth
     std::vector<std::set<key_path>> expected_keys(3);
-    expected_keys[0].emplace(key_path(p).append(TEXT("key_1_deep_0")));
-    expected_keys[1].emplace(key_path(p).append(TEXT("key_1_deep_0\\key_1_deep_1")));
-    expected_keys[1].emplace(key_path(p).append(TEXT("key_1_deep_0\\key_2_deep_1")));
-    expected_keys[2].emplace(key_path(p).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_1_deep_2")));
-    expected_keys[2].emplace(key_path(p).append(TEXT("key_1_deep_0\\key_2_deep_1\\key_2_deep_2")));
-    expected_keys[0].emplace(key_path(p).append(TEXT("key_2_deep_0")));
-    expected_keys[0].emplace(key_path(p).append(TEXT("key_3_deep_0")));
-    expected_keys[1].emplace(key_path(p).append(TEXT("key_3_deep_0\\key_1_deep_1")));
-    expected_keys[1].emplace(key_path(p).append(TEXT("key_3_deep_0\\key_2_deep_1")));
+    expected_keys[0].emplace(key_path(p).append("key_1_deep_0"));
+    expected_keys[1].emplace(key_path(p).append("key_1_deep_0\\key_1_deep_1"));
+    expected_keys[1].emplace(key_path(p).append("key_1_deep_0\\key_2_deep_1"));
+    expected_keys[2].emplace(key_path(p).append("key_1_deep_0\\key_2_deep_1\\key_1_deep_2"));
+    expected_keys[2].emplace(key_path(p).append("key_1_deep_0\\key_2_deep_1\\key_2_deep_2"));
+    expected_keys[0].emplace(key_path(p).append("key_2_deep_0"));
+    expected_keys[0].emplace(key_path(p).append("key_3_deep_0"));
+    expected_keys[1].emplace(key_path(p).append("key_3_deep_0\\key_1_deep_1"));
+    expected_keys[1].emplace(key_path(p).append("key_3_deep_0\\key_2_deep_1"));
 
     // using range-based for loop
     int elements = 0;
@@ -135,7 +134,7 @@ TEST(KeyIterator, Construct)
     // key_iterator::key_iterator(const key&, std::error_code&)
     {
         std::error_code ec;
-        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+        const key_path p = "HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read";
 
         // right permissions
         const key k1(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
@@ -158,23 +157,23 @@ TEST(KeyIterator, Construct)
     {
         std::error_code ec;
 
-        key_iterator it1(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"));
+        key_iterator it1("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent");
         EXPECT_TRUE(it1 == key_iterator());
 
-        key_iterator it2(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"), ec);
+        key_iterator it2("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent", ec);
         EXPECT_TRUE(it2 == key_iterator() && !ec);
 
-        key_iterator it3(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"));
+        key_iterator it3("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
         EXPECT_TRUE(it3 != key_iterator());
 
-        key_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
+        key_iterator it4("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read", ec);
         EXPECT_TRUE(it4 != key_iterator() && !ec);
     }
 }
 
 TEST(KeyIterator, ConstructFromKeyAndIterate)
 {
-    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = "HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read";
     const key k(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
 
     test_iteration(key_path(), [&]() { return key_iterator(k); });
@@ -183,7 +182,7 @@ TEST(KeyIterator, ConstructFromKeyAndIterate)
 TEST(KeyIterator, ConstructFromPathAndIterate)
 {
     std::error_code ec;
-    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = "HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read";
 
     test_iteration(p, [&]() { return key_iterator(p); });
 }
@@ -200,7 +199,7 @@ TEST(RecursiveKeyIterator, Construct)
     // recursive_key_iterator::recursive_key_iterator(const key&, std::error_code&)
     {
         std::error_code ec;
-        const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+        const key_path p = "HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read";
 
         // right permissions
         const key k1(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
@@ -231,17 +230,17 @@ TEST(RecursiveKeyIterator, Construct)
     {
         std::error_code ec;
 
-        recursive_key_iterator it1(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"));
+        recursive_key_iterator it1("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent");
         EXPECT_TRUE(it1 == recursive_key_iterator());
 
-        recursive_key_iterator it2(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent"), ec);
+        recursive_key_iterator it2("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\non_existent", ec);
         EXPECT_TRUE(it2 == recursive_key_iterator() && !ec);
 
-        recursive_key_iterator it3(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"));
+        recursive_key_iterator it3("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
         EXPECT_TRUE(it3 != recursive_key_iterator());
         EXPECT_TRUE(it3.options() == key_options::none);
 
-        recursive_key_iterator it4(TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read"), ec);
+        recursive_key_iterator it4("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read", ec);
         EXPECT_TRUE(it4 != recursive_key_iterator() && !ec);
         EXPECT_TRUE(it4.options() == key_options::none);
 
@@ -251,14 +250,14 @@ TEST(RecursiveKeyIterator, Construct)
 
 TEST(RecursiveKeyIterator, ConstructFromKeyAndIterate)
 {
-    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = "HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read";
 
     test_recursive_iteration(p, [&]() { return recursive_key_iterator(p); });
 }
 
 TEST(RecursiveKeyIterator, ConstructFromPathAndIterate)
 {
-    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = "HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read";
     const key k(open_only_tag{}, p, access_rights::enumerate_sub_keys | access_rights::query_value);
 
     test_recursive_iteration(p, [&]() { return recursive_key_iterator(k); });
@@ -266,12 +265,12 @@ TEST(RecursiveKeyIterator, ConstructFromPathAndIterate)
 
 TEST(RecursiveKeyIterator, Pop)
 {
-    const key_path p = TEXT("HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read");
+    const key_path p = "HKEY_CURRENT_USER\\SOFTWARE\\libregistry\\read";
 
     std::set<key_path> expected_keys;
-    expected_keys.emplace(key_path(p).append(TEXT("key_1_deep_0")));
-    expected_keys.emplace(key_path(p).append(TEXT("key_2_deep_0")));
-    expected_keys.emplace(key_path(p).append(TEXT("key_3_deep_0")));
+    expected_keys.emplace(key_path(p).append("key_1_deep_0"));
+    expected_keys.emplace(key_path(p).append("key_2_deep_0"));
+    expected_keys.emplace(key_path(p).append("key_3_deep_0"));
 
     int elements = 0;
     for (auto it = recursive_key_iterator(p); ; ++it)
